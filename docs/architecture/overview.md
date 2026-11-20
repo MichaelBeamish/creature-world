@@ -6,8 +6,11 @@ src/
   simulation/   pure TS: world, creatures, traits, perception, minds, steering, rng   (no DOM, no Vue)
   render/       Canvas 2D: scene background, procedural creature drawing, emotes, debug draw
   input/        DOM pointer events → world "presence" (cursor position, velocity, active)
-  app/          game loop, wiring, Vue shell (overlay UI: mute toggle, debug panel)
+  app/          game loop, wiring, Vue shell (overlay UI: mute toggle, debug panel); App.vue is the root
+  main.ts       entry point: mounts App.vue
 ```
+Tests sit next to the code they cover (`*.test.ts`). The simulation import boundary is enforced by ESLint
+(`no-restricted-imports` in `eslint.config.js`).
 Dependency direction: `app → render, input → simulation`. Simulation depends on nothing.
 
 ## Data flow (per frame)

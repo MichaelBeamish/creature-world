@@ -5,7 +5,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 
 | # | Task | Status |
 |---|---|---|
-| 1 | Project scaffold | todo |
+| 1 | Project scaffold | done |
 | 2 | Canvas stage + game loop | todo |
 | 3 | Simulation core: world, creature, RNG | todo |
 | 4 | Draw a static creature | todo |
@@ -24,6 +24,11 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 Vite + Vue 3 + TS (strict), Vitest, ESLint + Prettier, pnpm; folder layout from the architecture doc; commands in CLAUDE.md.
 - **Accept:** `pnpm dev` serves a page; `pnpm test`, `pnpm lint`, `pnpm typecheck` pass with one sample test.
 - **Verify:** run all four commands.
+- **Approved spec decisions (2026-11-20):** install pnpm globally via npm and pin it in `packageManager`;
+  `engines.node >=22.12.0`; deps: `vue` + dev `vite`, `@vitejs/plugin-vue`, `typescript`, `vue-tsc`, `@vue/tsconfig`,
+  `vitest`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-vue`, `eslint-config-prettier`, `prettier`.
+  Also: strip `create-vite` demo content; lint rule blocks vue/render/input/app imports in `src/simulation/`;
+  sample test `src/simulation/math.test.ts` (`clamp`, `lerp`); `format:check` and `build` must pass too.
 
 ### 2. Canvas stage + game loop
 Full-viewport, DPR-aware canvas; fixed-timestep loop with interpolation alpha; resize handling.

@@ -1,8 +1,14 @@
 # Creature World — Project Instructions
 
 A browser world of furry, octopus-like creatures that feel alive and notice the visitor.
-Portfolio + learning project. The owner is an experienced Vue developer returning after a break (since 2022):
-explain modern practices and important tradeoffs as we go.
+Portfolio + learning project. The owner is an experienced Vue developer returning after a break (since 2022).
+
+## Mentoring (owner preference)
+Claude leads development, and the owner wants to grow as a developer along the way.
+- When implementing something **important**, briefly explain the concepts, architectural choices, and techniques behind it.
+- Focus on what helps the owner **confidently maintain the app** or **discuss it in a technical interview**:
+  the *why*, the tradeoffs, the alternatives, and the name of the pattern.
+- **Skip trivial code.** Keep explanations short (a few bullets), and put them at the end of a task summary rather than in the middle of the work.
 
 ## Read first
 - `docs/product/mvp.md` — what we are building now (and what we are NOT)
@@ -31,4 +37,19 @@ framework-free simulation in plain TS · Vitest · ESLint + Prettier · pnpm.
 - Name things after the creature domain (`perceive`, `mood`, `traits`), not generic jargon.
 
 ## Commands
-_None yet — added by backlog task #1 (scaffold)._
+Requires Node >= 22.12 and pnpm (version pinned in `package.json` → `packageManager`).
+
+| Command | Purpose |
+|---|---|
+| `pnpm install` | Install dependencies |
+| `pnpm dev` | Dev server with hot reload (http://localhost:5173) |
+| `pnpm build` | Type-check, then production build to `dist/` |
+| `pnpm preview` | Serve the production build locally |
+| `pnpm test` | Run unit tests once (Vitest) |
+| `pnpm test:watch` | Run tests in watch mode |
+| `pnpm typecheck` | Type-check app + config (`vue-tsc -b`) |
+| `pnpm lint` | ESLint (incl. simulation layer-boundary rule) |
+| `pnpm format` / `pnpm format:check` | Prettier write / check (Markdown excluded) |
+
+Before marking a task done, `test`, `typecheck`, `lint`, `format:check`, and `build` must all pass.
+TypeScript is pinned to 6.x: `vue-tsc` and `typescript-eslint` don't support TypeScript 7 yet.
