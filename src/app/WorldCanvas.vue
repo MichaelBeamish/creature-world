@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
+import { drawScene } from '../render/scene'
 import { createStage, type Stage } from '../render/stage'
-import { createDemoDot, drawDemoDot, stepDemoDot } from './demoDot'
+import { createWorld, resizeWorld, stepWorld } from '../simulation/world'
 import { createGameLoop, type GameLoop } from './gameLoop'
+import { resolveSeed } from './seed'
+
+const CREATURE_COUNT = 5
 
 const canvasEl = useTemplateRef<HTMLCanvasElement>('canvas')
 
@@ -13,17 +17,27 @@ let loop: GameLoop | null = null
 onMounted(() => {
   if (!canvasEl.value) return
   const s = createStage(canvasEl.value)
-  const dot = createDemoDot()
   stage = s
+
+  const seed = resolveSeed(window.location.search)
+  console.info(
+    `[Creature World] seed ${seed} — add ?seed=${seed} to the URL to see this world again`,
+  )
+  const world = createWorld({
+    seed,
+    width: s.width,
+    height: s.height,
+    creatureCount: CREATURE_COUNT,
+  })
 
   loop = createGameLoop({
     step(dt) {
-      stepDemoDot(dot, dt, s.width, s.height)
+      if (world.width !== s.width || world.height !== s.height)
+        resizeWorld(world, s.width, s.height)
+      stepWorld(world, dt)
     },
     render(alpha) {
-      s.ctx.fillStyle = '#0e2a3a'
-      s.ctx.fillRect(0, 0, s.width, s.height)
-      drawDemoDot(s.ctx, dot, alpha)
+      drawScene(s.ctx, world, alpha, s.width, s.height)
     },
   })
   loop.start()

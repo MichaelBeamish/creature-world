@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CREATURE_LIMITS } from './creature'
+import { CREATURE_LIMITS, footprint, footprintsOverlap } from './creature'
 import { createRng, range } from './rng'
 import { createWorld, resizeWorld, stepWorld, type World, type WorldConfig } from './world'
 
@@ -30,14 +30,14 @@ describe('createWorld', () => {
     expect(new Set(ids).size).toBe(5)
   })
 
-  it('spawns creatures at rest, inside the bounds, with appearance in range', () => {
+  it('spawns creatures at rest, with their whole footprint inside the bounds and appearance in range', () => {
     const world = createWorld({ ...CONFIG, creatureCount: 200 })
-    const m = CREATURE_LIMITS.spawnMargin
     for (const c of world.creatures) {
-      expect(c.position.x).toBeGreaterThanOrEqual(m)
-      expect(c.position.x).toBeLessThanOrEqual(CONFIG.width - m)
-      expect(c.position.y).toBeGreaterThanOrEqual(m)
-      expect(c.position.y).toBeLessThanOrEqual(CONFIG.height - m)
+      const f = footprint(c.position, c.size)
+      expect(f.x - f.radius).toBeGreaterThanOrEqual(0)
+      expect(f.x + f.radius).toBeLessThanOrEqual(CONFIG.width)
+      expect(f.y - f.radius).toBeGreaterThanOrEqual(0)
+      expect(f.y + f.radius).toBeLessThanOrEqual(CONFIG.height)
       expect(c.prevPosition).toEqual(c.position)
       expect(c.velocity).toEqual({ x: 0, y: 0 })
       expect(c.hue).toBeGreaterThanOrEqual(0)
@@ -49,13 +49,38 @@ describe('createWorld', () => {
     }
   })
 
-  it('still spawns inside a world smaller than the spawn margin', () => {
+  it('falls back to the center of a world too small for a creature', () => {
     const world = createWorld({ ...CONFIG, width: 50, height: 40 })
     for (const c of world.creatures) {
-      expect(c.position.x).toBeGreaterThanOrEqual(0)
-      expect(c.position.x).toBeLessThanOrEqual(50)
-      expect(c.position.y).toBeGreaterThanOrEqual(0)
-      expect(c.position.y).toBeLessThanOrEqual(40)
+      const f = footprint(c.position, c.size)
+      expect([f.x, f.y]).toEqual([25, 20])
+    }
+  })
+
+  it('spawns creatures whose footprints do not overlap (several seeds)', () => {
+    for (const seed of [1, 2, 3, 42, 1234, 99999]) {
+      const { creatures } = createWorld({ ...CONFIG, seed })
+      for (let i = 0; i < creatures.length; i++) {
+        for (let j = i + 1; j < creatures.length; j++) {
+          const a = creatures[i]!
+          const b = creatures[j]!
+          expect(
+            footprintsOverlap(footprint(a.position, a.size), footprint(b.position, b.size)),
+          ).toBe(false)
+        }
+      }
+    }
+  })
+
+  it('spaces hues at least 30° apart around the color wheel', () => {
+    for (const seed of [1, 7, 1234]) {
+      const hues = createWorld({ ...CONFIG, seed }).creatures.map((c) => c.hue)
+      for (let i = 0; i < hues.length; i++) {
+        for (let j = i + 1; j < hues.length; j++) {
+          const d = Math.abs(hues[i]! - hues[j]!)
+          expect(Math.min(d, 360 - d)).toBeGreaterThanOrEqual(30)
+        }
+      }
     }
   })
 })

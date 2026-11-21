@@ -11,7 +11,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 3 | Simulation core: world, creature, RNG | done |
 | 13 | CI with GitHub Actions | done |
 | 14 | Branch + pull-request workflow | done |
-| 4 | Draw a static creature | todo |
+| 4 | Draw a static creature | done |
 | 5 | Idle animation | todo |
 | 6 | Wandering + bounds + separation | todo |
 | 7 | Cursor presence + perception | todo |
@@ -54,6 +54,11 @@ Full-viewport, DPR-aware canvas; fixed-timestep loop with interpolation alpha; r
 Procedural body, eyes, tentacles from creature params (color, size, tentacle count).
 - **Accept:** 3–5 visibly distinct creatures render at spawn positions.
 - **Verify:** visual check (screenshot).
+- **Approved spec decisions (2026-11-20):** style **B "Little octopus"** (tall mantle, eyes low, long wavy tapered
+  tentacles, soft gradient shading, light fuzz) — preview sketch reviewed by owner; render as a pure function of state;
+  stateless hash noise for fur; golden-angle hue spacing (pastel); rejection-sampled non-overlapping spawns using a
+  footprint that includes tentacles; seed random per visit, `?seed=` override, logged; default 5 creatures;
+  delete `demoDot.ts`; owner does the final visual check.
 
 ### 5. Idle animation
 Breathing, blinking, tentacle sway, driven by per-creature phases.
@@ -64,6 +69,8 @@ Breathing, blinking, tentacle sway, driven by per-creature phases.
 Steering: wander, soft screen bounds, separation; occasional rest.
 - **Accept:** 60s run: no creature leaves the screen or overlaps another (unit test on simulation).
 - **Verify:** tests + visual check.
+- **Carried over from task #4:** in small windows, spawn footprints can't all fit, so creatures start overlapping;
+  separation must resolve this (use `footprint()` from `creature.ts`), including after the window shrinks.
 
 ### 7. Cursor presence + perception
 Input module maps pointer/tap to `Presence`; creatures compute attention from distance and cursor motion.

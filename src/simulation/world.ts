@@ -1,5 +1,5 @@
-import { createCreature, type Creature } from './creature'
-import { createRng, type Rng } from './rng'
+import { createCreature, GOLDEN_ANGLE, type Creature } from './creature'
+import { createRng, range, type Rng } from './rng'
 import { addScaled, copyVec2 } from './vec2'
 
 /** The whole simulation state: plain data, so it can be compared, cloned, and snapshotted. */
@@ -25,9 +25,12 @@ export interface WorldConfig {
 export function createWorld(config: WorldConfig): World {
   const rng = createRng(config.seed)
   const bounds = { width: config.width, height: config.height }
-  const creatures = Array.from({ length: config.creatureCount }, (_, i) =>
-    createCreature(rng, i + 1, bounds),
-  )
+  const baseHue = range(rng, 0, 360)
+  const creatures: Creature[] = []
+  for (let i = 0; i < config.creatureCount; i++) {
+    const hue = baseHue + i * GOLDEN_ANGLE
+    creatures.push(createCreature(rng, i + 1, bounds, hue, creatures))
+  }
   return { width: config.width, height: config.height, time: 0, tick: 0, rng, creatures }
 }
 
