@@ -2,6 +2,18 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-21 — Task #17: Code map + drift check ✅
+- **Done:** `docs/architecture/code-map.md` — conventions, every source file per folder (purpose + exports, taken
+  from the code), a 42-row "to change X, edit Y" knob table, 5 recipes (archetype, emote, stimulus, knob, file).
+  `src/codeMap.test.ts` drift test (Vite `import.meta.glob` + `?raw`, no new deps). Workflow: code map in CLAUDE.md
+  "Read first" + rule 7 "Verify before you reference"; `/plan-task` lists exact, confirmed symbols; `/verify-task`
+  checks the code map with the README; README and overview link it.
+- **Verified:** 165/165 tests; the drift test fails on an unmapped file, a stale entry, and made-up knobs
+  (`MOVEMENT.topSpeed`, `MAIN_VOLUME`) — each shown on purpose, then reverted. Owner: "looks good".
+- **Learned / notes:** documentation as a CI-tested artifact; compiler + drift test cover made-up references in code
+  and docs; `import.meta.glob` excludes the calling module itself.
+- **Next:** task #15 (sea floor).
+
 ## 2026-11-21 — Task #12: MVP polish + success-criteria review ✅ — MVP achieved
 - **Done:** reduced motion (`render/motion.ts`, live `app/reducedMotion.ts`: decorative motion toned down, background
   still, behavior unchanged); living background (`render/background.ts`: caustics, stateless floating motes, vignette);

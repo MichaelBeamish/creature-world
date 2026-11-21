@@ -1,5 +1,8 @@
 # Architecture Overview
 
+> This explains *how and why* the system works. For *where* each file lives and which constant to edit for a given
+> change, see the [code map](code-map.md) (kept in sync by `src/codeMap.test.ts`).
+
 ## Layers
 ```
 src/

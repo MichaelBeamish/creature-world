@@ -7,10 +7,13 @@ description: Turn a backlog task into a short implementation spec and get the ow
 
 1. Read `CLAUDE.md`, `docs/tasks/backlog.md`, `docs/architecture/overview.md`, and any relevant ADRs.
 2. Identify the task (by number from the argument, or the first `todo` task). Confirm earlier tasks it depends on are `done`.
-3. Inspect the current code that the task touches.
+3. Inspect the current code that the task touches. Start from `docs/architecture/code-map.md` (where things are,
+   "to change X, edit Y"), then **confirm every file and symbol you will mention by searching/reading the code** —
+   never from memory.
 4. Write a spec in chat (do not create files) with:
    - **Goal** — one sentence.
-   - **Files** — to create / modify.
+   - **Files** — to create / modify, with the exact functions/types/constants touched; each confirmed to exist in
+     the code, or marked *new*.
    - **Approach** — 3–8 bullets; mention any concept worth teaching the owner.
    - **Acceptance criteria** — copied from the backlog, refined to be concrete and testable.
    - **Tests** — what will be unit-tested; what is checked visually.
