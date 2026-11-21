@@ -1,0 +1,41 @@
+import { describe, expect, it } from 'vitest'
+import { createWorld } from '../simulation/world'
+import { createEmoteWatcher } from './soundEvents'
+
+describe('createEmoteWatcher', () => {
+  it('reports a new emote exactly once, even while it stays on screen', () => {
+    const world = createWorld({ seed: 1, width: 1280, height: 720, creatureCount: 3 })
+    const watch = createEmoteWatcher()
+    expect(watch(world)).toEqual([])
+
+    world.creatures[1]!.expression.emote = { kind: 'exclaim', age: 0 }
+    const first = watch(world)
+    expect(first).toHaveLength(1)
+    expect(first[0]!.creature.id).toBe(world.creatures[1]!.id)
+    expect(first[0]!.kind).toBe('exclaim')
+
+    world.creatures[1]!.expression.emote!.age = 0.5 // same emote, still showing
+    expect(watch(world)).toEqual([])
+  })
+
+  it('a later emote of the same kind is a new event', () => {
+    const world = createWorld({ seed: 1, width: 1280, height: 720, creatureCount: 1 })
+    const watch = createEmoteWatcher()
+    world.creatures[0]!.expression.emote = { kind: 'question', age: 0 }
+    expect(watch(world)).toHaveLength(1)
+    world.creatures[0]!.expression.emote = null
+    expect(watch(world)).toEqual([])
+    world.creatures[0]!.expression.emote = { kind: 'question', age: 0 }
+    expect(watch(world)).toHaveLength(1)
+  })
+
+  it('tracks creatures independently and never changes the world', () => {
+    const world = createWorld({ seed: 1, width: 1280, height: 720, creatureCount: 3 })
+    world.creatures[0]!.expression.emote = { kind: 'anger', age: 0 }
+    world.creatures[2]!.expression.emote = { kind: 'heart', age: 0 }
+    const before = structuredClone(world)
+    const watch = createEmoteWatcher()
+    expect(watch(world).map((e) => e.kind)).toEqual(['anger', 'heart'])
+    expect(world).toEqual(before)
+  })
+})

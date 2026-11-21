@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef } from 'vue'
+import { createEmoteWatcher } from '../audio/soundEvents'
+import { createSynth, type Synth } from '../audio/synth'
+import { chirpFor, panFor } from '../audio/voice'
 import { createPointerInput, type PointerInput } from '../input/pointer'
 import { drawScene } from '../render/scene'
 import { createStage, type Stage } from '../render/stage'
 import { setPresenceInput } from '../simulation/presence'
 import { createWorld, resizeWorld, stepWorld } from '../simulation/world'
 import DebugPanel from './DebugPanel.vue'
+import MuteToggle from './MuteToggle.vue'
 import { createDebugSnapshot, createPublisher, type DebugSnapshot } from './debugSnapshot'
 import { createFpsMeter } from './fpsMeter'
 import { createGameLoop, type GameLoop } from './gameLoop'
@@ -23,6 +27,21 @@ const debugAllowed = import.meta.env.DEV || debugRequested
 const debugVisible = ref(debugRequested)
 // shallowRef: Vue tracks only "a new snapshot arrived" — never the fields inside it.
 const snapshot = shallowRef<DebugSnapshot | null>(null)
+
+// Sound: always starts muted. The AudioContext is only created on the first unmute click
+// (browsers block audio until a user gesture).
+const muted = ref(true)
+/** Plain mirror of `muted` for the per-frame code (no reactive reads in the hot loop). */
+let soundOn = false
+let synth: Synth | null = null
+const watchEmotes = createEmoteWatcher()
+
+function toggleSound() {
+  synth ??= createSynth()
+  soundOn = !soundOn
+  muted.value = !soundOn
+  synth.setMuted(!soundOn)
+}
 
 // Deliberately NOT reactive (ADR 0001): per-frame objects must stay out of Vue's reactivity system.
 let stage: Stage | null = null
@@ -80,6 +99,13 @@ onMounted(() => {
       drawScene(s.ctx, world, alpha, s.width, s.height, { debug: showDebug })
     },
     frame(now, workMs) {
+      // Sound is an output layer: it observes new emotes (always, so nothing stale plays on unmute).
+      const events = watchEmotes(world)
+      if (synth && soundOn) {
+        for (const e of events)
+          synth.play(chirpFor(e.creature, e.kind), panFor(e.creature.position.x, s.width))
+      }
+
       if (!showDebug) return // zero cost while the overlay is off
       meter.record(now, workMs)
       if (publish(now)) snapshot.value = createDebugSnapshot(world, seed, meter.stats())
@@ -94,6 +120,8 @@ onBeforeUnmount(() => {
   stage?.destroy()
   pointer?.destroy()
   window.removeEventListener('keydown', onKeyDown)
+  synth?.close()
+  synth = null
   loop = null
   stage = null
   pointer = null
@@ -103,6 +131,7 @@ onBeforeUnmount(() => {
 <template>
   <canvas ref="canvas" class="world-canvas" />
   <DebugPanel v-if="debugVisible && snapshot" :snapshot="snapshot" />
+  <MuteToggle :muted="muted" @toggle="toggleSound" />
 </template>
 
 <style scoped>
