@@ -12,7 +12,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 13 | CI with GitHub Actions | done |
 | 14 | Branch + pull-request workflow | done |
 | 4 | Draw a static creature | done |
-| 5 | Idle animation | todo |
+| 5 | Idle animation | done |
 | 6 | Wandering + bounds + separation | todo |
 | 7 | Cursor presence + perception | todo |
 | 8 | Traits + RuleMind reactions | todo |
@@ -64,6 +64,10 @@ Procedural body, eyes, tentacles from creature params (color, size, tentacle cou
 Breathing, blinking, tentacle sway, driven by per-creature phases.
 - **Accept:** creatures look alive while stationary; animation phases are not synchronized.
 - **Verify:** visual check; unit test that blink timing varies by creature.
+- **Approved spec decisions (2026-11-20):** animation state in simulation (`breathPhase/Rate`, `swayPhase/Rate`,
+  `blinkTimer`, `eyeOpenness`) stepped by `stepAnimation`; phase accumulation (`phase += rate*dt`), not `sin(t*rate)`;
+  seeded per-creature phases/rates; blink state machine (2–6 s wait, ~160 ms blink, ~15% double blinks); traveling-wave
+  tentacle sway; subtle squash/stretch breathing; no interpolation of phases.
 
 ### 6. Wandering + bounds + separation
 Steering: wander, soft screen bounds, separation; occasional rest.
@@ -101,6 +105,7 @@ Soft synthesized chirps (Web Audio) on notice/emote; muted by default; Vue toggl
 Background, color tuning, timing tweaks; walk through all MVP success criteria.
 - **Accept:** all criteria in `mvp.md` checked and recorded in `progress.md`.
 - **Verify:** criteria checklist.
+- **Carried over from task #5:** honor `prefers-reduced-motion` (tone down sway/breathing amplitude; keep blinks).
 
 ### 13. CI with GitHub Actions
 `.github/workflows/ci.yml` runs on every push to `main` and every pull request: install with the locked

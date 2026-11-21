@@ -1,3 +1,4 @@
+import { createAnimation, type CreatureAnimation } from './animation'
 import { int, range, type Rng } from './rng'
 import { vec2, type Vec2 } from './vec2'
 
@@ -23,6 +24,8 @@ export interface Creature {
   /** Mantle half-width in world units; all body proportions scale with it. */
   size: number
   tentacleCount: number
+  /** Idle-animation state (breathing, sway, blinking). */
+  anim: CreatureAnimation
 }
 
 export const CREATURE_LIMITS = {
@@ -106,6 +109,7 @@ export function createCreature(
     hue: ((hue % 360) + 360) % 360,
     size,
     tentacleCount,
+    anim: createAnimation(rng),
   }
 }
 

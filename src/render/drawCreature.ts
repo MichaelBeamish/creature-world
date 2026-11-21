@@ -3,8 +3,8 @@ import { hash2 } from './noise'
 
 /**
  * Draws one "little octopus" (style B) at (x, y) — the interpolated mantle center.
- * Pure function of the creature's data: reads it, never mutates it. Every detail is derived
- * from id/hue/size/tentacleCount, so a creature always looks the same.
+ * Pure function of the creature's data: reads it, never mutates it. Shape details come from
+ * id/hue/size/tentacleCount; motion (breathing, sway, blinking) from `creature.anim`.
  */
 export function drawCreature(
   ctx: CanvasRenderingContext2D,
@@ -12,9 +12,10 @@ export function drawCreature(
   x: number,
   y: number,
 ): void {
-  const { id, hue, size } = creature
-  const rx = size
-  const ry = size * BODY.mantleHalfHeight
+  const { id, hue, size, anim } = creature
+  // Breathing as gentle squash & stretch: taller ±3%, wider ±2%, slightly out of phase.
+  const rx = size * (1 + BREATH.width * Math.sin(anim.breathPhase - BREATH.widthLag))
+  const ry = size * BODY.mantleHalfHeight * (1 + BREATH.height * Math.sin(anim.breathPhase))
   const colors = {
     tentacle: `hsl(${hue} 40% 60%)`,
     fuzz: `hsl(${hue} 42% 64%)`,
@@ -34,8 +35,19 @@ export function drawCreature(
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
   ctx.fill()
 
-  drawEyes(ctx, x, y + size * 0.35, size)
+  drawEyes(ctx, x, y + size * 0.35, size, anim.eyeOpenness)
 }
+
+/** Motion amplitudes — kept subtle so creatures read as calm, not jittery. */
+const BREATH = { height: 0.03, width: 0.02, widthLag: 0.8 } as const
+const SWAY = {
+  /** Sideways swing at the tip, as a multiple of size; control points swing less (root moves least). */
+  amplitude: 0.35,
+  /** Phase offset between neighboring tentacles, so they don't move in lockstep. */
+  spread: 0.9,
+  /** Phase lag per segment along the tentacle → the motion travels from root to tip. */
+  lag: 0.9,
+} as const
 
 function drawTentacles(
   ctx: CanvasRenderingContext2D,
@@ -44,7 +56,7 @@ function drawTentacles(
   y: number,
   color: string,
 ): void {
-  const { id, size, tentacleCount: n } = creature
+  const { id, size, tentacleCount: n, anim } = creature
   ctx.fillStyle = color
   for (let i = 0; i < n; i++) {
     const s = n === 1 ? 0 : (i / (n - 1)) * 2 - 1 // -1 (left) .. 1 (right)
@@ -52,13 +64,21 @@ function drawTentacles(
     const wave = (i % 2 === 0 ? -1 : 1) * size * (0.4 + hash2(id, i + 50) * 0.3)
     const rootX = x + s * size * 0.75
     const rootY = y + size * BODY.tentacleRootY
-    // Cubic Bézier: fan outward, with an S-shaped wave.
+
+    // Traveling wave: each point further along lags in phase, so the swing runs root → tip.
+    const phase = anim.swayPhase + i * SWAY.spread
+    const swing = size * SWAY.amplitude
+    const sway1 = swing * 0.35 * Math.sin(phase)
+    const sway2 = swing * 0.7 * Math.sin(phase - SWAY.lag)
+    const sway3 = swing * Math.sin(phase - SWAY.lag * 2)
+
+    // Cubic Bézier: fan outward, with an S-shaped wave plus the sway.
     taperedCurve(
       ctx,
       [rootX, rootY],
-      [rootX + s * size * 0.6 + wave, rootY + length * 0.33],
-      [rootX + s * size * 0.9 - wave, rootY + length * 0.66],
-      [rootX + s * size * 1.3 + wave * 0.5, rootY + length],
+      [rootX + s * size * 0.6 + wave + sway1, rootY + length * 0.33],
+      [rootX + s * size * 0.9 - wave + sway2, rootY + length * 0.66],
+      [rootX + s * size * 1.3 + wave * 0.5 + sway3, rootY + length],
       size * 0.36,
       size * 0.08,
     )
@@ -145,16 +165,41 @@ function drawFuzz(
   ctx.stroke()
 }
 
-function drawEyes(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number): void {
+/** Below this openness the eye is drawn as a closed lid (a curved line) instead. */
+const CLOSED_EYE = 0.15
+
+function drawEyes(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  openness: number,
+): void {
   const gap = size * 0.36
   const r = size * 0.24
   const pupil = size * 0.13
   for (const side of [-1, 1]) {
     const ex = cx + side * gap
-    ctx.fillStyle = '#fffdf8'
+
+    if (openness < CLOSED_EYE) {
+      // Closed: a gentle downward-curved lid line.
+      ctx.strokeStyle = '#1b1530'
+      ctx.lineWidth = Math.max(1.5, size * 0.06)
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      ctx.arc(ex, cy - r * 0.6, r, Math.PI * 0.2, Math.PI * 0.8)
+      ctx.stroke()
+      continue
+    }
+
+    // Open (or partly open): the eye white squashes vertically; pupil and highlight are clipped to it.
+    const eyeRy = r * 1.12 * openness
+    ctx.save()
     ctx.beginPath()
-    ctx.ellipse(ex, cy, r, r * 1.12, 0, 0, Math.PI * 2)
+    ctx.ellipse(ex, cy, r, eyeRy, 0, 0, Math.PI * 2)
+    ctx.fillStyle = '#fffdf8'
     ctx.fill()
+    ctx.clip()
 
     ctx.fillStyle = '#1b1530'
     ctx.beginPath()
@@ -165,5 +210,6 @@ function drawEyes(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: n
     ctx.beginPath()
     ctx.arc(ex - pupil * 0.35, cy - pupil * 0.2, pupil * 0.32, 0, Math.PI * 2)
     ctx.fill()
+    ctx.restore()
   }
 }

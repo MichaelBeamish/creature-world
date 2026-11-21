@@ -2,6 +2,18 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Task #5: Idle animation ✅
+- **Done:** `simulation/animation.ts` — per-creature breath/sway oscillators (seeded phases and rates, phase
+  accumulation with wrapping) and a blink state machine (2–6 s waits, 160 ms blinks, ~15% double blinks), stepped
+  in `stepWorld`. Renderer: squash/stretch breathing, traveling-wave tentacle sway, eyelids via canvas clipping.
+- **Verified:** 45/45 tests (blink coverage/duration/openness, double-blink rate over 600 s, exact phase
+  accumulation incl. rate change, desync across creatures, determinism incl. animation); frames at different times
+  differ; ~120 FPS headless; owner: "they move beautifully".
+- **Learned / notes:** oscillators via phase accumulation (smooth rate changes) and phase wrapping (float
+  precision); state machines; traveling waves from phase lag; canvas clipping. Seeds are stable within a code
+  version, not across versions (new rng draws shift later spawns). Added roadmap item #9 (drag / boop / shake).
+- **Next:** task #6 (wandering + bounds + separation).
+
 ## 2026-11-20 — Task #4: Draw a static creature ✅
 - **Done:** style B "Little octopus" (owner picked it from a 3-style preview): tapered Bézier tentacles with
   rounded tips, light fuzz, gradient-shaded mantle, eyes with highlights. `drawScene` (pure, painter's algorithm,

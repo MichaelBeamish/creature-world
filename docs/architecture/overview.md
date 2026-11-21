@@ -30,8 +30,11 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
 
 - **World** — size, time, tick, seeded RNG state, creatures (later: presence). `stepWorld` advances one fixed step.
 - **Rng** — mulberry32 PRNG with state stored in the world; the only source of randomness in simulation.
-- **Creature** — id, position, prevPosition (for interpolation), velocity, appearance; later traits, attention,
-  current behavior, emote, animation phases.
+- **Creature** — id, position, prevPosition (for interpolation), velocity, appearance, `anim`; later traits,
+  attention, current behavior, emote.
+- **Animation** — `anim` (breath/sway oscillators, blink state machine) is simulation state stepped by
+  `stepAnimation`, because behavior will modulate it. Oscillators accumulate phase (`phase += rate·dt`, wrapped),
+  so changing a rate never makes motion jump. The renderer maps it to squash/stretch, eyelids, and tentacle sway.
 - **Body proportions** — `BODY` in `creature.ts` (multiples of `size`) is shared by simulation (spawn
   footprint, later collisions) and rendering, so what you see matches the space a creature occupies.
 - **Rendering** — `drawScene(ctx, world, alpha)` is a pure function of world state (painter's algorithm, back to
