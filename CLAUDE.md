@@ -53,4 +53,6 @@ Requires Node >= 22.12 and pnpm (version pinned in `package.json` → `packageMa
 | `pnpm format` / `pnpm format:check` | Prettier write / check (Markdown excluded) |
 
 Before marking a task done, `test`, `typecheck`, `lint`, `format:check`, and `build` must all pass.
+CI (`.github/workflows/ci.yml`) runs the same five checks on Node 22 and latest LTS for every push to `main`
+and every pull request; it must be green.
 TypeScript is pinned to 6.x: `vue-tsc` and `typescript-eslint` don't support TypeScript 7 yet.

@@ -1,6 +1,7 @@
 # Backlog
 
-Ordered. Each task is small and independently verifiable. Status: `todo` · `planned` · `in-progress` · `done`.
+Ordered by table position. Task numbers are stable IDs (never renumbered), so new tasks get the next free number.
+Each task is small and independently verifiable. Status: `todo` · `planned` · `in-progress` · `done`.
 Before starting a task, run `/plan-task <n>` to write a detailed spec and get approval.
 
 | # | Task | Status |
@@ -8,6 +9,8 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 1 | Project scaffold | done |
 | 2 | Canvas stage + game loop | done |
 | 3 | Simulation core: world, creature, RNG | done |
+| 13 | CI with GitHub Actions | in-progress |
+| 14 | Branch + pull-request workflow | todo |
 | 4 | Draw a static creature | todo |
 | 5 | Idle animation | todo |
 | 6 | Wandering + bounds + separation | todo |
@@ -91,3 +94,21 @@ Soft synthesized chirps (Web Audio) on notice/emote; muted by default; Vue toggl
 Background, color tuning, timing tweaks; walk through all MVP success criteria.
 - **Accept:** all criteria in `mvp.md` checked and recorded in `progress.md`.
 - **Verify:** criteria checklist.
+
+### 13. CI with GitHub Actions
+`.github/workflows/ci.yml` runs on every push to `main` and every pull request: install with the locked
+dependencies, then test, typecheck, lint, format:check, build.
+- **Accept:** the workflow passes on GitHub for `main`; a deliberately broken check makes it fail (then revert).
+- **Verify:** `gh run list` / `gh run view` show green and red runs as expected.
+- **Approved spec decisions (2026-11-20):** triggers push(main) + pull_request + workflow_dispatch; pnpm version from
+  `packageManager`, pnpm cache; checks as separate steps (format → lint → typecheck → test → build); Node matrix 22 +
+  `lts/*`; `permissions: contents: read`; concurrency cancels stale runs; actions pinned to major tags; red run proven
+  via a temporary branch + workflow_dispatch, then deleted; committed directly to main (last time before task #14).
+
+### 14. Branch + pull-request workflow
+Each task gets its own branch and pull request; merging the PR becomes the owner's approval gate.
+Update `CLAUDE.md` and the skills (`implement-task` creates the branch, `checkpoint` commits/pushes the branch and
+opens the PR, merge only with owner approval); protect `main` so it requires green CI.
+- **Accept:** docs and skills describe the new flow; this task itself is delivered through the first PR, which
+  shows green CI and is merged by the owner.
+- **Verify:** the PR page on GitHub shows the task summary, a passing CI check, and the merge.
