@@ -2,6 +2,29 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Decision: personality archetypes + visitor stimuli
+- Owner wanted creatures to act scared, curious, or angry depending on personality and what the visitor does.
+- **Personality = archetype on trait dials:** `curiosity` × `boldness` grid → Peeker, Friendly, Scaredy, Grumpy;
+  `energy` for intensity; `boldness` replaces `shyness`; archetypes dealt without replacement (every world has a mix).
+  Anger belongs to the Grumpy personality (fight-or-flight), not to every creature.
+- **Stimuli (task #7):** calm presence, sudden movement, chasing. Clicking stays on the roadmap (#9).
+- Updated `mvp.md` (personality section, success criterion #3, out-of-scope) and tasks #7–9 in the backlog.
+
+## 2026-11-20 — Task #6: Wandering + bounds + separation ✅
+- **Done:** `steering.ts` (Reynolds wander / stay-in-bounds / footprint separation as pure force functions);
+  `movement.ts` (wander ↔ rest activity, weighted blending, exponential drag, 35 px/s cap); `constraints.ts`
+  (position-based pass: separate overlaps, clamp into bounds, cancel velocity into walls); fixed step order with
+  semi-implicit Euler. Renderer: lean (≤ ~8°) and tentacle trailing from velocity.
+- **Verified:** 61/61 tests — 60 s × 5 seeds checked every step (in bounds, no overlap, speed cap), everyone
+  travels and rests, smooth turning, small-window overlap (75–154 px) resolved to < 0.5 px, resize back in bounds
+  within one step, determinism. Real-time DevTools screenshots show movement, lean, trailing. Owner: "perfect for
+  this relaxed state".
+- **Learned / notes:** steering = desired − current velocity; soft forces vs hard constraints (position-based
+  dynamics); exponential drag is frame-rate independent; symplectic Euler. Test lesson: a `≤` assertion hid a real
+  0.02 px residue — assert what actually happens. Headless `--virtual-time-budget` doesn't advance rAF reliably;
+  use real-time DevTools capture for motion.
+- **Next:** task #7 (cursor presence + perception).
+
 ## 2026-11-20 — Task #5: Idle animation ✅
 - **Done:** `simulation/animation.ts` — per-creature breath/sway oscillators (seeded phases and rates, phase
   accumulation with wrapping) and a blink state machine (2–6 s waits, 160 ms blinks, ~15% double blinks), stepped

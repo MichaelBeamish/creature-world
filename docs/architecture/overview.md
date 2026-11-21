@@ -45,7 +45,12 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   MVP uses `RuleMind` (state machine weighted by traits). A future `LlmMind` can implement the
   same interface asynchronously, producing intents and speech without touching rendering or steering.
 - **Intent** — a high-level goal (`wander`, `approach`, `flee`, `hide`, `rest`, `emote`) that steering turns into motion.
-- **Steering** — classic steering behaviors (seek, flee, arrive, wander, separation) plus screen bounds.
+- **Steering** (`steering.ts`) — Reynolds steering behaviors as pure functions returning desired forces:
+  `wander`, `stayInBounds`, `separate` (later: seek, flee, arrive). `movement.ts` blends them with weights, applies
+  exponential water drag and a speed limit, and runs the wander/rest `activity` (becomes part of the mind in task #8).
+- **Constraints** (`constraints.ts`) — after integration, a position-based pass separates overlapping footprints
+  and clamps footprints into bounds. Steering makes motion natural; constraints guarantee the rules.
+- **Step order** — activity → steering → velocity → position (semi-implicit Euler) → constraints → animation.
 
 ## Game loop
 Fixed timestep (e.g. 60 Hz) with an accumulator, so behavior is deterministic and testable regardless of

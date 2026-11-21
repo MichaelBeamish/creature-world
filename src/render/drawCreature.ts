@@ -1,16 +1,18 @@
 import { BODY, type Creature } from '../simulation/creature'
+import { MOVEMENT } from '../simulation/movement'
 import { hash2 } from './noise'
 
 /**
- * Draws one "little octopus" (style B) at (x, y) — the interpolated mantle center.
+ * Draws one "little octopus" (style B) at (screenX, screenY) — the interpolated mantle center.
  * Pure function of the creature's data: reads it, never mutates it. Shape details come from
- * id/hue/size/tentacleCount; motion (breathing, sway, blinking) from `creature.anim`.
+ * id/hue/size/tentacleCount; motion (breathing, sway, blinking) from `creature.anim`;
+ * lean and tentacle trailing from `creature.velocity`.
  */
 export function drawCreature(
   ctx: CanvasRenderingContext2D,
   creature: Creature,
-  x: number,
-  y: number,
+  screenX: number,
+  screenY: number,
 ): void {
   const { id, hue, size, anim } = creature
   // Breathing as gentle squash & stretch: taller ±3%, wider ±2%, slightly out of phase.
@@ -22,6 +24,15 @@ export function drawCreature(
     body: `hsl(${hue} 55% 74%)`,
     highlight: `hsl(${hue} 70% 85%)`,
   }
+
+  // Lean into the direction of travel (up to ~8°), rotating around the mantle center.
+  // Everything below is drawn in this local frame, with the mantle center at (0, 0).
+  const leanAmount = Math.max(-1, Math.min(1, creature.velocity.x / MOVEMENT.maxSpeed))
+  ctx.save()
+  ctx.translate(screenX, screenY)
+  ctx.rotate(leanAmount * MOTION.maxLean)
+  const x = 0
+  const y = 0
 
   drawTentacles(ctx, creature, x, y, colors.tentacle)
   drawFuzz(ctx, id, x, y, rx, ry, size, colors.fuzz)
@@ -36,6 +47,7 @@ export function drawCreature(
   ctx.fill()
 
   drawEyes(ctx, x, y + size * 0.35, size, anim.eyeOpenness)
+  ctx.restore()
 }
 
 /** Motion amplitudes — kept subtle so creatures read as calm, not jittery. */
@@ -48,6 +60,13 @@ const SWAY = {
   /** Phase lag per segment along the tentacle → the motion travels from root to tip. */
   lag: 0.9,
 } as const
+/** Secondary motion while swimming. */
+const MOTION = {
+  /** Maximum body lean in radians (~8°) at top speed. */
+  maxLean: 0.14,
+  /** Tentacle tips trail behind by velocity × this many seconds (roots trail least). */
+  trailSeconds: 0.45,
+} as const
 
 function drawTentacles(
   ctx: CanvasRenderingContext2D,
@@ -56,7 +75,10 @@ function drawTentacles(
   y: number,
   color: string,
 ): void {
-  const { id, size, tentacleCount: n, anim } = creature
+  const { id, size, tentacleCount: n, anim, velocity } = creature
+  // Trailing: tentacles lag behind the motion (follow-through), more toward the tips.
+  const trailX = -velocity.x * MOTION.trailSeconds
+  const trailY = -velocity.y * MOTION.trailSeconds
   ctx.fillStyle = color
   for (let i = 0; i < n; i++) {
     const s = n === 1 ? 0 : (i / (n - 1)) * 2 - 1 // -1 (left) .. 1 (right)
@@ -76,9 +98,12 @@ function drawTentacles(
     taperedCurve(
       ctx,
       [rootX, rootY],
-      [rootX + s * size * 0.6 + wave + sway1, rootY + length * 0.33],
-      [rootX + s * size * 0.9 - wave + sway2, rootY + length * 0.66],
-      [rootX + s * size * 1.3 + wave * 0.5 + sway3, rootY + length],
+      [rootX + s * size * 0.6 + wave + sway1 + trailX * 0.3, rootY + length * 0.33 + trailY * 0.3],
+      [
+        rootX + s * size * 0.9 - wave + sway2 + trailX * 0.65,
+        rootY + length * 0.66 + trailY * 0.65,
+      ],
+      [rootX + s * size * 1.3 + wave * 0.5 + sway3 + trailX, rootY + length + trailY],
       size * 0.36,
       size * 0.08,
     )
