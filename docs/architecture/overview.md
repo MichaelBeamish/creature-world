@@ -40,7 +40,12 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
 - **Rendering** — `drawScene(ctx, world, alpha)` is a pure function of world state (painter's algorithm, back to
   front). Per-creature detail (fur, tentacle variation) comes from a stateless hash (`render/noise.ts`), never stored.
 - **Seed** — random per visit; `?seed=<int>` reproduces a world (seed is logged to the console).
-- **Perception** — what a creature currently notices (cursor, nearby creatures) given its radius.
+- **Input → Presence** — `input/pointer.ts` (Pointer Events: mouse/pen/touch) only keeps the latest sample. Once per
+  fixed step the app copies it into `world.presence` (`setPresenceInput`); the simulation derives smoothed velocity
+  itself. Input is sampled at the boundary, so the simulation stays DOM-free and tests script cursor paths per tick.
+- **Perception** (`perception.ts`) — per creature, the same for all: `attention` (fast attack / slow release),
+  `startle`, `pressure`, `trust`, and the current `stimulus` (sudden > chasing > calm > none). Personality decides
+  how a creature *feels* about it (task #8). Dev-only view: `?debug` (`render/debugDraw.ts`).
 - **Mind** (the seam) — `interface Mind { decide(creature, perception, rng): Intent }`.
   MVP uses `RuleMind` (state machine weighted by traits). A future `LlmMind` can implement the
   same interface asynchronously, producing intents and speech without touching rendering or steering.
@@ -50,7 +55,7 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   exponential water drag and a speed limit, and runs the wander/rest `activity` (becomes part of the mind in task #8).
 - **Constraints** (`constraints.ts`) — after integration, a position-based pass separates overlapping footprints
   and clamps footprints into bounds. Steering makes motion natural; constraints guarantee the rules.
-- **Step order** — activity → steering → velocity → position (semi-implicit Euler) → constraints → animation.
+- **Step order** — presence → perception → activity → steering → velocity → position (semi-implicit Euler) → constraints → animation.
 
 ## Game loop
 Fixed timestep (e.g. 60 Hz) with an accumulator, so behavior is deterministic and testable regardless of

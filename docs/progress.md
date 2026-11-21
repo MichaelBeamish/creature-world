@@ -2,6 +2,19 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Task #7: Cursor presence + perception ✅
+- **Done:** `input/pointer.ts` (Pointer Events → latest sample; touch lingers 1 s; injected clock/target);
+  `simulation/presence.ts` (visitor as plain data, EMA velocity computed per step); `simulation/perception.ts`
+  (attention with fast attack / slow release; startle, pressure, trust → stimulus sudden > chasing > calm > none);
+  `render/debugDraw.ts` (`?debug`: rings + labels + cursor speed). Creatures perceive but don't react yet (task #8).
+- **Verified:** 81/81 tests (20 new: scripted cursor paths for every stimulus, attack/release timing, determinism
+  with a scripted visitor, "no behavior change"); real mouse driven via DevTools showed calm while hovering and sudden
+  on a 1047 px/s flick; owner confirmed the debug labels respond.
+- **Learned / notes:** sampling input at the boundary (deterministic, replayable); Pointer Events + `touch-action`;
+  attack/release envelopes; dependency injection for testability (fake target + clock). Lesson: say explicitly when a
+  task is "perceive only" — the owner expected visible reactions; the debug view made the invisible work checkable.
+- **Next:** task #8 (traits + archetypes + mind: the creatures start reacting).
+
 ## 2026-11-20 — Decision: personality archetypes + visitor stimuli
 - Owner wanted creatures to act scared, curious, or angry depending on personality and what the visitor does.
 - **Personality = archetype on trait dials:** `curiosity` × `boldness` grid → Peeker, Friendly, Scaredy, Grumpy;

@@ -14,7 +14,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 4 | Draw a static creature | done |
 | 5 | Idle animation | done |
 | 6 | Wandering + bounds + separation | done |
-| 7 | Cursor presence + perception | todo |
+| 7 | Cursor presence + perception | done |
 | 8 | Traits + RuleMind reactions | todo |
 | 9 | Eyes + emotes | todo |
 | 10 | Debug overlay | todo |
@@ -88,6 +88,12 @@ Input module maps pointer/tap to `Presence`; creatures compute attention from di
 - **Owner decision (2026-11-20):** perception classifies the visitor's behavior into three stimuli — **calm presence**
   (hovering still / slow nearby, builds trust), **sudden movement** (fast flick, startles), **chasing** (cursor keeps
   following one creature, pressure builds). Clicking is out of MVP (roadmap #9).
+- **Approved spec decisions (2026-11-20):** `input/pointer.ts` keeps only the latest Pointer Events sample (mouse/pen/
+  touch; tap ≈ 1 s presence; `touch-action: none`); app copies it into the world once per fixed step
+  (`setPresenceInput`); presence velocity = EMA computed in simulation; perception per creature: attention with fast
+  attack (~0.3 s) / slow release (~2 s), `startle` impulse (> 900 px/s, ~0.6 s), `pressure` (heading ≤ 45° toward,
+  > 60 px/s, ~1.5 s), `trust` (< 80 px/s nearby, ~4 s); stimulus priority sudden > chasing > calm > none; radius 240 px,
+  same for all; no behavior change yet; minimal dev-only `?debug` view (ring + label) that task #10 extends.
 
 ### 8. Traits + RuleMind reactions
 `Mind` interface; `RuleMind` chooses approach/follow/peek/flee/hide/grumpy stand-off from traits, emotion and stimuli.
