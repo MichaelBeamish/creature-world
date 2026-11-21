@@ -5,6 +5,8 @@ export interface GameLoopCallbacks {
   step(dt: number): void
   /** Draw the current state; `alpha` in [0, 1) interpolates between the last two steps. */
   render(alpha: number): void
+  /** Optional: called once per frame with the rAF timestamp and how long step + render took (ms). */
+  frame?(now: number, workMs: number): void
 }
 
 export interface GameLoop {
@@ -26,10 +28,12 @@ export function createGameLoop(
     const frameSeconds = lastTime === null ? 0 : (now - lastTime) / 1000
     lastTime = now
 
+    const workStart = callbacks.frame ? performance.now() : 0
     const result = advanceFixedStep(accumulator, frameSeconds, config)
     accumulator = result.accumulator
     for (let i = 0; i < result.steps; i++) callbacks.step(config.stepSeconds)
     callbacks.render(result.alpha)
+    callbacks.frame?.(now, performance.now() - workStart)
 
     frameId = requestAnimationFrame(frame)
   }

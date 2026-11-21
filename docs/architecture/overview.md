@@ -45,7 +45,7 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   itself. Input is sampled at the boundary, so the simulation stays DOM-free and tests script cursor paths per tick.
 - **Perception** (`perception.ts`) — per creature, the same for all: `attention` (fast attack / slow release),
   `startle`, `pressure`, `trust`, and the current `stimulus` (sudden > chasing > calm > none). Personality decides
-  how a creature *feels* about it (task #8). Dev-only view: `?debug` (`render/debugDraw.ts`).
+  how a creature *feels* about it (task #8).
 - **Personality** (`traits.ts`, ADR 0004) — archetype (Friendly, Peeker, Scaredy, Grumpy) sets the trait dials
   `curiosity`, `boldness`, `energy` (+ seeded variation); dealt without replacement.
 - **Emotion** (`emotion.ts`) — utility scores from perception × traits → smoothed levels → dominant emotion with
@@ -64,6 +64,10 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   direction, or a glanced-at neighbour), emote events (? ! 💢 ♥, ~1.5 s, per-creature cooldown) and mood-scaled
   breathing/sway rates. The renderer maps emotion levels continuously to body language (puff, red flush, bristling
   fur, wide eyes, glaring lids, blush); `render/emotes.ts` draws vector emote bubbles.
+- **Debug overlay** — `D` toggles it in dev; `?debug` enables it in any build. Canvas layer: `render/debugDraw.ts`.
+  Vue layer: `DebugPanel.vue` (display-only) fed by `createDebugSnapshot` — a plain copy published at ≤ 5 Hz into a
+  `shallowRef`, so Vue never tracks simulation objects. `fpsMeter.ts` reports FPS and per-frame work time (the
+  `frame` hook in `gameLoop.ts`). Zero cost while hidden.
 - **Step order** — presence → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → constraints → animation.
 
 ## Game loop

@@ -17,7 +17,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 7 | Cursor presence + perception | done |
 | 8 | Traits + RuleMind reactions | done |
 | 9 | Eyes + emotes | done |
-| 10 | Debug overlay | todo |
+| 10 | Debug overlay | done |
 | 11 | Sound + mute toggle | todo |
 | 12 | MVP polish + success-criteria review | todo |
 
@@ -129,6 +129,10 @@ grumpy puff-up + color flush; breathing/sway rates follow the emotion (phase acc
 Toggle (e.g. `D` key) drawing radii/states on canvas, plus a Vue panel with traits and FPS (throttled snapshots).
 - **Accept:** overlay shows correct state; no FPS drop with overlay off.
 - **Verify:** visual check; Vue panel updates ≤ 5 Hz.
+- **Approved spec decisions (2026-11-20):** `D` toggles in dev; `?debug` enables in any build (and then `D` works);
+  `app/fpsMeter.ts` (rolling FPS, avg/worst frame work time) + `app/debugSnapshot.ts` (world → plain snapshot, 5 Hz
+  publisher) as pure tested TS; `DebugPanel.vue` display-only, collapsible, top-right, fed via `shallowRef`; zero cost
+  when off; no Vue component tests (no new deps); owner reads FPS for MVP criterion #4.
 
 ### 11. Sound + mute toggle
 Soft synthesized chirps (Web Audio) on notice/emote; muted by default; Vue toggle.

@@ -1,21 +1,52 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
+import { onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef } from 'vue'
 import { createPointerInput, type PointerInput } from '../input/pointer'
 import { drawScene } from '../render/scene'
 import { createStage, type Stage } from '../render/stage'
 import { setPresenceInput } from '../simulation/presence'
 import { createWorld, resizeWorld, stepWorld } from '../simulation/world'
+import DebugPanel from './DebugPanel.vue'
+import { createDebugSnapshot, createPublisher, type DebugSnapshot } from './debugSnapshot'
+import { createFpsMeter } from './fpsMeter'
 import { createGameLoop, type GameLoop } from './gameLoop'
 import { resolveSeed } from './seed'
 
 const CREATURE_COUNT = 5
+/** Debug panel refresh interval: ≤ 5 updates per second. */
+const SNAPSHOT_INTERVAL_MS = 200
 
 const canvasEl = useTemplateRef<HTMLCanvasElement>('canvas')
+
+// Debug overlay: `D` toggles it in dev; `?debug` turns it on (and enables `D`) in any build.
+const debugRequested = new URLSearchParams(window.location.search).has('debug')
+const debugAllowed = import.meta.env.DEV || debugRequested
+const debugVisible = ref(debugRequested)
+// shallowRef: Vue tracks only "a new snapshot arrived" — never the fields inside it.
+const snapshot = shallowRef<DebugSnapshot | null>(null)
 
 // Deliberately NOT reactive (ADR 0001): per-frame objects must stay out of Vue's reactivity system.
 let stage: Stage | null = null
 let loop: GameLoop | null = null
 let pointer: PointerInput | null = null
+/** Plain mirror of `debugVisible` for the per-frame code (no reactive reads in the hot loop). */
+let showDebug = debugVisible.value
+
+const meter = createFpsMeter()
+const publish = createPublisher(SNAPSHOT_INTERVAL_MS)
+
+function toggleDebug() {
+  showDebug = !showDebug
+  debugVisible.value = showDebug
+  if (!showDebug) {
+    meter.reset()
+    snapshot.value = null
+  }
+}
+
+function onKeyDown(event: KeyboardEvent) {
+  if (!debugAllowed || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return
+  if (event.key === 'd' || event.key === 'D') toggleDebug()
+}
 
 onMounted(() => {
   if (!canvasEl.value) return
@@ -23,7 +54,7 @@ onMounted(() => {
   stage = s
   const input = createPointerInput(canvasEl.value, () => performance.now())
   pointer = input
-  const debug = new URLSearchParams(window.location.search).has('debug')
+  window.addEventListener('keydown', onKeyDown)
 
   const seed = resolveSeed(window.location.search)
   console.info(
@@ -46,7 +77,12 @@ onMounted(() => {
       stepWorld(world, dt)
     },
     render(alpha) {
-      drawScene(s.ctx, world, alpha, s.width, s.height, { debug })
+      drawScene(s.ctx, world, alpha, s.width, s.height, { debug: showDebug })
+    },
+    frame(now, workMs) {
+      if (!showDebug) return // zero cost while the overlay is off
+      meter.record(now, workMs)
+      if (publish(now)) snapshot.value = createDebugSnapshot(world, seed, meter.stats())
     },
   })
   loop.start()
@@ -57,6 +93,7 @@ onBeforeUnmount(() => {
   loop?.stop()
   stage?.destroy()
   pointer?.destroy()
+  window.removeEventListener('keydown', onKeyDown)
   loop = null
   stage = null
   pointer = null
@@ -65,6 +102,7 @@ onBeforeUnmount(() => {
 
 <template>
   <canvas ref="canvas" class="world-canvas" />
+  <DebugPanel v-if="debugVisible && snapshot" :snapshot="snapshot" />
 </template>
 
 <style scoped>
