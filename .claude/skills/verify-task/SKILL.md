@@ -5,13 +5,15 @@ description: Verify an implemented task against its acceptance criteria, then up
 
 # Verify a task
 
-1. Run every check that exists (see Commands in `CLAUDE.md`): tests, type-check, lint, build.
-2. Walk through each acceptance criterion and mark it ✅ / ❌ with evidence (test name, command output, or screenshot/visual check).
+1. Confirm you are on the task branch (`task/<n>-…`), not `main`.
+2. Run every check that exists (see Commands in `CLAUDE.md`): tests, type-check, lint, format, build.
+3. Walk through each acceptance criterion and mark it ✅ / ❌ with evidence (test name, command output, or screenshot/visual check).
    - For visual criteria, run the app (use the `run` skill or ask the owner to look) — don't assume.
-3. Check `git status`/`git diff` for stray changes outside the task's scope.
-4. Report results to the owner honestly, including failures.
-5. If everything passes and the owner agrees:
+   - If the owner already runs `pnpm dev`, reuse it; only stop processes you started yourself.
+4. Check `git status`/`git diff` for stray changes outside the task's scope.
+5. Report results to the owner honestly, including failures.
+6. If everything passes and the owner agrees:
    - Set the task to `done` in `docs/tasks/backlog.md`.
    - Add a dated entry to the top of `docs/progress.md` (what was done, how verified, anything learned).
    - Update `docs/architecture/overview.md` if the structure changed.
-6. Suggest `/checkpoint`. Do not commit.
+7. Suggest `/checkpoint`. Do not commit. CI on the pull request is the final gate before the owner merges.
