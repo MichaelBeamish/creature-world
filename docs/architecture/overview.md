@@ -31,7 +31,7 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
 - **World** — size, time, tick, seeded RNG state, creatures (later: presence). `stepWorld` advances one fixed step.
 - **Rng** — mulberry32 PRNG with state stored in the world; the only source of randomness in simulation.
 - **Creature** — id, position, prevPosition (for interpolation), velocity, appearance, `anim`, `perception`,
-  `archetype` + `traits`, `mind` (emotion + intent); later emote.
+  `archetype` + `traits`, `mind` (emotion + intent), `expression` (gaze, emote).
 - **Animation** — `anim` (breath/sway oscillators, blink state machine) is simulation state stepped by
   `stepAnimation`, because behavior will modulate it. Oscillators accumulate phase (`phase += rate·dt`, wrapped),
   so changing a rate never makes motion jump. The renderer maps it to squash/stretch, eyelids, and tentacle sway.
@@ -60,7 +60,11 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   exponential water drag and a speed limit, and runs the wander/rest `activity` (becomes part of the mind in task #8).
 - **Constraints** (`constraints.ts`) — after integration, a position-based pass separates overlapping footprints
   and clamps footprints into bounds. Steering makes motion natural; constraints guarantee the rules.
-- **Step order** — presence → perception → mind (emotion, intent) → steering → velocity → position (semi-implicit Euler) → constraints → animation.
+- **Expression** (`expression.ts`) — what a creature *shows*: gaze (dart-and-hold toward the visitor, travel
+  direction, or a glanced-at neighbour), emote events (? ! 💢 ♥, ~1.5 s, per-creature cooldown) and mood-scaled
+  breathing/sway rates. The renderer maps emotion levels continuously to body language (puff, red flush, bristling
+  fur, wide eyes, glaring lids, blush); `render/emotes.ts` draws vector emote bubbles.
+- **Step order** — presence → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → constraints → animation.
 
 ## Game loop
 Fixed timestep (e.g. 60 Hz) with an accumulator, so behavior is deterministic and testable regardless of

@@ -2,6 +2,24 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Task #9: Eyes + emotes ✅
+- **Done:** `simulation/expression.ts` — gaze (dart-and-hold toward the visitor, travel direction, or a glanced-at
+  neighbour), emote events (? ! 💢 ♥; 1.5 s life, 2.5 s cooldown, ♥ once per visit), mood-scaled breathing/sway
+  (via base rates + phase accumulation). Renderer: puff/shrink, red flush/pale, bristling fur, stretch on darts,
+  gaze-following pupils, wide scared eyes, grumpy half-lid glare, blush; `render/emotes.ts` vector bubbles with an
+  overshoot pop.
+- **Verified:** 135/135 tests — MVP criterion #2 for all four archetypes (reaction within 1 s), emote mapping,
+  lifetime, cooldown, ♥ once per visit, gaze, deterministic glances, breathing response. Real mouse, no debug: all
+  four moods readable in one screenshot. Owner: "it's awesome".
+- **Owner observation:** "sometimes too many of one personality, others missing". Measured: 1000/1000 worlds contain
+  all four archetypes — the real cause is that personalities only show when reacting (calm creatures look alike;
+  Peeker's early wariness resembles Scaredy; everyone shows `!` after a flick). Proposed "personality tells" (resting
+  face + idle habits per archetype); owner chose not to add it for now.
+- **Learned / notes:** events in the simulation, looks in the renderer; continuous blending from smoothed levels;
+  phase accumulation paying off; saccades; easing (`easeOutBack`); vector shapes over platform-dependent emoji.
+  Verify a perceived bug with data before "fixing" it.
+- **Next:** task #10 (debug overlay).
+
 ## 2026-11-20 — Task #8: Traits + archetypes + mind ✅
 - **Done:** `traits.ts` (archetype grid → curiosity/boldness ±0.08 + energy; dealt without replacement);
   `emotion.ts` (utility scores → attack/release levels → dominant emotion with hysteresis; fear reflex on targets);

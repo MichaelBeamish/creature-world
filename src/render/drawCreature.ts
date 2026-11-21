@@ -6,7 +6,8 @@ import { hash2 } from './noise'
  * Draws one "little octopus" (style B) at (screenX, screenY) — the interpolated mantle center.
  * Pure function of the creature's data: reads it, never mutates it. Shape details come from
  * id/hue/size/tentacleCount; motion (breathing, sway, blinking) from `creature.anim`;
- * lean and tentacle trailing from `creature.velocity`.
+ * lean and tentacle trailing from `creature.velocity`; mood (puff, flush, bristles, eyes, blush)
+ * from the smoothed emotion levels — so every change of mood blends in and out continuously.
  */
 export function drawCreature(
   ctx: CanvasRenderingContext2D,
@@ -14,20 +15,40 @@ export function drawCreature(
   screenX: number,
   screenY: number,
 ): void {
-  const { id, hue, size, anim } = creature
+  const { id, size, anim, velocity } = creature
+  const mood = creature.mind.emotion.levels
+  const scared = mood.scared
+  const grumpy = mood.grumpy
+
+  // Puff up when grumpy, shrink a little when scared; stretch along a fast dart (squash & stretch).
+  const puff = 1 + MOOD.puff * grumpy - MOOD.shrink * scared
+  const fast = MOVEMENT.baseSpeed * 2
+  const stretchX = 1 + MOOD.stretch * Math.min(1, Math.abs(velocity.x) / fast)
+  const stretchY = 1 + MOOD.stretch * Math.min(1, Math.abs(velocity.y) / fast)
   // Breathing as gentle squash & stretch: taller ±3%, wider ±2%, slightly out of phase.
-  const rx = size * (1 + BREATH.width * Math.sin(anim.breathPhase - BREATH.widthLag))
-  const ry = size * BODY.mantleHalfHeight * (1 + BREATH.height * Math.sin(anim.breathPhase))
+  const rx =
+    size * puff * stretchX * (1 + BREATH.width * Math.sin(anim.breathPhase - BREATH.widthLag))
+  const ry =
+    size *
+    puff *
+    stretchY *
+    BODY.mantleHalfHeight *
+    (1 + BREATH.height * Math.sin(anim.breathPhase))
+
+  // Grumpy flushes toward red; scared goes pale.
+  const hue = mixHue(creature.hue, 2, grumpy * MOOD.flush)
+  const sat = (base: number) => base + 20 * grumpy - 15 * scared
+  const light = (base: number) => base - 6 * grumpy + 6 * scared
   const colors = {
-    tentacle: `hsl(${hue} 40% 60%)`,
-    fuzz: `hsl(${hue} 42% 64%)`,
-    body: `hsl(${hue} 55% 74%)`,
-    highlight: `hsl(${hue} 70% 85%)`,
+    tentacle: `hsl(${hue} ${sat(40)}% ${light(60)}%)`,
+    fuzz: `hsl(${hue} ${sat(42)}% ${light(64)}%)`,
+    body: `hsl(${hue} ${sat(55)}% ${light(74)}%)`,
+    highlight: `hsl(${hue} ${sat(70)}% ${light(85)}%)`,
   }
 
   // Lean into the direction of travel (up to ~8°), rotating around the mantle center.
   // Everything below is drawn in this local frame, with the mantle center at (0, 0).
-  const leanAmount = Math.max(-1, Math.min(1, creature.velocity.x / MOVEMENT.baseSpeed))
+  const leanAmount = Math.max(-1, Math.min(1, velocity.x / MOVEMENT.baseSpeed))
   ctx.save()
   ctx.translate(screenX, screenY)
   ctx.rotate(leanAmount * MOTION.maxLean)
@@ -35,7 +56,9 @@ export function drawCreature(
   const y = 0
 
   drawTentacles(ctx, creature, x, y, colors.tentacle)
-  drawFuzz(ctx, id, x, y, rx, ry, size, colors.fuzz)
+  // Fur bristles (stands on end) when scared or grumpy.
+  const bristle = 1 + MOOD.bristle * Math.max(scared, grumpy)
+  drawFuzz(ctx, id, x, y, rx, ry, size, colors.fuzz, bristle)
 
   // Mantle with soft shading: a radial gradient lit from the upper left.
   const shade = ctx.createRadialGradient(x - rx * 0.35, y - ry * 0.45, size * 0.2, x, y, ry * 1.15)
@@ -46,9 +69,28 @@ export function drawCreature(
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
   ctx.fill()
 
-  drawEyes(ctx, x, y + size * 0.35, size, anim.eyeOpenness)
+  const eyeY = y + size * 0.35
+  drawBlush(ctx, x, eyeY, size, affection(creature))
+  drawEyes(ctx, x, eyeY, size, anim.eyeOpenness, {
+    gaze: creature.expression.gaze,
+    scared,
+    grumpy,
+    curious: mood.curious,
+    lidColor: colors.body,
+  })
   ctx.restore()
 }
+
+/** Mood → body language (multiples of size, or 0..1 blends). */
+const MOOD = {
+  puff: 0.12,
+  shrink: 0.06,
+  stretch: 0.1,
+  /** How far grumpy pulls the hue toward red (0..1). */
+  flush: 0.6,
+  /** Extra fur length when bristling (1 + this × mood). */
+  bristle: 1.6,
+} as const
 
 /** Motion amplitudes — kept subtle so creatures read as calm, not jittery. */
 const BREATH = { height: 0.03, width: 0.02, widthLag: 0.8 } as const
@@ -67,6 +109,19 @@ const MOTION = {
   /** Tentacle tips trail behind by velocity × this many seconds (roots trail least). */
   trailSeconds: 0.45,
 } as const
+
+/** Blend hue `from` toward `to` by t (0..1), the short way around the color wheel. */
+function mixHue(from: number, to: number, t: number): number {
+  const delta = ((to - from + 540) % 360) - 180
+  return (from + delta * t + 360) % 360
+}
+
+/** 0..1 — a bold, curious creature with a trusted visitor close by blushes. */
+function affection(creature: Creature): number {
+  if (creature.traits.boldness < 0.5) return 0
+  const closeness = Math.max(0, 1 - creature.perception.distance / 160)
+  return creature.mind.emotion.levels.curious * creature.perception.trust * closeness
+}
 
 function drawTentacles(
   ctx: CanvasRenderingContext2D,
@@ -170,6 +225,7 @@ function drawFuzz(
   ry: number,
   size: number,
   color: string,
+  bristle: number,
 ): void {
   const strands = Math.round(size * 2.2)
   ctx.strokeStyle = color
@@ -178,7 +234,7 @@ function drawFuzz(
   ctx.beginPath()
   for (let i = 0; i < strands; i++) {
     const angle = (i / strands) * Math.PI * 2 + hash2(id, i + 100) * 0.1
-    const length = size * (0.08 + hash2(id, i + 200) * 0.1)
+    const length = size * (0.08 + hash2(id, i + 200) * 0.1) * bristle
     const tilt = (hash2(id, i + 300) - 0.5) * 0.6
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
@@ -193,16 +249,28 @@ function drawFuzz(
 /** Below this openness the eye is drawn as a closed lid (a curved line) instead. */
 const CLOSED_EYE = 0.15
 
+interface EyeMood {
+  /** Where the eyes look (length 0..1). */
+  gaze: { x: number; y: number }
+  scared: number
+  grumpy: number
+  curious: number
+  /** Body color, used for the grumpy half-lid. */
+  lidColor: string
+}
+
 function drawEyes(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   size: number,
   openness: number,
+  mood: EyeMood,
 ): void {
   const gap = size * 0.36
-  const r = size * 0.24
-  const pupil = size * 0.13
+  // Scared: wide eyes with tiny pupils. Curious: bigger pupils.
+  const r = size * 0.24 * (1 + 0.25 * mood.scared)
+  const pupil = size * 0.13 * (1 - 0.45 * mood.scared + 0.25 * mood.curious)
   for (const side of [-1, 1]) {
     const ex = cx + side * gap
 
@@ -217,7 +285,7 @@ function drawEyes(
       continue
     }
 
-    // Open (or partly open): the eye white squashes vertically; pupil and highlight are clipped to it.
+    // Open (or partly open): the eye white squashes vertically; pupil, highlight and lid are clipped to it.
     const eyeRy = r * 1.12 * openness
     ctx.save()
     ctx.beginPath()
@@ -226,15 +294,62 @@ function drawEyes(
     ctx.fill()
     ctx.clip()
 
+    // Pupils look along the gaze, staying inside the eye.
+    const reach = (r - pupil) * 0.85
+    const px = ex + mood.gaze.x * reach
+    const py = cy + r * 0.12 + mood.gaze.y * reach * 0.8
     ctx.fillStyle = '#1b1530'
     ctx.beginPath()
-    ctx.arc(ex, cy + r * 0.12, pupil, 0, Math.PI * 2)
+    ctx.arc(px, py, pupil, 0, Math.PI * 2)
     ctx.fill()
 
     ctx.fillStyle = '#ffffff'
     ctx.beginPath()
-    ctx.arc(ex - pupil * 0.35, cy - pupil * 0.2, pupil * 0.32, 0, Math.PI * 2)
+    ctx.arc(px - pupil * 0.35, py - pupil * 0.2, pupil * 0.32, 0, Math.PI * 2)
     ctx.fill()
+
+    // Grumpy: a slanted half-lid, lower toward the middle of the face — a glare.
+    if (mood.grumpy > 0.05) {
+      const top = cy - eyeRy - 1
+      const inner = top + eyeRy * 2 * 0.62 * mood.grumpy
+      const outer = top + eyeRy * 2 * 0.25 * mood.grumpy
+      ctx.fillStyle = mood.lidColor
+      ctx.beginPath()
+      ctx.moveTo(ex - side * (r + 1), top)
+      ctx.lineTo(ex + side * (r + 1), top)
+      ctx.lineTo(ex + side * (r + 1), outer)
+      ctx.lineTo(ex - side * (r + 1), inner)
+      ctx.closePath()
+      ctx.fill()
+    }
     ctx.restore()
   }
+}
+
+/** Soft pink cheeks below the eyes (affection). */
+function drawBlush(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  eyeY: number,
+  size: number,
+  amount: number,
+): void {
+  if (amount < 0.02) return
+  ctx.save()
+  ctx.globalAlpha = Math.min(1, amount) * 0.55
+  ctx.fillStyle = 'hsl(345 85% 72%)'
+  for (const side of [-1, 1]) {
+    ctx.beginPath()
+    ctx.ellipse(
+      cx + side * size * 0.62,
+      eyeY + size * 0.3,
+      size * 0.17,
+      size * 0.09,
+      0,
+      0,
+      Math.PI * 2,
+    )
+    ctx.fill()
+  }
+  ctx.restore()
 }

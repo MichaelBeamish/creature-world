@@ -16,7 +16,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 6 | Wandering + bounds + separation | done |
 | 7 | Cursor presence + perception | done |
 | 8 | Traits + RuleMind reactions | done |
-| 9 | Eyes + emotes | todo |
+| 9 | Eyes + emotes | done |
 | 10 | Debug overlay | todo |
 | 11 | Sound + mute toggle | todo |
 | 12 | MVP polish + success-criteria review | todo |
@@ -116,6 +116,13 @@ Input module maps pointer/tap to `Presence`; creatures compute attention from di
 Eyes track the focus target; emotes (`!`, `?`, `♥`, `💢`) pop on state changes; squash/stretch with velocity;
 grumpy puff-up + color flush; breathing/sway rates follow the emotion (phase accumulation keeps it smooth).
 - **Accept:** noticing the cursor shows a reaction within 1s (criterion #2).
+- **Approved spec decisions (2026-11-20):** `simulation/expression.ts` holds gaze (saccade-like darts toward cursor when
+  attentive, else travel direction; content creatures occasionally glance at a neighbour), emote events with ~1.5 s
+  life and ≥ 2.5 s per-creature cooldown (curious → ?, scared → !, grumpy → 💢, Friendly near trusted visitor → ♥ once
+  per visit), and emotion-scaled breath/sway rates (phase accumulation keeps them smooth). Renderer maps emotion levels
+  continuously: scared = wide eyes, tiny pupils, shrink, bristling fur, stretch when darting; grumpy = half-lid glare,
+  puff-up, red flush, bristling fur; curious = bigger pupils; affection = blush. Emotes are vector-drawn (no emoji
+  fonts) with an overshoot pop, float, fade.
 - **Verify:** visual check.
 
 ### 10. Debug overlay

@@ -11,9 +11,12 @@ export interface CreatureAnimation {
   /** Breathing oscillator: phase in radians [0, 2π), rate in radians per second. */
   breathPhase: number
   breathRate: number
+  /** The creature's calm breathing rate; mood scales `breathRate` from this (expression.ts). */
+  breathBase: number
   /** Tentacle-sway oscillator. */
   swayPhase: number
   swayRate: number
+  swayBase: number
   /** Seconds until the next blink starts (counts down while the eyes are open). */
   blinkTimer: number
   /** Seconds into the current blink, or -1 when not blinking. */
@@ -41,11 +44,17 @@ export const ANIMATION = {
 } as const
 
 export function createAnimation(rng: Rng): CreatureAnimation {
+  const breathPhase = range(rng, 0, TAU)
+  const breathRate = range(rng, ANIMATION.breathHz[0], ANIMATION.breathHz[1]) * TAU
+  const swayPhase = range(rng, 0, TAU)
+  const swayRate = range(rng, ANIMATION.swayHz[0], ANIMATION.swayHz[1]) * TAU
   return {
-    breathPhase: range(rng, 0, TAU),
-    breathRate: range(rng, ANIMATION.breathHz[0], ANIMATION.breathHz[1]) * TAU,
-    swayPhase: range(rng, 0, TAU),
-    swayRate: range(rng, ANIMATION.swayHz[0], ANIMATION.swayHz[1]) * TAU,
+    breathPhase,
+    breathRate,
+    breathBase: breathRate,
+    swayPhase,
+    swayRate,
+    swayBase: swayRate,
     blinkTimer: range(rng, ANIMATION.firstBlinkWait[0], ANIMATION.firstBlinkWait[1]),
     blinkElapsed: -1,
     blinksQueued: 0,

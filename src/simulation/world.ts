@@ -1,5 +1,6 @@
 import { stepAnimation } from './animation'
 import { resolveConstraints } from './constraints'
+import { stepExpression } from './expression'
 import { createCreature, GOLDEN_ANGLE, type Creature } from './creature'
 import { ruleMind, type Mind } from './mind'
 import { stepMovement } from './movement'
@@ -58,7 +59,7 @@ export function createWorld(config: WorldConfig): World {
 /**
  * Advance the world by exactly one fixed step of `dt` seconds. Mutates in place.
  * Order matters (and is fixed, for determinism):
- * presence → perception → mind (emotion, intent) → steering → velocity → position → constraints → animation.
+ * presence → perception → mind (emotion, intent) → expression → steering → velocity → position → constraints → animation.
  */
 export function stepWorld(world: World, dt: number): void {
   updatePresence(world.presence, dt)
@@ -66,6 +67,7 @@ export function stepWorld(world: World, dt: number): void {
     copyVec2(creature.prevPosition, creature.position)
     stepPerception(creature.perception, creature.position, world.presence, dt)
     MIND.think(creature, world, dt)
+    stepExpression(creature, world, dt)
     stepMovement(creature, world, dt)
   }
   for (const creature of world.creatures) {

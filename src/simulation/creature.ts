@@ -1,4 +1,5 @@
 import { createAnimation, type CreatureAnimation } from './animation'
+import { createExpression, type Expression } from './expression'
 import { createMindState, type MindState } from './mindState'
 import { createPerception, type Perception } from './perception'
 import { int, range, type Rng } from './rng'
@@ -40,6 +41,8 @@ export interface Creature {
   traits: Traits
   /** Emotion and current intent (see mind.ts). */
   mind: MindState
+  /** What it shows: gaze, emote, mood-driven animation speed (see expression.ts). */
+  expression: Expression
 }
 
 export interface Activity {
@@ -139,6 +142,7 @@ export function createCreature(
     archetype,
     traits,
     mind: createMindState(),
+    expression: createExpression(),
   }
 }
 
