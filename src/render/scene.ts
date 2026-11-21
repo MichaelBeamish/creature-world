@@ -1,12 +1,16 @@
 import { lerp } from '../simulation/math'
 import type { World } from '../simulation/world'
+import { drawBackground, drawVignette } from './background'
 import { drawCreature } from './drawCreature'
 import { drawPerceptionDebug } from './debugDraw'
 import { drawEmotes } from './emotes'
+import { FULL_MOTION, type MotionSettings } from './motion'
 
 export interface SceneOptions {
   /** Dev-only perception view (`?debug`). */
   debug?: boolean
+  /** Decorative motion (toned down when the user prefers reduced motion). */
+  motion?: MotionSettings
 }
 
 /**
@@ -21,21 +25,19 @@ export function drawScene(
   height: number,
   options: SceneOptions = {},
 ): void {
-  // Soft "deep water" backdrop: slightly lighter near the surface.
-  const water = ctx.createLinearGradient(0, 0, 0, height)
-  water.addColorStop(0, '#13384b')
-  water.addColorStop(1, '#0b2230')
-  ctx.fillStyle = water
-  ctx.fillRect(0, 0, width, height)
+  const motion = options.motion ?? FULL_MOTION
+
+  drawBackground(ctx, width, height, world.time, motion)
 
   // Painter's algorithm: draw back-to-front, so creatures lower on screen appear in front.
   const ordered = [...world.creatures].sort((a, b) => a.position.y - b.position.y)
   for (const creature of ordered) {
     const x = lerp(creature.prevPosition.x, creature.position.x, alpha)
     const y = lerp(creature.prevPosition.y, creature.position.y, alpha)
-    drawCreature(ctx, creature, x, y)
+    drawCreature(ctx, creature, x, y, motion)
   }
 
-  drawEmotes(ctx, world, alpha)
+  drawEmotes(ctx, world, alpha, motion)
+  drawVignette(ctx, width, height)
   if (options.debug) drawPerceptionDebug(ctx, world, alpha)
 }

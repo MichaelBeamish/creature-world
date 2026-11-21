@@ -1,5 +1,6 @@
 import { BODY, type Creature } from '../simulation/creature'
 import { MOVEMENT } from '../simulation/movement'
+import { FULL_MOTION, type MotionSettings } from './motion'
 import { hash2 } from './noise'
 
 /**
@@ -14,6 +15,7 @@ export function drawCreature(
   creature: Creature,
   screenX: number,
   screenY: number,
+  motion: MotionSettings = FULL_MOTION,
 ): void {
   const { id, size, anim, velocity } = creature
   const mood = creature.mind.emotion.levels
@@ -27,13 +29,16 @@ export function drawCreature(
   const stretchY = 1 + MOOD.stretch * Math.min(1, Math.abs(velocity.y) / fast)
   // Breathing as gentle squash & stretch: taller ±3%, wider ±2%, slightly out of phase.
   const rx =
-    size * puff * stretchX * (1 + BREATH.width * Math.sin(anim.breathPhase - BREATH.widthLag))
+    size *
+    puff *
+    stretchX *
+    (1 + BREATH.width * motion.breath * Math.sin(anim.breathPhase - BREATH.widthLag))
   const ry =
     size *
     puff *
     stretchY *
     BODY.mantleHalfHeight *
-    (1 + BREATH.height * Math.sin(anim.breathPhase))
+    (1 + BREATH.height * motion.breath * Math.sin(anim.breathPhase))
 
   // Grumpy flushes toward red; scared goes pale.
   const hue = mixHue(creature.hue, 2, grumpy * MOOD.flush)
@@ -51,11 +56,11 @@ export function drawCreature(
   const leanAmount = Math.max(-1, Math.min(1, velocity.x / MOVEMENT.baseSpeed))
   ctx.save()
   ctx.translate(screenX, screenY)
-  ctx.rotate(leanAmount * MOTION.maxLean)
+  ctx.rotate(leanAmount * MOTION.maxLean * motion.lean)
   const x = 0
   const y = 0
 
-  drawTentacles(ctx, creature, x, y, colors.tentacle)
+  drawTentacles(ctx, creature, x, y, colors.tentacle, motion)
   // Fur bristles (stands on end) when scared or grumpy.
   const bristle = 1 + MOOD.bristle * Math.max(scared, grumpy)
   drawFuzz(ctx, id, x, y, rx, ry, size, colors.fuzz, bristle)
@@ -129,11 +134,12 @@ function drawTentacles(
   x: number,
   y: number,
   color: string,
+  motion: MotionSettings,
 ): void {
   const { id, size, tentacleCount: n, anim, velocity } = creature
   // Trailing: tentacles lag behind the motion (follow-through), more toward the tips.
-  const trailX = -velocity.x * MOTION.trailSeconds
-  const trailY = -velocity.y * MOTION.trailSeconds
+  const trailX = -velocity.x * MOTION.trailSeconds * motion.trail
+  const trailY = -velocity.y * MOTION.trailSeconds * motion.trail
   ctx.fillStyle = color
   for (let i = 0; i < n; i++) {
     const s = n === 1 ? 0 : (i / (n - 1)) * 2 - 1 // -1 (left) .. 1 (right)
@@ -144,7 +150,7 @@ function drawTentacles(
 
     // Traveling wave: each point further along lags in phase, so the swing runs root → tip.
     const phase = anim.swayPhase + i * SWAY.spread
-    const swing = size * SWAY.amplitude
+    const swing = size * SWAY.amplitude * motion.sway
     const sway1 = swing * 0.35 * Math.sin(phase)
     const sway2 = swing * 0.7 * Math.sin(phase - SWAY.lag)
     const sway3 = swing * Math.sin(phase - SWAY.lag * 2)

@@ -23,6 +23,8 @@ Claude leads development, and the owner wants to grow as a developer along the w
 4. **Verify before done.** A task is complete only after `/verify-task` passes its acceptance criteria.
 5. **Nothing reaches GitHub without explicit approval; only the owner decides to merge.** See *Git workflow* below.
 6. **Keep docs current.** Update `docs/progress.md` and the backlog when tasks complete; update architecture docs when structure changes.
+   **Check `README.md` on every task** (it is the public front page): update features, controls/URL options, commands,
+   the architecture summary, and status/roadmap whenever the task changes them; say "README checked — no change" otherwise.
 7. **Prefer simple.** Fewer files, fewer abstractions, no speculative generality — except the deliberate seams named in the architecture doc.
 
 ## Git workflow (one branch + pull request per task)
