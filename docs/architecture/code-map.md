@@ -26,7 +26,7 @@
 
 | File | Purpose | Key exports |
 |---|---|---|
-| `src/simulation/world.ts` | The world state and the fixed-step order of everything | `World`, `createWorld`, `stepWorld`, `resizeWorld` |
+| `src/simulation/world.ts` | The world state (incl. `scenery`) and the fixed-step order of everything | `World`, `createWorld`, `stepWorld`, `resizeWorld` |
 | `src/simulation/creature.ts` | Creature data, body proportions, spawn footprint, seeded spawning | `Creature`, `BODY`, `CREATURE_LIMITS`, `footprint`, `createCreature` |
 | `src/simulation/traits.ts` | Personality: archetypes on trait dials, dealt without replacement | `Archetype`, `ARCHETYPES`, `dealArchetypes`, `createTraits` |
 | `src/simulation/presence.ts` | The visitor (cursor/finger) as data; smoothed velocity | `Presence`, `setPresenceInput`, `updatePresence` |
@@ -38,6 +38,7 @@
 | `src/simulation/movement.ts` | Intent → steering forces, drag, personal speed limit | `MOVEMENT`, `INTENT_SPEED`, `speedLimit`, `stepMovement` |
 | `src/simulation/steering.ts` | Reynolds steering behaviors as pure force functions | `STEERING`, `wander`, `stayInBounds`, `separate`, `arrive`, `seek`, `flee`, `brake` |
 | `src/simulation/constraints.ts` | Position-based pass: no overlaps, stay in bounds | `resolveConstraints` |
+| `src/simulation/scenery.ts` | Sea floor: sand height, the swimmable area, seeded rocks/shells/seaweed (own random stream) | `SceneryItem`, `FLOOR`, `SCENERY`, `floorHeight`, `swimBounds`, `createScenery` |
 | `src/simulation/animation.ts` | Breathing/sway oscillators and the blink state machine | `CreatureAnimation`, `ANIMATION`, `stepAnimation` |
 | `src/simulation/rng.ts` | Seeded PRNG (mulberry32) — the only randomness in the simulation | `Rng`, `createRng`, `next`, `range`, `int`, `pick` |
 | `src/simulation/vec2.ts` | 2D vector helpers (mutate in place, no allocations) | `Vec2`, `vec2`, `addScaled`, `limitLength` |
@@ -47,7 +48,8 @@
 
 | File | Purpose | Key exports |
 |---|---|---|
-| `src/render/scene.ts` | Draws one frame: background → creatures (back to front) → emotes → vignette → debug | `drawScene`, `SceneOptions` |
+| `src/render/scene.ts` | Draws one frame: background → floor → creatures (back to front) → emotes → vignette → debug | `drawScene`, `SceneOptions` |
+| `src/render/floor.ts` | "Moonlit reef" sea floor: sand, mossy rocks, glowing shells, swaying seaweed | `drawFloor` |
 | `src/render/drawCreature.ts` | The "little octopus": body, fur, tentacles, eyes, mood body language | `drawCreature` |
 | `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade | `drawEmotes` |
 | `src/render/background.ts` | Water, caustics, floating motes (pure function of time), vignette | `drawBackground`, `drawVignette`, `motePosition` |
@@ -133,6 +135,13 @@
 | **Scene** | | |
 | Number of floating motes | `MOTE_COUNT` | `src/render/background.ts` |
 | Number of light patches (caustics) | `CAUSTIC_COUNT` | `src/render/background.ts` |
+| Sea-floor height (fraction of the window) | `FLOOR.fraction` | `src/simulation/scenery.ts` |
+| How far tentacles may rest on the sand | `FLOOR.tentacleAllowance` | `src/simulation/scenery.ts` |
+| How many rocks / shells / seaweed | `SCENERY.rocks` | `src/simulation/scenery.ts` |
+| Rock size | `SCENERY.rockSize` | `src/simulation/scenery.ts` |
+| How far shells stay from rocks (never half-hidden) | `SCENERY.shellRockGap` | `src/simulation/scenery.ts` |
+| Seaweed height | `SCENERY.seaweedHeight` | `src/simulation/scenery.ts` |
+| Sea-floor colors (sand, rocks, moss, glow) | `LOOK.sandTop` | `src/render/floor.ts` |
 | How much reduced motion tones things down | `REDUCED_MOTION.sway` | `src/render/motion.ts` |
 | **Sound** | | |
 | Overall volume | `MASTER_VOLUME` | `src/audio/synth.ts` |
@@ -164,6 +173,12 @@
 2. `src/simulation/emotion.ts`: decide how each emotion scores it in `scoreEmotions`.
 3. `src/render/debugDraw.ts`: give it a color in `STIMULUS_COLOR`.
 4. Tests: `src/simulation/perception.test.ts` (scripted cursor path), `src/simulation/emotion.test.ts` (grid row).
+
+**Add a new kind of scenery (e.g. coral)**
+
+1. `src/simulation/scenery.ts`: extend `SceneryKind`, add its count/size to `SCENERY`, place it in `createScenery`.
+2. `src/render/floor.ts`: draw it in `drawFloor` (a new `draw…` function, using `hash2` for stable detail).
+3. Tests: `src/simulation/scenery.test.ts` (counts and ranges).
 
 **Add or rename a tuning knob**
 

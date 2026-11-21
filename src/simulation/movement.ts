@@ -6,6 +6,7 @@ import type { Creature } from './creature'
 import type { IntentKind } from './mindState'
 import { MIND } from './mind'
 import { PERCEPTION } from './perception'
+import { swimBounds } from './scenery'
 import { arrive, brake, flee, separate, stayInBounds, wander } from './steering'
 import { addScaled, limitLength, vec2 } from './vec2'
 import type { World } from './world'
@@ -118,7 +119,7 @@ export function stepMovement(creature: Creature, world: World, dt: number): void
       break
   }
 
-  stayInBounds(boundsForce, creature, world, MOVEMENT.boundsStrength)
+  stayInBounds(boundsForce, creature, swimBounds(world), MOVEMENT.boundsStrength)
   addScaled(creature.velocity, boundsForce, weights.bounds * dt)
   separate(separationForce, creature, world.creatures, MOVEMENT.separationStrength)
   addScaled(creature.velocity, separationForce, weights.separation * dt)

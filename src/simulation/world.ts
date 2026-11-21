@@ -7,6 +7,7 @@ import { stepMovement } from './movement'
 import { stepPerception } from './perception'
 import { createPresence, updatePresence, type Presence } from './presence'
 import { createRng, range, type Rng } from './rng'
+import { createScenery, swimBounds, type SceneryItem } from './scenery'
 import { dealArchetypes } from './traits'
 import { addScaled, copyVec2 } from './vec2'
 
@@ -26,6 +27,8 @@ export interface World {
   creatures: Creature[]
   /** The visitor (cursor/finger). Fed by the app via `setPresenceInput(world.presence, …)`. */
   presence: Presence
+  /** Rocks, shells and seaweed on the sea floor (from an independent random stream). */
+  scenery: SceneryItem[]
 }
 
 export interface WorldConfig {
@@ -37,7 +40,8 @@ export interface WorldConfig {
 
 export function createWorld(config: WorldConfig): World {
   const rng = createRng(config.seed)
-  const bounds = { width: config.width, height: config.height }
+  // Creatures spawn in the swimmable area above the sand.
+  const bounds = swimBounds({ width: config.width, height: config.height })
   const baseHue = range(rng, 0, 360)
   const archetypes = dealArchetypes(rng, config.creatureCount)
   const creatures: Creature[] = []
@@ -53,6 +57,7 @@ export function createWorld(config: WorldConfig): World {
     rng,
     creatures,
     presence: createPresence(),
+    scenery: createScenery(config.seed),
   }
 }
 

@@ -2,7 +2,8 @@
 
 [![CI](https://github.com/MichaelBeamish/creature-world/actions/workflows/ci.yml/badge.svg)](https://github.com/MichaelBeamish/creature-world/actions/workflows/ci.yml)
 
-A tiny living tide pool in the browser. Soft, furry, octopus-like creatures breathe, blink, wander and rest —
+A tiny living tide pool in the browser. Above a moonlit sea floor of sand, mossy rocks, glowing shells and
+swaying seaweed, soft, furry, octopus-like creatures breathe, blink, wander and rest —
 and when you move your cursor near them, each one reacts in its own way.
 
 It should feel like **discovering something alive**, not using a website.
@@ -83,6 +84,5 @@ decisions; [Claude Code](https://claude.com/claude-code) planned, implemented, t
 ## Status & roadmap
 
 The MVP — "The Tide Pool" ([scope & success criteria](docs/product/mvp.md)) — is complete (success criteria 1–5 verified; the informal
-first-viewer test is pending). Next up: a sea floor
-with rocks and shells, bubbles, and a public deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md)
+first-viewer test is pending), and a sea floor has since been added. Next up: bubbles and a public deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md)
 (direct interaction, social life, an LLM-guided mind, …).

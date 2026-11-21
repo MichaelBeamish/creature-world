@@ -2,6 +2,24 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-21 — Task #15: Sea floor ✅
+- **Done:** look B "Moonlit reef" (owner's pick from a 3-style preview). `simulation/scenery.ts`: `floorHeight`,
+  `swimBounds` (single source of truth for the swimmable area, used by spawning, steering, constraints and hiding),
+  `createScenery` (rocks/shells/seaweed as data with relative positions, independent seeded stream).
+  `render/floor.ts`: wavy grainy sand, mossy rocks, glowing shells, swaying seaweed (still under reduced motion).
+- **Owner feedback round:** rocks too big → 18–34 px; moss "obviously a stretched oval" → small irregular patches on
+  the rock's real top edge, clipped to its outline; shells half-hidden behind rocks → shells keep clear of rocks at
+  generation time (skipped rather than placed badly; never below 2 shells in 500 worlds). Owner: "night and day
+  difference".
+- **Verified:** 174/174 tests — floor clamping, swim area, determinism, relative positions, scenery uses none of the
+  creatures' randomness, shells clear of rocks across 500 seeds, rock size; movement/personality invariants now check
+  nobody sinks into the sand every step. Real browser: seaweed sways / holds still under reduced motion; 0.8 ms/frame.
+  Code map + README + overview updated; the drift test caught the new file on creation.
+- **Learned / notes:** single source of truth (`swimBounds`); independent random streams; relative layout
+  coordinates; clipping decoration to a shape (`ctx.clip(path2D)`); fix placement in data, not in drawing; turn a
+  "best effort" into a guarantee when the rule matters (skip instead of near-miss).
+- **Next:** task #16 (bubbles).
+
 ## 2026-11-21 — Task #17: Code map + drift check ✅
 - **Done:** `docs/architecture/code-map.md` — conventions, every source file per folder (purpose + exports, taken
   from the code), a 42-row "to change X, edit Y" knob table, 5 recipes (archetype, emote, stimulus, knob, file).

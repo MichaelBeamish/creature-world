@@ -8,6 +8,7 @@
 import { footprint, type Creature } from './creature'
 import { stepEmotion } from './emotion'
 import { range, type Rng } from './rng'
+import { swimBounds } from './scenery'
 import type { World } from './world'
 
 export interface Mind {
@@ -88,7 +89,7 @@ function chooseHideTarget(creature: Creature, world: World): void {
   let best = { x: r, y: r - offsetY }
   let bestDist = -1
   for (const fx of [r, world.width - r]) {
-    for (const fy of [r, world.height - r]) {
+    for (const fy of [r, swimBounds(world).height - r]) {
       const d = Math.hypot(fx - from.x, fy - from.y)
       if (d > bestDist) {
         bestDist = d
