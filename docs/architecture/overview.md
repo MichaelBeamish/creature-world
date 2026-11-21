@@ -80,6 +80,10 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   time — no particle state) and a vignette. Reduced motion (`app/reducedMotion.ts`, live `matchMedia` watcher) passes
   `MotionSettings` (`render/motion.ts`) to the renderer: decorative sway/breath/lean/trail are toned down, emotes fade in
   without overshoot, the background holds still; wandering and reactions are unchanged.
+- **Sea floor** (`scenery.ts`, `render/floor.ts`) — `swimBounds(world)` is the single source of truth for the
+  swimmable area (window minus the sand, plus a small allowance so tentacles rest on it); spawning, steering,
+  constraints and hiding all use it. Scenery (rocks, shells, seaweed) is plain data with relative positions from an
+  independent seeded stream (it never shifts the creatures' random draws), ready for future interaction.
 - **UI shell** — Vue overlays: `DebugPanel`, `MuteToggle`, `FirstVisitHint` (fades out on first interaction).
 - **Step order** — presence → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → constraints → animation.
 

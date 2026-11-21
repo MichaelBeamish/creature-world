@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { resolveConstraints } from './constraints'
 import { footprint, footprintsOverlap } from './creature'
+import { swimBounds } from './scenery'
 import { createWorld, type World } from './world'
 
 function worldWith(positions: [number, number][], width = 1000, height = 800): World {
@@ -49,7 +50,7 @@ describe('resolveConstraints', () => {
     resolveConstraints(world)
     const f = fp(world, 0)
     expect(f.x - f.radius).toBeCloseTo(0, 9)
-    expect(f.y + f.radius).toBeCloseTo(world.height, 9)
+    expect(f.y + f.radius).toBeCloseTo(swimBounds(world).height, 9) // rests on the sand, not below it
     expect(c.velocity).toEqual({ x: 0, y: 0 })
   })
 

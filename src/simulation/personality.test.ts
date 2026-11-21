@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { footprint } from './creature'
 import { speedLimit } from './movement'
 import { setPresenceInput } from './presence'
+import { swimBounds } from './scenery'
 import { ARCHETYPES, type Archetype } from './traits'
 import { createWorld, stepWorld, type World } from './world'
 
@@ -140,7 +141,7 @@ describe('invariants with a visitor present', () => {
           expect(f.x - f.radius).toBeGreaterThanOrEqual(-1e-6)
           expect(f.x + f.radius).toBeLessThanOrEqual(world.width + 1e-6)
           expect(f.y - f.radius).toBeGreaterThanOrEqual(-1e-6)
-          expect(f.y + f.radius).toBeLessThanOrEqual(world.height + 1e-6)
+          expect(f.y + f.radius).toBeLessThanOrEqual(swimBounds(world).height + 1e-6)
         }
         for (let i = 0; i < fs.length; i++) {
           for (let j = i + 1; j < fs.length; j++) {

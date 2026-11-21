@@ -27,6 +27,8 @@ const text = touch ? 'tap near them…' : 'move your cursor near them…'
     italic 15px/1.4 system-ui,
     sans-serif;
   letter-spacing: 0.02em;
+  /* Stays readable where it overlaps the sea floor. */
+  text-shadow: 0 1px 6px rgb(8 24 34 / 85%);
   opacity: 0;
   pointer-events: none;
   /* Appear after a moment, so the creatures get the first look. */

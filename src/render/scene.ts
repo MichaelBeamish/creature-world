@@ -4,6 +4,7 @@ import { drawBackground, drawVignette } from './background'
 import { drawCreature } from './drawCreature'
 import { drawPerceptionDebug } from './debugDraw'
 import { drawEmotes } from './emotes'
+import { drawFloor } from './floor'
 import { FULL_MOTION, type MotionSettings } from './motion'
 
 export interface SceneOptions {
@@ -28,6 +29,7 @@ export function drawScene(
   const motion = options.motion ?? FULL_MOTION
 
   drawBackground(ctx, width, height, world.time, motion)
+  drawFloor(ctx, world, width, height, motion)
 
   // Painter's algorithm: draw back-to-front, so creatures lower on screen appear in front.
   const ordered = [...world.creatures].sort((a, b) => a.position.y - b.position.y)

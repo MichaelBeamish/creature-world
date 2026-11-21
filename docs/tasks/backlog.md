@@ -21,7 +21,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 11 | Sound + mute toggle | done |
 | 12 | MVP polish + success-criteria review | done |
 | 17 | Code map + drift check | done |
-| 15 | Sea floor (sand, rocks, shells) | todo |
+| 15 | Sea floor (sand, rocks, shells) | done |
 | 16 | Bubbles (particle system) | todo |
 
 ---
@@ -184,6 +184,14 @@ can become interactive later (roadmap #10).
 - **Accept:** seeded, deterministic layout; creatures never sink into the floor; readable cozy look (owner check);
   reduced motion respected; all checks pass.
 - **Verify:** tests + visual check. Plan with `/plan-task 15` (look and world-bounds decisions with the owner).
+- **Approved spec decisions (2026-11-21):** look **B "Moonlit reef"** (owner's pick from a 3-style preview): cool
+  blue-grey sand with a wavy top edge and grain, dark mossy rocks, softly glowing shells, gently swaying seaweed
+  (holds still under reduced motion). *New* `swimBounds(world)` (area above the sand + a small allowance so tentacles
+  rest on it) replaces the full window height in spawning (`randomPosition`), steering (`stepMovement` →
+  `stayInBounds`), constraints (`keepInBounds`) and hiding (`chooseHideTarget`). Scenery = data in *new*
+  `simulation/scenery.ts` (`kind`: rock/shell/seaweed, relative `u`/`depth`, size, variant) from an independent
+  seeded stream, so creature spawns don't shift; *new* `render/floor.ts` drawn between background and creatures.
+  Floor ≈ 15% of height, clamped 70–130 px.
 
 ### 16. Bubbles (particle system)
 Fleeing/startled creatures release a few bubbles that wobble up to the surface and pop. A small particle system:

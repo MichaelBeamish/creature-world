@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { footprint, type Footprint } from './creature'
 import { speedLimit } from './movement'
+import { swimBounds } from './scenery'
 import { createWorld, resizeWorld, stepWorld, type World } from './world'
 
 const DT = 1 / 60
@@ -14,7 +15,7 @@ function insideBounds(f: Footprint, world: World, eps = 1e-6): boolean {
     f.x - f.radius >= -eps &&
     f.x + f.radius <= world.width + eps &&
     f.y - f.radius >= -eps &&
-    f.y + f.radius <= world.height + eps
+    f.y + f.radius <= swimBounds(world).height + eps // never sinks into the sand
   )
 }
 

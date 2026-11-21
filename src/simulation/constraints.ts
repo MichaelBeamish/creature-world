@@ -8,6 +8,7 @@
  * overlap is minimized rather than eliminated.
  */
 import { footprint, type Creature } from './creature'
+import { swimBounds } from './scenery'
 import type { World } from './world'
 
 /** Tiny extra push so resolved pairs end up strictly apart despite floating-point rounding. */
@@ -15,13 +16,14 @@ const SLOP = 1e-6
 
 export function resolveConstraints(world: World, iterations = 3): void {
   const { creatures } = world
+  const bounds = swimBounds(world) // the area above the sand
   for (let pass = 0; pass < iterations; pass++) {
     for (let i = 0; i < creatures.length; i++) {
       for (let j = i + 1; j < creatures.length; j++) {
         separatePair(creatures[i]!, creatures[j]!)
       }
     }
-    for (const c of creatures) keepInBounds(c, world.width, world.height)
+    for (const c of creatures) keepInBounds(c, bounds.width, bounds.height)
   }
 }
 
