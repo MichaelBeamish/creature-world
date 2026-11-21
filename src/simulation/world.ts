@@ -1,11 +1,16 @@
 import { stepAnimation } from './animation'
 import { resolveConstraints } from './constraints'
 import { createCreature, GOLDEN_ANGLE, type Creature } from './creature'
-import { stepActivity, stepMovement } from './movement'
+import { ruleMind, type Mind } from './mind'
+import { stepMovement } from './movement'
 import { stepPerception } from './perception'
 import { createPresence, updatePresence, type Presence } from './presence'
 import { createRng, range, type Rng } from './rng'
+import { dealArchetypes } from './traits'
 import { addScaled, copyVec2 } from './vec2'
+
+/** The mind every creature uses (the seam where a future LLM-guided mind would plug in). */
+const MIND: Mind = ruleMind
 
 /** The whole simulation state: plain data, so it can be compared, cloned, and snapshotted. */
 export interface World {
@@ -33,10 +38,11 @@ export function createWorld(config: WorldConfig): World {
   const rng = createRng(config.seed)
   const bounds = { width: config.width, height: config.height }
   const baseHue = range(rng, 0, 360)
+  const archetypes = dealArchetypes(rng, config.creatureCount)
   const creatures: Creature[] = []
   for (let i = 0; i < config.creatureCount; i++) {
     const hue = baseHue + i * GOLDEN_ANGLE
-    creatures.push(createCreature(rng, i + 1, bounds, hue, creatures))
+    creatures.push(createCreature(rng, i + 1, bounds, hue, creatures, archetypes[i]))
   }
   return {
     width: config.width,
@@ -52,14 +58,14 @@ export function createWorld(config: WorldConfig): World {
 /**
  * Advance the world by exactly one fixed step of `dt` seconds. Mutates in place.
  * Order matters (and is fixed, for determinism):
- * presence → perception → activity → steering → velocity → position → constraints → animation.
+ * presence → perception → mind (emotion, intent) → steering → velocity → position → constraints → animation.
  */
 export function stepWorld(world: World, dt: number): void {
   updatePresence(world.presence, dt)
   for (const creature of world.creatures) {
     copyVec2(creature.prevPosition, creature.position)
     stepPerception(creature.perception, creature.position, world.presence, dt)
-    stepActivity(creature, dt, world.rng)
+    MIND.think(creature, world, dt)
     stepMovement(creature, world, dt)
   }
   for (const creature of world.creatures) {

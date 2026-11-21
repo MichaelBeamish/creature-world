@@ -27,7 +27,7 @@ export function drawCreature(
 
   // Lean into the direction of travel (up to ~8°), rotating around the mantle center.
   // Everything below is drawn in this local frame, with the mantle center at (0, 0).
-  const leanAmount = Math.max(-1, Math.min(1, creature.velocity.x / MOVEMENT.maxSpeed))
+  const leanAmount = Math.max(-1, Math.min(1, creature.velocity.x / MOVEMENT.baseSpeed))
   ctx.save()
   ctx.translate(screenX, screenY)
   ctx.rotate(leanAmount * MOTION.maxLean)

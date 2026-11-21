@@ -15,7 +15,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 5 | Idle animation | done |
 | 6 | Wandering + bounds + separation | done |
 | 7 | Cursor presence + perception | done |
-| 8 | Traits + RuleMind reactions | todo |
+| 8 | Traits + RuleMind reactions | done |
 | 9 | Eyes + emotes | todo |
 | 10 | Debug overlay | todo |
 | 11 | Sound + mute toggle | todo |
@@ -103,6 +103,13 @@ Input module maps pointer/tap to `Presence`; creatures compute attention from di
   **archetype** (Peeker, Friendly, Scaredy, Grumpy — the curiosity × boldness grid in `mvp.md`) + small seeded
   variation; archetypes dealt without replacement so every world has a mix. Emotions (curious, scared, grumpy, content)
   are temporary states; energy also replaces the shared speed from task #6.
+- **Approved spec decisions (2026-11-20):** perception → utility-scored emotions (scared = disturbance × (1−boldness);
+  grumpy = disturbance × boldness × (1−curiosity); curious = attention × curiosity × trust-boost; content baseline 0.3)
+  → dominant emotion with smoothing + hysteresis + minimum duration (fear is an instant reflex) → intent (approach/
+  follow, peek, flee, hide = edge point farthest from cursor, stand-off, wander/rest) → Reynolds seek/arrive/flee.
+  Archetype dials: Friendly .85/.80, Peeker .80/.25, Scaredy .20/.15, Grumpy .20/.85 (curiosity/boldness) ±0.08;
+  energy 0.3–0.9 scales speed; flee ≈ 2.5× speed. `Mind` interface + `ruleMind` (future LLM layered above for
+  goals; reflexes stay in RuleMind). Debug labels show archetype/emotion/intent. Record in ADR 0004. One task.
 - **Verify:** tests + visual check with contrasting creatures.
 
 ### 9. Eyes + emotes

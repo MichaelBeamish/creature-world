@@ -1,6 +1,8 @@
 import { createAnimation, type CreatureAnimation } from './animation'
+import { createMindState, type MindState } from './mindState'
 import { createPerception, type Perception } from './perception'
 import { int, range, type Rng } from './rng'
+import { createTraits, type Archetype, type Traits } from './traits'
 import { vec2, type Vec2 } from './vec2'
 
 export interface Bounds {
@@ -33,6 +35,11 @@ export interface Creature {
   activity: Activity
   /** What it notices about the visitor (attention, stimulus, …). */
   perception: Perception
+  /** Personality: archetype + the trait dials it sets. */
+  archetype: Archetype
+  traits: Traits
+  /** Emotion and current intent (see mind.ts). */
+  mind: MindState
 }
 
 export interface Activity {
@@ -99,7 +106,9 @@ export function createCreature(
   bounds: Bounds,
   hue: number,
   others: readonly Creature[] = [],
+  archetype: Archetype = 'friendly',
 ): Creature {
+  const traits = createTraits(rng, archetype)
   const size = range(rng, CREATURE_LIMITS.minSize, CREATURE_LIMITS.maxSize)
   const tentacleCount = int(rng, CREATURE_LIMITS.minTentacles, CREATURE_LIMITS.maxTentacles)
 
@@ -127,6 +136,9 @@ export function createCreature(
     // Start mid-way through a wander period so creatures don't all rest at the same moment.
     activity: { kind: 'wander', timer: range(rng, 2, 15) },
     perception: createPerception(),
+    archetype,
+    traits,
+    mind: createMindState(),
   }
 }
 
