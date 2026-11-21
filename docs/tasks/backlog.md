@@ -9,8 +9,8 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 1 | Project scaffold | done |
 | 2 | Canvas stage + game loop | done |
 | 3 | Simulation core: world, creature, RNG | done |
-| 13 | CI with GitHub Actions | in-progress |
-| 14 | Branch + pull-request workflow | todo |
+| 13 | CI with GitHub Actions | done |
+| 14 | Branch + pull-request workflow | done |
 | 4 | Draw a static creature | todo |
 | 5 | Idle animation | todo |
 | 6 | Wandering + bounds + separation | todo |
@@ -112,3 +112,6 @@ opens the PR, merge only with owner approval); protect `main` so it requires gre
 - **Accept:** docs and skills describe the new flow; this task itself is delivered through the first PR, which
   shows green CI and is merged by the owner.
 - **Verify:** the PR page on GitHub shows the task summary, a passing CI check, and the merge.
+- **Approved spec decisions (2026-11-20):** branches `task/<n>-<slug>`; one approval at checkpoint covers commit +
+  branch push + PR; owner merges ("Squash and merge"); squash-only merges + auto-delete branches; ruleset on `main`:
+  PR required, both CI checks required, no force-push/deletion, applies to admins; PR template; skills + CLAUDE.md updated.

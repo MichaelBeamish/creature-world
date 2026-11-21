@@ -2,6 +2,28 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Task #14: Branch + pull-request workflow ✅
+- **Done:** one branch (`task/<n>-<slug>`) and PR per task; `/checkpoint` = one approval for commit + push + PR;
+  owner merges ("Squash and merge"). PR template added; CLAUDE.md Git workflow section; implement/verify/checkpoint
+  skills updated. Repo: squash-only, auto-delete merged branches, squash commits keep commit messages.
+  Ruleset "Protect main": PR required, both CI checks required, no force-push or deletion, no bypass.
+- **Verified:** API read-back of repo settings and effective rules on `main`; local checks pass; delivered as PR #1
+  with green CI, merged by the owner.
+- **Learned / notes:** feature branches + PRs as the review gate; squash merge tradeoffs; rulesets vs classic branch
+  protection; required checks match job names (rename the CI job → update the ruleset); `git branch -D` after squash.
+- **Next:** task #4 (draw a static creature) — first task through the full PR flow.
+
+## 2026-11-20 — Task #13: CI with GitHub Actions ✅
+- **Done:** `.github/workflows/ci.yml` — on push to `main`, PRs, and manual dispatch; Node 22 + latest LTS matrix;
+  pnpm from `packageManager` with store cache; `--frozen-lockfile`; format → lint → typecheck → test → build as
+  separate steps; read-only token; concurrency cancels stale runs. Added tasks #13/#14 to the backlog (stable IDs).
+- **Verified:** run 44842531643 green on both Node versions; rerun restored the pnpm cache; temporary branch
+  `ci-red-check` with a failing test → run 44842663363 failed at the Test step on both jobs (and GitHub emailed the
+  owner); branch deleted, `main` untouched.
+- **Learned / notes:** CI as the shared source of truth; matrix builds; least-privilege tokens and action pinning
+  (major tag vs SHA); lockfile-keyed caching. GitHub notifies on failed runs (email / mobile app).
+- **Next:** task #14 (branch + pull-request workflow), delivered as the first PR.
+
 ## 2026-11-20 — Task #3: Simulation core ✅
 - **Done:** `rng.ts` (mulberry32; `createRng`/`next`/`range`/`int`/`pick`, state as plain data); `vec2.ts` (in-place
   helpers); `creature.ts` (seeded spawn: position, hue, size, tentacles); `world.ts` (`createWorld`, `stepWorld` with

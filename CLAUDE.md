@@ -21,10 +21,24 @@ Claude leads development, and the owner wants to grow as a developer along the w
 2. **One task at a time.** Small, independently testable increments. No drive-by features or refactors.
 3. **Ask before major decisions.** New dependencies, architecture changes, or deviations from an ADR → discuss first, then record with `/adr`.
 4. **Verify before done.** A task is complete only after `/verify-task` passes its acceptance criteria.
-5. **Never commit or push without explicit approval.** Use `/checkpoint`, which proposes a message and waits for a "yes",
-   then asks separately whether to push to `origin` (public GitHub repo: MichaelBeamish/creature-world).
+5. **Nothing reaches GitHub without explicit approval; only the owner decides to merge.** See *Git workflow* below.
 6. **Keep docs current.** Update `docs/progress.md` and the backlog when tasks complete; update architecture docs when structure changes.
 7. **Prefer simple.** Fewer files, fewer abstractions, no speculative generality — except the deliberate seams named in the architecture doc.
+
+## Git workflow (one branch + pull request per task)
+Public repo: MichaelBeamish/creature-world. `main` is protected by a ruleset: changes land only through a PR
+with both CI checks green; no direct pushes, force-pushes, or deletion (applies to admins too). Squash merges only.
+
+1. `/plan-task n` → owner approves the spec.
+2. `/implement-task n` → creates `task/<n>-<short-slug>` from an up-to-date `main`, then implements.
+3. `/verify-task n` → local checks + acceptance criteria; on owner agreement, mark done + progress entry.
+4. `/checkpoint` → **one owner approval** covers: commit(s) on the branch, push the branch, open a PR
+   (body follows `.github/pull_request_template.md`).
+5. CI runs on the PR. When green, tell the owner and share the PR link.
+6. **The owner merges** ("Squash and merge" on GitHub, or explicitly tells Claude to). Never merge on your own.
+7. After the merge: switch to `main`, `git pull --ff-only`, delete the local branch (GitHub auto-deletes the remote one).
+
+Never commit directly to `main`. Never amend pushed commits, force-push, or skip hooks unless the owner asks.
 
 ## Stack (see ADRs)
 Vite · TypeScript (strict) · Vue 3 `<script setup>` for UI shell only · Canvas 2D rendering ·
