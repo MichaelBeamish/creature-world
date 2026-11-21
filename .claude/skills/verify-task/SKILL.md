@@ -16,4 +16,7 @@ description: Verify an implemented task against its acceptance criteria, then up
    - Set the task to `done` in `docs/tasks/backlog.md`.
    - Add a dated entry to the top of `docs/progress.md` (what was done, how verified, anything learned).
    - Update `docs/architecture/overview.md` if the structure changed.
+   - **Check `README.md`** (the repo's public front page): does this task change anything it describes — features,
+     controls/URL options (`?debug`, `?seed=`, keys), commands, requirements, the architecture summary, links, or the
+     status/roadmap? Update it if so; otherwise state "README checked — no change" in the report. Verify any new links resolve.
 7. Suggest `/checkpoint`. Do not commit. CI on the pull request is the final gate before the owner merges.

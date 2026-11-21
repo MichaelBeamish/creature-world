@@ -1,5 +1,8 @@
 # MVP — "The Tide Pool"
 
+> **Status (2026-11-21): achieved.** Criteria 1–5 verified with evidence (see `docs/progress.md`, task #12).
+> Criterion 6 (informal first-viewer test) deferred by the owner — to be run when the chance comes up naturally.
+
 **Goal:** a visitor opens the page and, within 10 seconds, a creature notices their cursor and reacts in a way that fits its personality.
 
 ## In scope

@@ -73,6 +73,11 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   events; `chirpFor` (pure) designs each creature's voice (pentatonic pitch from size, timbre from archetype, contour
   from emote); `synth.ts` plays it (oscillator → low-pass → envelope → stereo pan → quiet master, ≤ 4 voices). Muted by
   default; the AudioContext is created only on the unmute click (browser autoplay policy).
+- **Scene & motion** — `render/background.ts` draws water, drifting caustics and floating motes (a pure function of
+  time — no particle state) and a vignette. Reduced motion (`app/reducedMotion.ts`, live `matchMedia` watcher) passes
+  `MotionSettings` (`render/motion.ts`) to the renderer: decorative sway/breath/lean/trail are toned down, emotes fade in
+  without overshoot, the background holds still; wandering and reactions are unchanged.
+- **UI shell** — Vue overlays: `DebugPanel`, `MuteToggle`, `FirstVisitHint` (fades out on first interaction).
 - **Step order** — presence → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → constraints → animation.
 
 ## Game loop

@@ -6,6 +6,7 @@
 import { EXPRESSION, type EmoteKind } from '../simulation/expression'
 import { lerp } from '../simulation/math'
 import type { World } from '../simulation/world'
+import { FULL_MOTION, type MotionSettings } from './motion'
 
 /** Ease-out with overshoot ("back"): grows a little past full size, then settles. */
 function easeOutBack(t: number): number {
@@ -18,15 +19,26 @@ const POP_SECONDS = 0.25
 const FADE_FROM = 0.7 // fraction of life after which it fades out
 const FLOAT_PX = 14
 
-export function drawEmotes(ctx: CanvasRenderingContext2D, world: World, alpha: number): void {
+export function drawEmotes(
+  ctx: CanvasRenderingContext2D,
+  world: World,
+  alpha: number,
+  motion: MotionSettings = FULL_MOTION,
+): void {
   for (const c of world.creatures) {
     const emote = c.expression.emote
     if (!emote) continue
     const life = emote.age / EXPRESSION.emoteLife
-    const scale = easeOutBack(Math.min(1, emote.age / POP_SECONDS))
-    const fade = life < FADE_FROM ? 1 : Math.max(0, 1 - (life - FADE_FROM) / (1 - FADE_FROM))
+    const appear = Math.min(1, emote.age / POP_SECONDS)
+    // Reduced motion: no overshoot "pop" — the emote simply fades in at full size.
+    const scale = motion.emotePop ? easeOutBack(appear) : 1
+    const fadeOut = life < FADE_FROM ? 1 : Math.max(0, 1 - (life - FADE_FROM) / (1 - FADE_FROM))
+    const fade = motion.emotePop ? fadeOut : Math.min(appear, fadeOut)
     const x = lerp(c.prevPosition.x, c.position.x, alpha) + c.size * 0.9
-    const y = lerp(c.prevPosition.y, c.position.y, alpha) - c.size * 1.7 - FLOAT_PX * life
+    const y =
+      lerp(c.prevPosition.y, c.position.y, alpha) -
+      c.size * 1.7 -
+      FLOAT_PX * motion.emoteFloat * life
 
     ctx.save()
     ctx.globalAlpha = fade

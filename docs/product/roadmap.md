@@ -20,3 +20,8 @@ Ideas, not commitments. Each becomes a planned milestone only after discussion.
      (follow-through), and a squash spring in `anim`.
    - Determinism holds for a given input-event sequence, so tests can feed synthetic input.
    - Note: shifts the vision from "noticed, not controlled" toward play — decide deliberately.
+10. **Interactive sea-floor objects** — builds on task #15 (rocks/shells as simulation data) and the mind (task #8):
+    - a Scaredy hides **behind a rock** instead of in a corner;
+    - a curious creature inspects or carries a shell;
+    - a Grumpy guards its favourite rock;
+    - the visitor could later nudge shells (ties into roadmap #9, direct interaction).

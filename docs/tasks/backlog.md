@@ -19,7 +19,9 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 9 | Eyes + emotes | done |
 | 10 | Debug overlay | done |
 | 11 | Sound + mute toggle | done |
-| 12 | MVP polish + success-criteria review | todo |
+| 12 | MVP polish + success-criteria review | done |
+| 15 | Sea floor (sand, rocks, shells) | todo |
+| 16 | Bubbles (particle system) | todo |
 
 ---
 
@@ -150,6 +152,28 @@ Background, color tuning, timing tweaks; walk through all MVP success criteria.
 - **Accept:** all criteria in `mvp.md` checked and recorded in `progress.md`.
 - **Verify:** criteria checklist.
 - **Carried over from task #5:** honor `prefers-reduced-motion` (tone down sway/breathing amplitude; keep blinks).
+- **Approved spec decisions (2026-11-21):** (A) reduced motion read live via `matchMedia`, passed as a motion factor to
+  the renderer: sway ×0.3, breathing ×0.4, lean/trailing ×0.5, emotes fade without overshoot, background still;
+  wandering and reactions unchanged. (B) polish — owner chose all four: living background (caustics, floating motes,
+  vignette), first-visit hint that fades on first interaction, share-ready page meta (description, theme color, Open
+  Graph), README for the public repo. (C) MVP review: evidence for all 6 criteria recorded in `progress.md`,
+  `mvp.md` marked achieved; criterion #6 informal friend test run by the owner (script provided); touch tap emulated.
+  Sea floor and bubbles split out into #15/#16 (owner agreed: keep #12 focused on closing the MVP).
+
+### 15. Sea floor (sand, rocks, shells)
+A sandy bottom with seeded rocks and shells (each world different), drawn behind the creatures; the floor becomes the
+bottom of the world. Rocks/shells are **data in the simulation** (position, shape, kind), not just pixels, so they
+can become interactive later (roadmap #10).
+- **Accept:** seeded, deterministic layout; creatures never sink into the floor; readable cozy look (owner check);
+  reduced motion respected; all checks pass.
+- **Verify:** tests + visual check. Plan with `/plan-task 15` (look and world-bounds decisions with the owner).
+
+### 16. Bubbles (particle system)
+Fleeing/startled creatures release a few bubbles that wobble up to the surface and pop. A small particle system:
+spawning from events, lifetimes, object pooling (no per-frame allocations).
+- **Accept:** bubbles spawn on flee/startle, rise and pop at the surface; bounded particle count; no measurable frame
+  cost at 5 creatures; reduced motion respected; all checks pass.
+- **Verify:** tests + visual check. Plan with `/plan-task 16`.
 
 ### 13. CI with GitHub Actions
 `.github/workflows/ci.yml` runs on every push to `main` and every pull request: install with the locked

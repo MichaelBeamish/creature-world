@@ -17,6 +17,7 @@ Backlog task #<!-- n -->: <!-- title --> (see `docs/tasks/backlog.md`)
 <!-- Commands run, tests added, visual checks (who looked), CI. -->
 
 - [ ] `pnpm test`, `typecheck`, `lint`, `format:check`, `build` pass locally
+- [ ] `README.md` checked and updated if this task changes what it describes
 - [ ] CI is green on this PR
 
 ## Concepts / decisions

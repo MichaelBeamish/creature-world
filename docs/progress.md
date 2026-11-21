@@ -2,6 +2,30 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-21 — Task #12: MVP polish + success-criteria review ✅ — MVP achieved
+- **Done:** reduced motion (`render/motion.ts`, live `app/reducedMotion.ts`: decorative motion toned down, background
+  still, behavior unchanged); living background (`render/background.ts`: caustics, stateless floating motes, vignette);
+  `FirstVisitHint.vue` (fades on first interaction; touch wording); share-ready page meta (description, theme color,
+  Open Graph); `README.md` for the public repo. Sea floor and bubbles split out into tasks #15/#16; roadmap #10 added.
+- **Verified:** 162/162 tests. Real browser: hint shows then is removed after the first move; background animates but
+  holds still when reduce-motion is toggled on live; touch taps raise attention 2% → 78%; frame cost 0.6 ms.
+- **Bug caught:** the hint never disappeared — Vue `<Transition>` waited for the longer CSS *animation* (fade-in,
+  already ended) instead of the fade-out *transition*; fixed with `type="transition"`.
+
+### MVP success-criteria review ("The Tide Pool", `docs/product/mvp.md`)
+| # | Criterion | Result | Evidence |
+|---|---|---|---|
+| 1 | Calm idle life for 60 s: no freezing, overlap, or leaving the screen | ✅ | `movement.test.ts` — 60 s × 5 seeds checked every step; everyone wanders and rests (task #6) |
+| 2 | Visible reaction within 1 s of the cursor nearby | ✅ | `expression.test.ts` — "MVP success criterion #2", all four archetypes (task #9) |
+| 3 | Same input + seed: Scaredy ends farther than Friendly; flick → Grumpy holds, Scaredy flees | ✅ | `personality.test.ts` — ≈160 vs ≈80 px; Grumpy < 25 px, Scaredy > 60 px (task #8) |
+| 4 | ~60 FPS with 5 creatures (≥ 55) | ✅ | Owner's laptop: 120 FPS (task #10); 0.6 ms work per frame with the new background |
+| 5 | Unit tests; lint, type-check, tests pass | ✅ | 162 tests in 23 files; CI on Node 22 + LTS green on every PR |
+| 6 | First-time viewer tells creatures apart (informal, 1–2 people) | ⏸ deferred | Owner's decision: run it if it comes up naturally. Related observation (task #9): personalities show mainly when reacting |
+
+- **Learned / notes:** reduced motion reduces *decoration*, not content; stateless particles; Open Graph for link
+  previews; the README as the repo's front page; Vue `<Transition type>` with mixed animation/transition.
+- **Next:** task #15 (sea floor), then #16 (bubbles); deploy (roadmap #1).
+
 ## 2026-11-21 — Task #11: Sound + mute toggle ✅
 - **Done:** `src/audio/` output layer — `voice.ts` (pure `chirpFor`: pentatonic pitch from size + per-creature detune,
   timbre from archetype, contour from emote; `panFor`), `soundEvents.ts` (new-emote watcher), `synth.ts` (Web Audio:

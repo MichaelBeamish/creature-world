@@ -4,15 +4,18 @@ import { createEmoteWatcher } from '../audio/soundEvents'
 import { createSynth, type Synth } from '../audio/synth'
 import { chirpFor, panFor } from '../audio/voice'
 import { createPointerInput, type PointerInput } from '../input/pointer'
+import { FULL_MOTION, motionSettings } from '../render/motion'
 import { drawScene } from '../render/scene'
 import { createStage, type Stage } from '../render/stage'
 import { setPresenceInput } from '../simulation/presence'
 import { createWorld, resizeWorld, stepWorld } from '../simulation/world'
 import DebugPanel from './DebugPanel.vue'
+import FirstVisitHint from './FirstVisitHint.vue'
 import MuteToggle from './MuteToggle.vue'
 import { createDebugSnapshot, createPublisher, type DebugSnapshot } from './debugSnapshot'
 import { createFpsMeter } from './fpsMeter'
 import { createGameLoop, type GameLoop } from './gameLoop'
+import { watchReducedMotion } from './reducedMotion'
 import { resolveSeed } from './seed'
 
 const CREATURE_COUNT = 5
@@ -42,6 +45,14 @@ function toggleSound() {
   muted.value = !soundOn
   synth.setMuted(!soundOn)
 }
+
+// First-visit hint: shown until the visitor first interacts with the pool.
+const hintVisible = ref(true)
+let hintPending = true
+
+// Accessibility: decorative motion follows the OS "reduce motion" setting, live.
+let motion = FULL_MOTION
+let stopWatchingMotion: (() => void) | null = null
 
 // Deliberately NOT reactive (ADR 0001): per-frame objects must stay out of Vue's reactivity system.
 let stage: Stage | null = null
@@ -74,6 +85,7 @@ onMounted(() => {
   const input = createPointerInput(canvasEl.value, () => performance.now())
   pointer = input
   window.addEventListener('keydown', onKeyDown)
+  stopWatchingMotion = watchReducedMotion((reduced) => (motion = motionSettings(reduced)))
 
   const seed = resolveSeed(window.location.search)
   console.info(
@@ -93,10 +105,14 @@ onMounted(() => {
       // Sample input at the boundary: the simulation only ever sees plain data, once per fixed step.
       const sample = input.sample(performance.now())
       setPresenceInput(world.presence, sample.x, sample.y, sample.active)
+      if (hintPending && sample.active) {
+        hintPending = false
+        hintVisible.value = false // a single reactive write, once
+      }
       stepWorld(world, dt)
     },
     render(alpha) {
-      drawScene(s.ctx, world, alpha, s.width, s.height, { debug: showDebug })
+      drawScene(s.ctx, world, alpha, s.width, s.height, { debug: showDebug, motion })
     },
     frame(now, workMs) {
       // Sound is an output layer: it observes new emotes (always, so nothing stale plays on unmute).
@@ -120,6 +136,8 @@ onBeforeUnmount(() => {
   stage?.destroy()
   pointer?.destroy()
   window.removeEventListener('keydown', onKeyDown)
+  stopWatchingMotion?.()
+  stopWatchingMotion = null
   synth?.close()
   synth = null
   loop = null
@@ -131,6 +149,7 @@ onBeforeUnmount(() => {
 <template>
   <canvas ref="canvas" class="world-canvas" />
   <DebugPanel v-if="debugVisible && snapshot" :snapshot="snapshot" />
+  <FirstVisitHint :visible="hintVisible" />
   <MuteToggle :muted="muted" @toggle="toggleSound" />
 </template>
 
