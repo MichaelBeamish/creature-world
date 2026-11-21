@@ -21,7 +21,8 @@ Claude leads development, and the owner wants to grow as a developer along the w
 2. **One task at a time.** Small, independently testable increments. No drive-by features or refactors.
 3. **Ask before major decisions.** New dependencies, architecture changes, or deviations from an ADR → discuss first, then record with `/adr`.
 4. **Verify before done.** A task is complete only after `/verify-task` passes its acceptance criteria.
-5. **Never commit without explicit approval.** Use `/checkpoint`, which proposes a message and waits for a "yes".
+5. **Never commit or push without explicit approval.** Use `/checkpoint`, which proposes a message and waits for a "yes",
+   then asks separately whether to push to `origin` (public GitHub repo: MichaelBeamish/creature-world).
 6. **Keep docs current.** Update `docs/progress.md` and the backlog when tasks complete; update architecture docs when structure changes.
 7. **Prefer simple.** Fewer files, fewer abstractions, no speculative generality — except the deliberate seams named in the architecture doc.
 

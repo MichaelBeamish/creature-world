@@ -11,4 +11,5 @@ description: Propose a git commit for verified work and create it only after the
    - A Conventional Commit message, e.g. `feat(simulation): add seeded world step` (types: feat, fix, docs, test, refactor, chore).
 3. **Ask the owner for approval and wait.** Never commit without an explicit "yes" in this conversation.
 4. On approval: stage only those files, commit, and show `git log --oneline -1`.
-5. Never push, amend, force, or skip hooks unless the owner explicitly asks.
+5. Ask whether to push to `origin` (a public repo). Push only on an explicit "yes", then confirm with `git status -sb`.
+6. Never amend, force-push, or skip hooks unless the owner explicitly asks.
