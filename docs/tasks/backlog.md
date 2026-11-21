@@ -13,7 +13,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 14 | Branch + pull-request workflow | done |
 | 4 | Draw a static creature | done |
 | 5 | Idle animation | done |
-| 6 | Wandering + bounds + separation | todo |
+| 6 | Wandering + bounds + separation | done |
 | 7 | Cursor presence + perception | todo |
 | 8 | Traits + RuleMind reactions | todo |
 | 9 | Eyes + emotes | todo |
@@ -75,19 +75,33 @@ Steering: wander, soft screen bounds, separation; occasional rest.
 - **Verify:** tests + visual check.
 - **Carried over from task #4:** in small windows, spawn footprints can't all fit, so creatures start overlapping;
   separation must resolve this (use `footprint()` from `creature.ts`), including after the window shrinks.
+- **Approved spec decisions (2026-11-20):** Reynolds steering (wander circle, soft stay-in-bounds, footprint
+  separation) blended into acceleration with water drag and max speed ~35 px/s; hard constraint pass afterwards
+  (position-based: separate overlaps, clamp footprints into bounds, few iterations); seeded wander/rest activity
+  (6–15 s / 3–8 s); step order activity → steering → velocity → position → constraints → animation; subtle lean
+  (≤ ~8°) + tentacle trailing in the renderer; one shared speed until traits (task #8).
 
 ### 7. Cursor presence + perception
 Input module maps pointer/tap to `Presence`; creatures compute attention from distance and cursor motion.
 - **Accept:** attention rises when presence is within radius and decays outside (unit test).
 - **Verify:** tests + debug log/visual.
+- **Owner decision (2026-11-20):** perception classifies the visitor's behavior into three stimuli — **calm presence**
+  (hovering still / slow nearby, builds trust), **sudden movement** (fast flick, startles), **chasing** (cursor keeps
+  following one creature, pressure builds). Clicking is out of MVP (roadmap #9).
 
 ### 8. Traits + RuleMind reactions
-`Mind` interface; `RuleMind` chooses approach/follow/peek/flee/hide from traits and attention.
-- **Accept:** MVP success criterion #3 (shy ends farther than curious) passes as a unit test.
+`Mind` interface; `RuleMind` chooses approach/follow/peek/flee/hide/grumpy stand-off from traits, emotion and stimuli.
+- **Accept:** MVP success criterion #3 (Scaredy ends farther than Friendly; sudden movement → Grumpy stands its ground,
+  Scaredy flees) passes as unit tests.
+- **Owner decision (2026-11-20):** traits are `curiosity`, `boldness` (replaces `shyness`), `energy`, set by an
+  **archetype** (Peeker, Friendly, Scaredy, Grumpy — the curiosity × boldness grid in `mvp.md`) + small seeded
+  variation; archetypes dealt without replacement so every world has a mix. Emotions (curious, scared, grumpy, content)
+  are temporary states; energy also replaces the shared speed from task #6.
 - **Verify:** tests + visual check with contrasting creatures.
 
 ### 9. Eyes + emotes
-Eyes track the focus target; emotes (`!`, `?`, `♥`) pop on state changes; squash/stretch with velocity.
+Eyes track the focus target; emotes (`!`, `?`, `♥`, `💢`) pop on state changes; squash/stretch with velocity;
+grumpy puff-up + color flush; breathing/sway rates follow the emotion (phase accumulation keeps it smooth).
 - **Accept:** noticing the cursor shows a reaction within 1s (criterion #2).
 - **Verify:** visual check.
 

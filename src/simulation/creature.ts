@@ -26,6 +26,16 @@ export interface Creature {
   tentacleCount: number
   /** Idle-animation state (breathing, sway, blinking). */
   anim: CreatureAnimation
+  /** Wander steering: angle of the target point on the wander circle (radians). */
+  wanderAngle: number
+  /** What the creature is doing right now, and for how many more seconds. */
+  activity: Activity
+}
+
+export interface Activity {
+  kind: 'wander' | 'rest'
+  /** Seconds left before switching activity. */
+  timer: number
 }
 
 export const CREATURE_LIMITS = {
@@ -110,6 +120,9 @@ export function createCreature(
     size,
     tentacleCount,
     anim: createAnimation(rng),
+    wanderAngle: range(rng, 0, Math.PI * 2),
+    // Start mid-way through a wander period so creatures don't all rest at the same moment.
+    activity: { kind: 'wander', timer: range(rng, 2, 15) },
   }
 }
 

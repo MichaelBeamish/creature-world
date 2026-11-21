@@ -100,23 +100,20 @@ describe('stepWorld', () => {
     expect(a.time).toBeCloseTo(10, 9)
   })
 
-  it('stores the pre-step position in prevPosition and moves by velocity × dt', () => {
-    const world = createWorld(CONFIG)
+  it('stores the pre-step position in prevPosition and moves by the updated velocity × dt', () => {
+    // A single creature in open water: no walls or neighbours, so constraints don't intervene.
+    const world = createWorld({ ...CONFIG, creatureCount: 1 })
     const c = world.creatures[0]!
-    c.velocity.x = 60
-    c.velocity.y = -30
+    c.position.x = CONFIG.width / 2
+    c.position.y = CONFIG.height / 2 - 40
+    c.velocity.x = 20
+    c.velocity.y = -10
     const before = { ...c.position }
     stepWorld(world, DT)
     expect(c.prevPosition).toEqual(before)
-    expect(c.position.x).toBeCloseTo(before.x + 1, 9)
-    expect(c.position.y).toBeCloseTo(before.y - 0.5, 9)
-  })
-
-  it('leaves creatures at rest when velocity is zero', () => {
-    const world = createWorld(CONFIG)
-    const start = structuredClone(world.creatures)
-    for (let i = 0; i < 60; i++) stepWorld(world, DT)
-    expect(world.creatures.map((c) => c.position)).toEqual(start.map((c) => c.position))
+    // Steering updates velocity first; position then integrates the *new* velocity (semi-implicit Euler).
+    expect(c.position.x).toBeCloseTo(before.x + c.velocity.x * DT, 9)
+    expect(c.position.y).toBeCloseTo(before.y + c.velocity.y * DT, 9)
   })
 })
 

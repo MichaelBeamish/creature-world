@@ -1,5 +1,7 @@
 import { stepAnimation } from './animation'
+import { resolveConstraints } from './constraints'
 import { createCreature, GOLDEN_ANGLE, type Creature } from './creature'
+import { stepActivity, stepMovement } from './movement'
 import { createRng, range, type Rng } from './rng'
 import { addScaled, copyVec2 } from './vec2'
 
@@ -35,18 +37,31 @@ export function createWorld(config: WorldConfig): World {
   return { width: config.width, height: config.height, time: 0, tick: 0, rng, creatures }
 }
 
-/** Advance the world by exactly one fixed step of `dt` seconds. Mutates in place. */
+/**
+ * Advance the world by exactly one fixed step of `dt` seconds. Mutates in place.
+ * Order matters (and is fixed, for determinism):
+ * activity → steering → velocity → position → constraints → animation.
+ */
 export function stepWorld(world: World, dt: number): void {
   for (const creature of world.creatures) {
     copyVec2(creature.prevPosition, creature.position)
-    addScaled(creature.position, creature.velocity, dt) // explicit Euler integration
+    stepActivity(creature, dt, world.rng)
+    stepMovement(creature, world, dt)
+  }
+  for (const creature of world.creatures) {
+    // Semi-implicit (symplectic) Euler: velocity was updated first, position uses the new velocity.
+    // More stable than explicit Euler for steering/springs, at the same cost.
+    addScaled(creature.position, creature.velocity, dt)
+  }
+  resolveConstraints(world)
+  for (const creature of world.creatures) {
     stepAnimation(creature.anim, dt, world.rng)
   }
   world.time += dt
   world.tick++
 }
 
-/** Update the world bounds (e.g. after a window resize). Keeping creatures inside is task #6. */
+/** Update the world bounds (e.g. after a window resize). The next step's constraints pull everyone inside. */
 export function resizeWorld(world: World, width: number, height: number): void {
   world.width = width
   world.height = height
