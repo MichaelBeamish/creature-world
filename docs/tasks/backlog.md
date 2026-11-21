@@ -7,7 +7,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 |---|---|---|
 | 1 | Project scaffold | done |
 | 2 | Canvas stage + game loop | done |
-| 3 | Simulation core: world, creature, RNG | todo |
+| 3 | Simulation core: world, creature, RNG | done |
 | 4 | Draw a static creature | todo |
 | 5 | Idle animation | todo |
 | 6 | Wandering + bounds + separation | todo |
@@ -42,6 +42,10 @@ Full-viewport, DPR-aware canvas; fixed-timestep loop with interpolation alpha; r
 `World`, `Creature`, seeded `rng`, `world.step(dt)`; no DOM imports.
 - **Accept:** same seed → identical world state after N steps (unit test).
 - **Verify:** tests; grep confirms no DOM/Vue imports in `src/simulation/`.
+- **Approved spec decisions (2026-11-20):** plain serializable data + functions (no classes), mutated in place;
+  hand-written mulberry32 PRNG (state stored in world); creature = id, position, prevPosition, velocity, hue, size,
+  tentacleCount; world coords = CSS px; ESLint `no-restricted-globals` bans window/document/rAF/performance/Math.random
+  in simulation; not wired into the app until task #4; no new deps.
 
 ### 4. Draw a static creature
 Procedural body, eyes, tentacles from creature params (color, size, tentacle count).

@@ -46,6 +46,36 @@ export default defineConfig([
           ],
         },
       ],
+      // Browser APIs and wall-clock time don't belong in a deterministic, testable simulation.
+      'no-restricted-globals': [
+        'error',
+        ...[
+          'window',
+          'document',
+          'navigator',
+          'localStorage',
+          'requestAnimationFrame',
+          'cancelAnimationFrame',
+          'performance',
+        ].map((name) => ({
+          name,
+          message: 'Simulation must not use browser APIs (ADR 0002); pass data in from app/.',
+        })),
+      ],
+      // Unseeded randomness and real time silently break determinism.
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'Math',
+          property: 'random',
+          message: 'Use the seeded rng (src/simulation/rng.ts) so behavior is reproducible.',
+        },
+        {
+          object: 'Date',
+          property: 'now',
+          message: 'Use world.time; simulation time comes from fixed steps.',
+        },
+      ],
     },
   },
 

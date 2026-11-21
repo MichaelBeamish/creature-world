@@ -2,6 +2,17 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Task #3: Simulation core ✅
+- **Done:** `rng.ts` (mulberry32; `createRng`/`next`/`range`/`int`/`pick`, state as plain data); `vec2.ts` (in-place
+  helpers); `creature.ts` (seeded spawn: position, hue, size, tentacles); `world.ts` (`createWorld`, `stepWorld` with
+  prevPosition + Euler integration, `resizeWorld`). ESLint now also bans browser globals, `Math.random`, `Date.now`
+  in simulation. Not yet wired into the app (task #4).
+- **Verified:** 30/30 tests (17 new: determinism after 600 steps, seed sensitivity, spawn bounds, RNG range and
+  uniformity); lint probe → 7 errors from 3 rules; typecheck, format, build pass; app unchanged, no console errors.
+- **Learned / notes:** seeded PRNG with state in the world = reproducible "randomness"; data-oriented design
+  (plain data + functions) vs OOP; in-place mutation to avoid GC stutter.
+- **Next:** task #4 (draw a static creature).
+
 ## 2026-11-20 — Task #2: Canvas stage + game loop ✅
 - **Done:** `fixedStep.ts` (pure 60 Hz accumulator: steps, carry-over, alpha, 250 ms frame cap, 10-step cap);
   `gameLoop.ts` (rAF driver, idempotent start/stop); `render/stage.ts` (DPR-aware canvas + ResizeObserver);

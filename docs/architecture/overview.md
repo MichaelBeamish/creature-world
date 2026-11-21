@@ -9,15 +9,15 @@ src/
   app/          game loop, wiring, Vue shell (overlay UI: mute toggle, debug panel); App.vue is the root
   main.ts       entry point: mounts App.vue
 ```
-Tests sit next to the code they cover (`*.test.ts`). The simulation import boundary is enforced by ESLint
-(`no-restricted-imports` in `eslint.config.js`).
+Tests sit next to the code they cover (`*.test.ts`). Simulation purity is enforced by ESLint in `eslint.config.js`:
+no Vue/render/input/app imports, no browser globals, no `Math.random` / `Date.now`.
 Dependency direction: `app → render, input → simulation`. Simulation depends on nothing.
 
 ## Data flow (per frame)
 ```
 pointer events ─► input ─► Presence ─┐
                                      ▼
-fixed-step loop ─► world.step(dt) : perceive → think (mind) → steer → integrate
+fixed-step loop ─► stepWorld(world, dt) : perceive → think (mind) → steer → integrate
                                      ▼
                  renderer.draw(world, alpha)  (interpolates between steps)
                                      ▼
@@ -25,8 +25,13 @@ fixed-step loop ─► world.step(dt) : perceive → think (mind) → steer → 
 ```
 
 ## Key concepts
-- **World** — owns creatures, presence, time, seeded RNG. `step(dt)` advances the simulation.
-- **Creature** — position, velocity, traits, attention, current behavior, emote, animation phases.
+Simulation state is **plain, serializable data**; behavior is **functions** that mutate it in place
+(e.g. `stepWorld(world, dt)`). Easy to test (`toEqual`), clone, snapshot for the debug panel, and later persist.
+
+- **World** — size, time, tick, seeded RNG state, creatures (later: presence). `stepWorld` advances one fixed step.
+- **Rng** — mulberry32 PRNG with state stored in the world; the only source of randomness in simulation.
+- **Creature** — id, position, prevPosition (for interpolation), velocity, appearance; later traits, attention,
+  current behavior, emote, animation phases.
 - **Perception** — what a creature currently notices (cursor, nearby creatures) given its radius.
 - **Mind** (the seam) — `interface Mind { decide(creature, perception, rng): Intent }`.
   MVP uses `RuleMind` (state machine weighted by traits). A future `LlmMind` can implement the
