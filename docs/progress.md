@@ -2,6 +2,21 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Task #4: Draw a static creature ✅
+- **Done:** style B "Little octopus" (owner picked it from a 3-style preview): tapered Bézier tentacles with
+  rounded tips, light fuzz, gradient-shaded mantle, eyes with highlights. `drawScene` (pure, painter's algorithm,
+  interpolated); `render/noise.ts` stateless hash for per-creature detail; shared `BODY` proportions + spawn
+  `footprint`; rejection-sampled non-overlapping spawns; golden-angle hues; `?seed=` / random seed (logged).
+  Deleted the temporary `demoDot.ts`.
+- **Verified:** 38/38 tests (non-overlap across 6 seeds, hue spacing ≥ 30°, footprint in bounds, hash range and
+  uniformity, seed parsing); same seed → byte-identical screenshots; frames 0.5 s vs 4 s identical (no flicker);
+  sharp at 2× DPR; owner approved the look.
+- **Known limitation:** very small windows can't fit 5 footprints, so creatures overlap at spawn → resolved by
+  separation in task #6 (owner chose to defer).
+- **Learned / notes:** rejection sampling with capped attempts; golden-angle color spacing; stateless noise keeps
+  rendering a pure function of state; painter's algorithm.
+- **Next:** task #5 (idle animation).
+
 ## 2026-11-20 — Task #14: Branch + pull-request workflow ✅
 - **Done:** one branch (`task/<n>-<slug>`) and PR per task; `/checkpoint` = one approval for commit + push + PR;
   owner merges ("Squash and merge"). PR template added; CLAUDE.md Git workflow section; implement/verify/checkpoint

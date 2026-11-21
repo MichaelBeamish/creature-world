@@ -32,6 +32,11 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
 - **Rng** — mulberry32 PRNG with state stored in the world; the only source of randomness in simulation.
 - **Creature** — id, position, prevPosition (for interpolation), velocity, appearance; later traits, attention,
   current behavior, emote, animation phases.
+- **Body proportions** — `BODY` in `creature.ts` (multiples of `size`) is shared by simulation (spawn
+  footprint, later collisions) and rendering, so what you see matches the space a creature occupies.
+- **Rendering** — `drawScene(ctx, world, alpha)` is a pure function of world state (painter's algorithm, back to
+  front). Per-creature detail (fur, tentacle variation) comes from a stateless hash (`render/noise.ts`), never stored.
+- **Seed** — random per visit; `?seed=<int>` reproduces a world (seed is logged to the console).
 - **Perception** — what a creature currently notices (cursor, nearby creatures) given its radius.
 - **Mind** (the seam) — `interface Mind { decide(creature, perception, rng): Intent }`.
   MVP uses `RuleMind` (state machine weighted by traits). A future `LlmMind` can implement the
