@@ -2,6 +2,18 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Task #10: Debug overlay ✅
+- **Done:** `app/fpsMeter.ts` (rolling FPS + avg/worst frame work time); `app/debugSnapshot.ts` (world → plain
+  snapshot + 200 ms publisher); `app/DebugPanel.vue` (display-only, collapsible); `frame(now, workMs)` hook in the game
+  loop; `D` toggle (dev, or any build with `?debug`); `shallowRef` publishing; zero work while hidden.
+- **Verified:** 144/144 tests (FPS math, rolling window, snapshot field-by-field + independence, throttle = 5/s on a
+  144 Hz display). Real browser: 5.0 panel updates/s; 0.7 ms work per frame (~4% of a 60 Hz budget); overlay costs
+  ~0.1 ms/frame only while visible. **MVP criterion #4 passes:** owner's laptop shows 120 FPS; `D` works.
+- **Learned / notes:** bridging a high-frequency world to a reactive UI (sample + immutable snapshot, like
+  `useSyncExternalStore`); `ref` vs `shallowRef`; plain mirror variables in hot loops; FPS vs frame time; stable
+  `v-for` keys.
+- **Next:** task #11 (sound + mute toggle).
+
 ## 2026-11-20 — Task #9: Eyes + emotes ✅
 - **Done:** `simulation/expression.ts` — gaze (dart-and-hold toward the visitor, travel direction, or a glanced-at
   neighbour), emote events (? ! 💢 ♥; 1.5 s life, 2.5 s cooldown, ♥ once per visit), mood-scaled breathing/sway
