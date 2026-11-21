@@ -2,6 +2,19 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-21 — Task #11: Sound + mute toggle ✅
+- **Done:** `src/audio/` output layer — `voice.ts` (pure `chirpFor`: pentatonic pitch from size + per-creature detune,
+  timbre from archetype, contour from emote; `panFor`), `soundEvents.ts` (new-emote watcher), `synth.ts` (Web Audio:
+  oscillator + vibrato LFO → low-pass → envelope → stereo pan → master 0.15; ≤ 4 voices; lazy AudioContext).
+  `MuteToggle.vue`: accessible button, always starts muted, preference not stored.
+- **Verified:** 155/155 tests (distinct voice per creature, determinism, bigger = lower, timbre/contour per archetype
+  and emote, gentle ranges over 320 combinations, panning, watcher once-only and read-only). Real browser: 0
+  AudioContexts while muted (even during a flick); 1 running context after the click; chirps played after unmuting.
+  Owner: "love it".
+- **Learned / notes:** synthesis basics (oscillator, filter, envelope, LFO vibrato); autoplay policy; pentatonic
+  harmony; data-driven sound (describe vs play); accessible toggle buttons.
+- **Next:** task #12 (MVP polish + success-criteria review).
+
 ## 2026-11-20 — Task #10: Debug overlay ✅
 - **Done:** `app/fpsMeter.ts` (rolling FPS + avg/worst frame work time); `app/debugSnapshot.ts` (world → plain
   snapshot + 200 ms publisher); `app/DebugPanel.vue` (display-only, collapsible); `frame(now, workMs)` hook in the game

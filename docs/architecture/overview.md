@@ -6,6 +6,7 @@ src/
   simulation/   pure TS: world, creatures, traits, perception, minds, steering, rng   (no DOM, no Vue)
   render/       Canvas 2D: scene background, procedural creature drawing, emotes, debug draw
   input/        DOM pointer events → world "presence" (cursor position, velocity, active)
+  audio/        Web Audio: per-creature chirp voices, triggered by new emotes (an output layer, like render/)
   app/          game loop, wiring, Vue shell (overlay UI: mute toggle, debug panel); App.vue is the root
   main.ts       entry point: mounts App.vue
 ```
@@ -68,6 +69,10 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   Vue layer: `DebugPanel.vue` (display-only) fed by `createDebugSnapshot` — a plain copy published at ≤ 5 Hz into a
   `shallowRef`, so Vue never tracks simulation objects. `fpsMeter.ts` reports FPS and per-frame work time (the
   `frame` hook in `gameLoop.ts`). Zero cost while hidden.
+- **Audio** (`src/audio/`) — an output layer that observes the world: `createEmoteWatcher` turns new emotes into sound
+  events; `chirpFor` (pure) designs each creature's voice (pentatonic pitch from size, timbre from archetype, contour
+  from emote); `synth.ts` plays it (oscillator → low-pass → envelope → stereo pan → quiet master, ≤ 4 voices). Muted by
+  default; the AudioContext is created only on the unmute click (browser autoplay policy).
 - **Step order** — presence → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → constraints → animation.
 
 ## Game loop

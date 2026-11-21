@@ -18,7 +18,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 8 | Traits + RuleMind reactions | done |
 | 9 | Eyes + emotes | done |
 | 10 | Debug overlay | done |
-| 11 | Sound + mute toggle | todo |
+| 11 | Sound + mute toggle | done |
 | 12 | MVP polish + success-criteria review | todo |
 
 ---
@@ -138,6 +138,12 @@ Toggle (e.g. `D` key) drawing radii/states on canvas, plus a Vue panel with trai
 Soft synthesized chirps (Web Audio) on notice/emote; muted by default; Vue toggle.
 - **Accept:** no sound until unmuted; chirps vary by creature.
 - **Verify:** manual check.
+- **Approved spec decisions (2026-11-21):** sounds triggered by new emote events, detected by an `src/audio/` layer
+  observing the world (no simulation change); pure `chirpFor(creature, emote)` sound descriptions — pitch from size
+  snapped to a pentatonic scale, timbre from archetype (Friendly sine, Peeker triangle doubled, Scaredy high + vibrato,
+  Grumpy filtered buzzy wave), contour from emote (? rising, ! blip, 💢 falling grumble, ♥ two-note coo); Web Audio
+  oscillator → low-pass → envelope → stereo pan (by screen x) → quiet master; ≤ 4 voices; `AudioContext` created only
+  on the unmute click (autoplay policy); always start muted, preference not stored; accessible `MuteToggle.vue`.
 
 ### 12. MVP polish + review
 Background, color tuning, timing tweaks; walk through all MVP success criteria.
