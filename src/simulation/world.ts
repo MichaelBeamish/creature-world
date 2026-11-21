@@ -2,6 +2,8 @@ import { stepAnimation } from './animation'
 import { resolveConstraints } from './constraints'
 import { createCreature, GOLDEN_ANGLE, type Creature } from './creature'
 import { stepActivity, stepMovement } from './movement'
+import { stepPerception } from './perception'
+import { createPresence, updatePresence, type Presence } from './presence'
 import { createRng, range, type Rng } from './rng'
 import { addScaled, copyVec2 } from './vec2'
 
@@ -16,6 +18,8 @@ export interface World {
   tick: number
   rng: Rng
   creatures: Creature[]
+  /** The visitor (cursor/finger). Fed by the app via `setPresenceInput(world.presence, …)`. */
+  presence: Presence
 }
 
 export interface WorldConfig {
@@ -34,17 +38,27 @@ export function createWorld(config: WorldConfig): World {
     const hue = baseHue + i * GOLDEN_ANGLE
     creatures.push(createCreature(rng, i + 1, bounds, hue, creatures))
   }
-  return { width: config.width, height: config.height, time: 0, tick: 0, rng, creatures }
+  return {
+    width: config.width,
+    height: config.height,
+    time: 0,
+    tick: 0,
+    rng,
+    creatures,
+    presence: createPresence(),
+  }
 }
 
 /**
  * Advance the world by exactly one fixed step of `dt` seconds. Mutates in place.
  * Order matters (and is fixed, for determinism):
- * activity → steering → velocity → position → constraints → animation.
+ * presence → perception → activity → steering → velocity → position → constraints → animation.
  */
 export function stepWorld(world: World, dt: number): void {
+  updatePresence(world.presence, dt)
   for (const creature of world.creatures) {
     copyVec2(creature.prevPosition, creature.position)
+    stepPerception(creature.perception, creature.position, world.presence, dt)
     stepActivity(creature, dt, world.rng)
     stepMovement(creature, world, dt)
   }

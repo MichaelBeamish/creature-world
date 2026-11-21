@@ -1,6 +1,12 @@
 import { lerp } from '../simulation/math'
 import type { World } from '../simulation/world'
 import { drawCreature } from './drawCreature'
+import { drawPerceptionDebug } from './debugDraw'
+
+export interface SceneOptions {
+  /** Dev-only perception view (`?debug`). */
+  debug?: boolean
+}
 
 /**
  * Draws the whole world for one frame. Reads the world, never mutates it.
@@ -12,6 +18,7 @@ export function drawScene(
   alpha: number,
   width: number,
   height: number,
+  options: SceneOptions = {},
 ): void {
   // Soft "deep water" backdrop: slightly lighter near the surface.
   const water = ctx.createLinearGradient(0, 0, 0, height)
@@ -27,4 +34,6 @@ export function drawScene(
     const y = lerp(creature.prevPosition.y, creature.position.y, alpha)
     drawCreature(ctx, creature, x, y)
   }
+
+  if (options.debug) drawPerceptionDebug(ctx, world, alpha)
 }

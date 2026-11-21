@@ -1,4 +1,5 @@
 import { createAnimation, type CreatureAnimation } from './animation'
+import { createPerception, type Perception } from './perception'
 import { int, range, type Rng } from './rng'
 import { vec2, type Vec2 } from './vec2'
 
@@ -30,6 +31,8 @@ export interface Creature {
   wanderAngle: number
   /** What the creature is doing right now, and for how many more seconds. */
   activity: Activity
+  /** What it notices about the visitor (attention, stimulus, …). */
+  perception: Perception
 }
 
 export interface Activity {
@@ -123,6 +126,7 @@ export function createCreature(
     wanderAngle: range(rng, 0, Math.PI * 2),
     // Start mid-way through a wander period so creatures don't all rest at the same moment.
     activity: { kind: 'wander', timer: range(rng, 2, 15) },
+    perception: createPerception(),
   }
 }
 
