@@ -6,7 +6,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | # | Task | Status |
 |---|---|---|
 | 1 | Project scaffold | done |
-| 2 | Canvas stage + game loop | todo |
+| 2 | Canvas stage + game loop | done |
 | 3 | Simulation core: world, creature, RNG | todo |
 | 4 | Draw a static creature | todo |
 | 5 | Idle animation | todo |
@@ -34,6 +34,9 @@ Vite + Vue 3 + TS (strict), Vitest, ESLint + Prettier, pnpm; folder layout from 
 Full-viewport, DPR-aware canvas; fixed-timestep loop with interpolation alpha; resize handling.
 - **Accept:** a test dot moves smoothly; loop step count is correct for a given elapsed time (unit test).
 - **Verify:** tests + visual check on resize.
+- **Approved spec decisions (2026-11-20):** 60 Hz fixed step with accumulator + render interpolation (alpha);
+  frame delta capped at 250 ms + max steps per frame; DPR-aware canvas via ResizeObserver; loop/stage kept out of
+  Vue reactivity, stopped in `onBeforeUnmount`; temporary `src/app/demoDot.ts` (delete in task #4); no new deps.
 
 ### 3. Simulation core
 `World`, `Creature`, seeded `rng`, `world.step(dt)`; no DOM imports.

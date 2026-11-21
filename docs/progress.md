@@ -2,6 +2,17 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Task #2: Canvas stage + game loop ✅
+- **Done:** `fixedStep.ts` (pure 60 Hz accumulator: steps, carry-over, alpha, 250 ms frame cap, 10-step cap);
+  `gameLoop.ts` (rAF driver, idempotent start/stop); `render/stage.ts` (DPR-aware canvas + ResizeObserver);
+  `WorldCanvas.vue` (template ref, non-reactive loop/stage, cleanup in `onBeforeUnmount`); temporary `demoDot.ts`.
+- **Verified:** 13/13 tests (incl. 30/60/144 FPS → identical 60 steps/s); typecheck, lint, format, build pass;
+  headless Chrome at DPR 2: canvas = viewport, buffer = 2×, no scrollbars, ~60 FPS, no console errors;
+  HMR edits keep a single loop (60 rAF calls/s); owner confirmed smooth motion and clean resizing.
+- **Learned / notes:** "Fix Your Timestep" pattern, spiral-of-death caps, DPR backing store vs CSS size,
+  keeping per-frame objects out of Vue reactivity. Also: GitHub repo created (public) and push rule added to workflow.
+- **Next:** task #3 (simulation core: world, creature, seeded RNG).
+
 ## 2026-11-20 — Task #1: Project scaffold ✅
 - **Done:** Vite 8 + Vue 3.5 + TypeScript 6 (strict) via `create-vite` (demo content removed); Vitest 5; ESLint 10 flat config
   (typescript-eslint, eslint-plugin-vue, eslint-config-prettier); Prettier; pnpm 12.21.0 pinned; Node >=22.12.0.
