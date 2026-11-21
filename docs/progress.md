@@ -2,6 +2,23 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-20 — Task #8: Traits + archetypes + mind ✅
+- **Done:** `traits.ts` (archetype grid → curiosity/boldness ±0.08 + energy; dealt without replacement);
+  `emotion.ts` (utility scores → attack/release levels → dominant emotion with hysteresis; fear reflex on targets);
+  `mind.ts` + `mindState.ts` (`Mind` interface, `ruleMind`: emotion → intent; peek in/out; hide in the farthest
+  corner; calm wander/rest rhythm); steering `arrive`/`seek`/`flee`/`brake`; intent-driven movement with personal
+  speed limits; debug labels `archetype · emotion → intent`; ADR 0004.
+- **Verified:** 123/123 tests — archetype grid (20 cases) at every ±0.08 variation corner, MVP criterion #3
+  (Scaredy ≈ 160 px vs Friendly ≈ 80 px; flick → Grumpy holds < 25 px, Scaredy flees > 60 px), peeking, hiding,
+  hysteresis, fear within one step, 30 s × 3 seeds of chasing/flicking with all invariants. Real mouse via DevTools
+  reproduced the grid. No runtime import cycles. Owner play test: "looking good!".
+- **Bugs caught:** fear reflex lagged (compared smoothed levels); hysteresis blocked mood changes at spawn; Grumpy fled
+  in the browser while tests passed (tests used exact dials — real creatures vary; corner testing found stacked
+  threats overflowing, fixed by capping threat at 1 and flinch 0.25); two import cycles (split `mindState.ts`).
+- **Learned / notes:** utility AI; hysteresis; layered/subsumption architecture for a future LLM mind; test the
+  corners of the input space, not just the typical value; measure before loosening a tolerance.
+- **Next:** task #9 (eyes + emotes: make emotions visible).
+
 ## 2026-11-20 — Task #7: Cursor presence + perception ✅
 - **Done:** `input/pointer.ts` (Pointer Events → latest sample; touch lingers 1 s; injected clock/target);
   `simulation/presence.ts` (visitor as plain data, EMA velocity computed per step); `simulation/perception.ts`

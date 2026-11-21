@@ -3,6 +3,7 @@
  * Reads the world; never mutates it.
  */
 import { lerp } from '../simulation/math'
+import type { EmotionKind } from '../simulation/emotion'
 import { PERCEPTION, type Stimulus } from '../simulation/perception'
 import type { World } from '../simulation/world'
 
@@ -11,6 +12,13 @@ const STIMULUS_COLOR: Record<Stimulus, string> = {
   calm: '#8fe3a8',
   sudden: '#ffd166',
   chasing: '#ff7b7b',
+}
+
+const EMOTION_COLOR: Record<EmotionKind, string> = {
+  content: '#c9d6d8',
+  curious: '#7fd3ff',
+  scared: '#c9a7ff',
+  grumpy: '#ff8a5c',
 }
 
 export function drawPerceptionDebug(
@@ -40,7 +48,9 @@ export function drawPerceptionDebug(
     ctx.globalAlpha = 1
     ctx.fillStyle = color
     const top = y - c.size * 1.6
-    ctx.fillText(p.stimulus, x, top - 14)
+    ctx.fillText(p.stimulus, x, top - 28)
+    ctx.fillStyle = EMOTION_COLOR[c.mind.emotion.kind]
+    ctx.fillText(`${c.archetype} · ${c.mind.emotion.kind} → ${c.mind.intent}`, x, top - 14)
     ctx.fillStyle = '#e8f4f2'
     ctx.fillText(
       `att ${p.attention.toFixed(2)}  trust ${p.trust.toFixed(2)}  press ${p.pressure.toFixed(2)}`,

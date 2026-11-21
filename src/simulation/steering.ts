@@ -105,3 +105,67 @@ export function separate(
   }
   return out
 }
+
+/**
+ * Arrive: steer toward `target`, slowing down inside `slowRadius` and stopping `stopDistance` short of it
+ * (so an approaching creature hovers at a comfortable distance instead of bumping into the cursor).
+ */
+export function arrive(
+  out: Vec2,
+  creature: Creature,
+  target: Vec2,
+  stopDistance: number,
+  slowRadius: number,
+  maxSpeed: number,
+  maxForce: number,
+): Vec2 {
+  const dx = target.x - creature.position.x
+  const dy = target.y - creature.position.y
+  const dist = Math.hypot(dx, dy)
+  const remaining = dist - stopDistance
+  const desiredSpeed =
+    remaining <= 0 || dist === 0 ? 0 : maxSpeed * Math.min(1, remaining / slowRadius)
+  const nx = dist === 0 ? 0 : dx / dist
+  const ny = dist === 0 ? 0 : dy / dist
+  setVec2(out, nx * desiredSpeed - creature.velocity.x, ny * desiredSpeed - creature.velocity.y)
+  return limitLength(out, maxForce)
+}
+
+/** Seek: full speed toward `target` (arrive with no slowing zone or stop distance). */
+export function seek(
+  out: Vec2,
+  creature: Creature,
+  target: Vec2,
+  maxSpeed: number,
+  maxForce: number,
+): Vec2 {
+  return arrive(out, creature, target, 0, 1e-9, maxSpeed, maxForce)
+}
+
+/**
+ * Flee: full speed directly away from `from` while closer than `safeDistance`; no force once safe.
+ * Exactly on top of the threat: flee upward (deterministic).
+ */
+export function flee(
+  out: Vec2,
+  creature: Creature,
+  from: Vec2,
+  safeDistance: number,
+  maxSpeed: number,
+  maxForce: number,
+): Vec2 {
+  const dx = creature.position.x - from.x
+  const dy = creature.position.y - from.y
+  const dist = Math.hypot(dx, dy)
+  if (dist >= safeDistance) return setVec2(out, 0, 0)
+  const nx = dist === 0 ? 0 : dx / dist
+  const ny = dist === 0 ? -1 : dy / dist
+  setVec2(out, nx * maxSpeed - creature.velocity.x, ny * maxSpeed - creature.velocity.y)
+  return limitLength(out, maxForce)
+}
+
+/** Brake: steer toward zero velocity (a creature holding its ground). */
+export function brake(out: Vec2, creature: Creature, maxForce: number): Vec2 {
+  setVec2(out, -creature.velocity.x, -creature.velocity.y)
+  return limitLength(out, maxForce)
+}

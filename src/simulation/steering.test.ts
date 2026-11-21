@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createCreature, footprint, type Creature } from './creature'
 import { createRng } from './rng'
-import { separate, stayInBounds, STEERING, wander } from './steering'
+import { arrive, brake, flee, seek, separate, stayInBounds, STEERING, wander } from './steering'
 import { vec2 } from './vec2'
 
 const BOUNDS = { width: 1000, height: 800 }
@@ -90,5 +90,45 @@ describe('wander', () => {
     for (const f of a.forces) expect(Math.hypot(f.x, f.y)).toBeLessThanOrEqual(25 + 1e-9)
     const start = creatureAt(1, 500, 300).wanderAngle
     expect(a.angle).not.toBe(start)
+  })
+})
+
+describe('arrive / seek / flee / brake', () => {
+  it('arrive heads toward the target and stops short at the stop distance', () => {
+    const c = creatureAt(1, 100, 300)
+    const toward = arrive(vec2(), c, vec2(400, 300), 70, 120, 40, 100)
+    expect(toward.x).toBeGreaterThan(0)
+    const close = creatureAt(1, 340, 300) // 60 px away, inside the 70 px stop distance
+    expect(arrive(vec2(), close, vec2(400, 300), 70, 120, 40, 100)).toEqual({ x: 0, y: 0 })
+  })
+
+  it('arrive slows down inside the slow radius', () => {
+    const far = creatureAt(1, 100, 300)
+    const near = creatureAt(1, 300, 300) // 30 px past the stop distance, inside slow radius
+    const fFar = arrive(vec2(), far, vec2(400, 300), 70, 120, 40, 1000)
+    const fNear = arrive(vec2(), near, vec2(400, 300), 70, 120, 40, 1000)
+    expect(fNear.x).toBeLessThan(fFar.x)
+  })
+
+  it('seek goes straight for the target', () => {
+    const c = creatureAt(1, 100, 100)
+    const f = seek(vec2(), c, vec2(200, 200), 40, 1000)
+    expect(f.x).toBeCloseTo(f.y, 9)
+    expect(f.x).toBeGreaterThan(0)
+  })
+
+  it('flee pushes away while too close and stops once safe', () => {
+    const c = creatureAt(1, 500, 300)
+    const f = flee(vec2(), c, vec2(450, 300), 200, 80, 1000)
+    expect(f.x).toBeGreaterThan(0)
+    expect(flee(vec2(), c, vec2(100, 300), 200, 80, 1000)).toEqual({ x: 0, y: 0 })
+  })
+
+  it('brake opposes the current velocity', () => {
+    const c = creatureAt(1, 500, 300)
+    c.velocity.x = 30
+    c.velocity.y = -10
+    const f = brake(vec2(), c, 1000)
+    expect(f).toEqual({ x: -30, y: 10 })
   })
 })

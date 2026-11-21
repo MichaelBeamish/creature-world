@@ -144,13 +144,7 @@ describe('in the world', () => {
     expect(scripted(5)).toEqual(scripted(5))
   })
 
-  it('does not change behavior yet: creatures move exactly as with no visitor', () => {
-    const withVisitor = scripted(5)
-    const without = createWorld(CONFIG)
-    for (let i = 0; i < Math.round(5 / DT); i++) stepWorld(without, DT)
-    expect(withVisitor.creatures.map((c) => c.position)).toEqual(
-      without.creatures.map((c) => c.position),
-    )
-    expect(withVisitor.creatures.some((c) => c.perception.attention > 0)).toBe(true)
+  it('perceives the scripted visitor (attention rises for creatures it passes)', () => {
+    expect(scripted(5).creatures.some((c) => c.perception.attention > 0)).toBe(true)
   })
 })

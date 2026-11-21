@@ -30,8 +30,8 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
 
 - **World** — size, time, tick, seeded RNG state, creatures (later: presence). `stepWorld` advances one fixed step.
 - **Rng** — mulberry32 PRNG with state stored in the world; the only source of randomness in simulation.
-- **Creature** — id, position, prevPosition (for interpolation), velocity, appearance, `anim`; later traits,
-  attention, current behavior, emote.
+- **Creature** — id, position, prevPosition (for interpolation), velocity, appearance, `anim`, `perception`,
+  `archetype` + `traits`, `mind` (emotion + intent); later emote.
 - **Animation** — `anim` (breath/sway oscillators, blink state machine) is simulation state stepped by
   `stepAnimation`, because behavior will modulate it. Oscillators accumulate phase (`phase += rate·dt`, wrapped),
   so changing a rate never makes motion jump. The renderer maps it to squash/stretch, eyelids, and tentacle sway.
@@ -46,16 +46,21 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
 - **Perception** (`perception.ts`) — per creature, the same for all: `attention` (fast attack / slow release),
   `startle`, `pressure`, `trust`, and the current `stimulus` (sudden > chasing > calm > none). Personality decides
   how a creature *feels* about it (task #8). Dev-only view: `?debug` (`render/debugDraw.ts`).
-- **Mind** (the seam) — `interface Mind { decide(creature, perception, rng): Intent }`.
-  MVP uses `RuleMind` (state machine weighted by traits). A future `LlmMind` can implement the
-  same interface asynchronously, producing intents and speech without touching rendering or steering.
-- **Intent** — a high-level goal (`wander`, `approach`, `flee`, `hide`, `rest`, `emote`) that steering turns into motion.
+- **Personality** (`traits.ts`, ADR 0004) — archetype (Friendly, Peeker, Scaredy, Grumpy) sets the trait dials
+  `curiosity`, `boldness`, `energy` (+ seeded variation); dealt without replacement.
+- **Emotion** (`emotion.ts`) — utility scores from perception × traits → smoothed levels → dominant emotion with
+  hysteresis; fear is a reflex (judged on target scores).
+- **Mind** (the seam, `mind.ts`) — `interface Mind { think(creature, world, dt) }` writes emotion + intent.
+  `ruleMind` runs every step. A future LLM mind sits *above* it (layered): slow high-level goals, while ruleMind
+  keeps the reflexes.
+- **Intent** — `wander`, `rest`, `approach`, `peek`, `flee`, `hide`, `standoff`; `movement.ts` maps each to
+  steering (wander, arrive, flee, brake) with a personal speed limit (energy × intent).
 - **Steering** (`steering.ts`) — Reynolds steering behaviors as pure functions returning desired forces:
   `wander`, `stayInBounds`, `separate` (later: seek, flee, arrive). `movement.ts` blends them with weights, applies
   exponential water drag and a speed limit, and runs the wander/rest `activity` (becomes part of the mind in task #8).
 - **Constraints** (`constraints.ts`) — after integration, a position-based pass separates overlapping footprints
   and clamps footprints into bounds. Steering makes motion natural; constraints guarantee the rules.
-- **Step order** — presence → perception → activity → steering → velocity → position (semi-implicit Euler) → constraints → animation.
+- **Step order** — presence → perception → mind (emotion, intent) → steering → velocity → position (semi-implicit Euler) → constraints → animation.
 
 ## Game loop
 Fixed timestep (e.g. 60 Hz) with an accumulator, so behavior is deterministic and testable regardless of
