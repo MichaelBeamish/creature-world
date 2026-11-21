@@ -2,6 +2,7 @@ import { lerp } from '../simulation/math'
 import type { World } from '../simulation/world'
 import { drawCreature } from './drawCreature'
 import { drawPerceptionDebug } from './debugDraw'
+import { drawEmotes } from './emotes'
 
 export interface SceneOptions {
   /** Dev-only perception view (`?debug`). */
@@ -35,5 +36,6 @@ export function drawScene(
     drawCreature(ctx, creature, x, y)
   }
 
+  drawEmotes(ctx, world, alpha)
   if (options.debug) drawPerceptionDebug(ctx, world, alpha)
 }
