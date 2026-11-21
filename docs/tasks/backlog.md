@@ -20,6 +20,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 10 | Debug overlay | done |
 | 11 | Sound + mute toggle | done |
 | 12 | MVP polish + success-criteria review | done |
+| 17 | Code map + drift check | done |
 | 15 | Sea floor (sand, rocks, shells) | todo |
 | 16 | Bubbles (particle system) | todo |
 
@@ -159,6 +160,22 @@ Background, color tuning, timing tweaks; walk through all MVP success criteria.
   Graph), README for the public repo. (C) MVP review: evidence for all 6 criteria recorded in `progress.md`,
   `mvp.md` marked achieved; criterion #6 informal friend test run by the owner (script provided); touch tap emulated.
   Sea floor and bubbles split out into #15/#16 (owner agreed: keep #12 focused on closing the MVP).
+
+### 17. Code map + drift check
+A "where things are" map so the growing codebase stays navigable and nobody (human or AI) references files, functions
+or constants that don't exist. `docs/architecture/code-map.md`: every folder and file with a one-line purpose and key
+exports, plus a "to change X, edit Y" table of tuning knobs. A unit test fails CI if a file in `src/` is missing from
+the map or the map names a file that doesn't exist. Workflow: "verify before you reference" in `CLAUDE.md` and
+`/plan-task` (specs name exact files/symbols, confirmed in the code); `/verify-task` checks the code map like the README.
+- **Accept:** map covers every `src/` file; drift test fails on an unmapped or stale entry (proven, then reverted);
+  tuning-knob table points at real constants; workflow docs updated; all checks pass.
+- **Verify:** tests + a deliberate drift to see CI-style failure. Plan with `/plan-task 17`.
+- **Approved spec decisions (2026-11-21):** map lists every non-test `src/` file (purpose + key exports) per folder;
+  tests follow the "next to the code" convention; "to change X, edit Y" knob table (~30 rows, incl. private render/audio
+  constants); "common changes" recipes (new archetype, emote, stimulus, knob). `src/codeMap.test.ts` (node fs, no new deps)
+  fails on unmapped/stale files and on knob constants/keys that don't exist. Workflow: code map in CLAUDE.md "Read
+  first" + "verify before you reference" rule; `/plan-task` lists exact files/symbols (confirmed or *new*);
+  `/verify-task` checks the code map with the README; README links the code map.
 
 ### 15. Sea floor (sand, rocks, shells)
 A sandy bottom with seeded rocks and shells (each world different), drawn behind the creatures; the floor becomes the

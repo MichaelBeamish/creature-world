@@ -16,6 +16,8 @@ description: Verify an implemented task against its acceptance criteria, then up
    - Set the task to `done` in `docs/tasks/backlog.md`.
    - Add a dated entry to the top of `docs/progress.md` (what was done, how verified, anything learned).
    - Update `docs/architecture/overview.md` if the structure changed.
+   - **Check `docs/architecture/code-map.md`**: new/renamed/removed files mapped; new or changed tuning constants in
+     the "to change X, edit Y" table; recipes still accurate. (`src/codeMap.test.ts` enforces files and knobs.)
    - **Check `README.md`** (the repo's public front page): does this task change anything it describes — features,
      controls/URL options (`?debug`, `?seed=`, keys), commands, requirements, the architecture summary, links, or the
      status/roadmap? Update it if so; otherwise state "README checked — no change" in the report. Verify any new links resolve.

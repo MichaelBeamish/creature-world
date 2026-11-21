@@ -59,7 +59,8 @@ fixed 60 Hz step: perception → mind (emotion → intent) → expression → st
   so an LLM-guided mind could later sit *above* the fast rule-based reflexes.
 - **Sound** — Web Audio synthesis (no audio files): pentatonic per-creature voices.
 
-Details: [architecture overview](docs/architecture/overview.md) · decisions:
+Details: [architecture overview](docs/architecture/overview.md) (the *why*) ·
+[code map](docs/architecture/code-map.md) (the *where*, and "to change X, edit Y") · decisions:
 [ADR 0001](docs/decisions/0001-vue-as-ui-shell.md) ·
 [0002](docs/decisions/0002-framework-free-simulation.md) ·
 [0003](docs/decisions/0003-canvas-2d-rendering.md) ·

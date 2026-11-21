@@ -12,7 +12,8 @@ Claude leads development, and the owner wants to grow as a developer along the w
 
 ## Read first
 - `docs/product/mvp.md` — what we are building now (and what we are NOT)
-- `docs/architecture/overview.md` — module boundaries and data flow
+- `docs/architecture/overview.md` — module boundaries and data flow (the *why*)
+- `docs/architecture/code-map.md` — every file, what it exports, and "to change X, edit Y" (the *where*)
 - `docs/tasks/backlog.md` — the next task to work on
 - `docs/decisions/` — accepted decisions (ADRs); don't contradict them silently
 
@@ -25,7 +26,11 @@ Claude leads development, and the owner wants to grow as a developer along the w
 6. **Keep docs current.** Update `docs/progress.md` and the backlog when tasks complete; update architecture docs when structure changes.
    **Check `README.md` on every task** (it is the public front page): update features, controls/URL options, commands,
    the architecture summary, and status/roadmap whenever the task changes them; say "README checked — no change" otherwise.
-7. **Prefer simple.** Fewer files, fewer abstractions, no speculative generality — except the deliberate seams named in the architecture doc.
+7. **Verify before you reference.** Before naming a file, function, type or constant (in a spec, code, or docs), look it
+   up in `docs/architecture/code-map.md` **and** confirm it in the code (search/read it). Never rely on memory. New things
+   are marked *new*. When files or tuning constants are added/renamed/removed, update the code map in the same change —
+   `src/codeMap.test.ts` fails CI otherwise.
+8. **Prefer simple.** Fewer files, fewer abstractions, no speculative generality — except the deliberate seams named in the architecture doc.
 
 ## Git workflow (one branch + pull request per task)
 Public repo: MichaelBeamish/creature-world. `main` is protected by a ruleset: changes land only through a PR
