@@ -2,6 +2,30 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #21: Shake → ink ✅
+- **Shake detection:** while held, the hand's *speed jolts* (how sharply its speed changes; smoothed twice, so
+  mouse-event jitter doesn't count) fill a **leaky bucket** of stress with a capped fill rate (only sustained shaking
+  counts; a flick never does). Steady-speed swirls and sweeps score ~0. Limit = base + boldness + boldness × curiosity:
+  normal trackpad shake → Scaredy ≈ 1.0 s, Peeker 1.4 s, Grumpy 1.9 s; Friendly ≈ 2.9 s (patient).
+- **Warning tell** near the limit: tremble (off under reduced motion), darker flush, faster squeaks.
+- **Ink:** *new* `simulation/ink.ts` — a second pooled particle system (72 slots, analytic motion, own random stream),
+  aimed toward the hand like a smoke screen; *new* `render/ink.ts` (deep indigo, owner's choice), ~2× creature-cloud
+  size, 4–6 s. *pfft* = new synth capability: white-noise buffer → downward band-pass sweep (`puffFor`).
+- **Escape:** the hold ends (fresh press needed), a short **jet** above the normal speed limit, `!`, then flee/hide.
+  The **Grumpy** (bold + incurious → `standsItsGround`) instead recoils, squirts again straight at the hand (💢) and
+  glares in a standoff for ~14 s (owner's choice).
+- **Rattled** (*new* `Perception.rattled`, ~30 s, owner's choice): caps trust at 1 − rattled, dampens curiosity
+  (`EMOTION.rattledDamp`) and keeps a Grumpy grumpy (`EMOTION.grudge`). Shown in the debug panel.
+- **Owner feedback → changes:** cloud too small (→ ~2×); too hard to trigger on a trackpad (→ speed-jolt detector,
+  recalibrated on measured hand paths; Friendly unchanged); Grumpy should do more (→ double squirt + grudge).
+  Also found by tests/browser: a single flick inked (→ capped fill rate); trust alone didn't keep a Friendly away
+  (→ curiosity damping); tiny cloud and sluggish escape in the browser (→ bigger cloud, jet).
+- **Verified:** 237 tests (+20): ink pool/motion/aim/determinism; wiggle/swirl/sweep/flick never ink; trackpad and
+  hard-shake timings by archetype; warning; escape, jet, Grumpy double squirt + grudge; rattled trust cap and slower
+  Friendly return; puff design. Scripted shakes in headless Chrome. All five checks pass; code map, overview, README.
+- **Learned:** choose the signal that *separates* the cases (speed jolts vs acceleration) and calibrate from measured
+  inputs; a test that compares float times with `==` can silently skip its assertion.
+
 ## 2026-11-22 — Task #20: Boop + drag with struggle ✅
 - **Boop** (quick click/tap): squash spring + blink + emote by personality (♥ ? ! 💢), timid ones scoot away.
   **Grab** (press and hold, head *or* tentacle — owner's choice): the creature hangs from the grab point on a damped

@@ -8,6 +8,7 @@ import { stepMovement } from './movement'
 import { stepPerception } from './perception'
 import { createPresence, updatePresence, type Presence } from './presence'
 import { createRng, range, type Rng } from './rng'
+import { createInk, stepInk, type InkSystem } from './ink'
 import {
   applyTether,
   createInteraction,
@@ -41,6 +42,8 @@ export interface World {
   bubbles: BubbleSystem
   /** Boop / grab-and-drag state and its sound events (own random stream). */
   interaction: Interaction
+  /** Ink puffs from shaken creatures (fixed pool, own random stream). */
+  ink: InkSystem
 }
 
 export interface WorldConfig {
@@ -72,6 +75,7 @@ export function createWorld(config: WorldConfig): World {
     scenery: createScenery(config.seed),
     bubbles: createBubbles(config.seed),
     interaction: createInteraction(config.seed),
+    ink: createInk(config.seed),
   }
 }
 
@@ -104,6 +108,7 @@ export function stepWorld(world: World, dt: number): void {
   applyTether(world, dt) // the held creature never trails the hand by more than the tether
   resolveConstraints(world, dt)
   stepBubbles(world, dt)
+  stepInk(world)
   for (const creature of world.creatures) {
     stepAnimation(creature.anim, dt, world.rng)
   }

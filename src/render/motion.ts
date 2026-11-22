@@ -21,6 +21,10 @@ export interface MotionSettings {
   bubbleWobble: number
   /** Boop squash-and-wobble multiplier. */
   squash: number
+  /** Tremble before inking (0 = none; the darker flush still warns). */
+  tremble: number
+  /** Ink cloud drift and swirl multiplier. */
+  inkDrift: number
 }
 
 export const FULL_MOTION: MotionSettings = {
@@ -33,6 +37,8 @@ export const FULL_MOTION: MotionSettings = {
   background: 1,
   bubbleWobble: 1,
   squash: 1,
+  tremble: 1,
+  inkDrift: 1,
 }
 
 export const REDUCED_MOTION: MotionSettings = {
@@ -45,6 +51,8 @@ export const REDUCED_MOTION: MotionSettings = {
   background: 0,
   bubbleWobble: 0,
   squash: 0.4,
+  tremble: 0,
+  inkDrift: 0.3,
 }
 
 export function motionSettings(reduced: boolean): MotionSettings {

@@ -25,7 +25,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 16 | Bubbles (particle system) | done |
 | 18 | Tentacle root corner peeks out (small fix) | done |
 | 20 | Boop + drag with struggle | done |
-| 21 | Shake → ink | todo |
+| 21 | Shake → ink | done |
 | 22 | Feeding | todo |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | todo |
@@ -265,6 +265,13 @@ high). Past it: an **ink cloud** bursts (pooled particles, like bubbles), a *pff
 capability), the creature slips free, flees/hides, and its **trust drops** for a while.
 - **Accept:** gentle shaking doesn't ink; hard shaking does, by archetype; ink cloud spreads and fades (bounded pool);
   trust consequence measurable; reduced motion respected; all checks pass.
+- **Approved spec decisions (2026-11-22):** stress = hand *acceleration* above a threshold while held (leaky bucket:
+  decays when calm; smooth sweeps don't count); threshold from boldness/curiosity (≈ Scaredy 1 s < Peeker 1.5 s <
+  Grumpy 2.5 s < Friendly 3.5 s of hard shaking). Warning tell near the limit: tremble + faster squeaks + darker
+  flush (reduced motion: no tremble). Ink: **deep indigo smoke** (owner), *new* `simulation/ink.ts` pooled puffs with
+  analytic motion, own random stream, ~4 s; *new* `render/ink.ts` drawn after creatures, before bubbles. Escape:
+  hold ends (fresh press needed), startle + dash, `!` emote. *New* `Perception.rattled` (**~30 s**, owner) caps trust
+  at 1 − rattled. *pfft* = new synth noise burst (`puff()`, `puffFor`), only when unmuted. `rattled` in debug panel.
 
 ### 22. Feeding
 Click empty water to drop a food pellet that slowly sinks. Curious creatures race for it, timid ones wait until the

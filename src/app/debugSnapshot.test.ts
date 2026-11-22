@@ -27,6 +27,7 @@ describe('createDebugSnapshot', () => {
         energy: c.traits.energy,
         attention: c.perception.attention,
         trust: c.perception.trust,
+        rattled: c.perception.rattled,
       })
     })
   })

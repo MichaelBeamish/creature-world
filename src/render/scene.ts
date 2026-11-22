@@ -1,4 +1,5 @@
 import { lerp } from '../simulation/math'
+import { stressFraction } from '../simulation/interaction'
 import type { World } from '../simulation/world'
 import { drawBackground, drawVignette } from './background'
 import { drawBubbles } from './bubbles'
@@ -6,6 +7,7 @@ import { drawCreature } from './drawCreature'
 import { drawPerceptionDebug } from './debugDraw'
 import { drawEmotes } from './emotes'
 import { drawFloor } from './floor'
+import { drawInk } from './ink'
 import { FULL_MOTION, type MotionSettings } from './motion'
 
 export interface SceneOptions {
@@ -41,11 +43,16 @@ export function drawScene(
     const y = lerp(creature.prevPosition.y, creature.position.y, alpha)
     const held =
       hold?.creatureId === creature.id
-        ? { hand: { x: hand.x - x, y: hand.y - y }, part: hold.part }
+        ? {
+            hand: { x: hand.x - x, y: hand.y - y },
+            part: hold.part,
+            stress: stressFraction(world, creature),
+          }
         : null
     drawCreature(ctx, creature, x, y, motion, held)
   }
 
+  drawInk(ctx, world, motion) // in front of the creatures: a smoke screen
   drawBubbles(ctx, world, motion)
   drawEmotes(ctx, world, alpha, motion)
   drawVignette(ctx, width, height)

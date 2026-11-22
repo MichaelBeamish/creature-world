@@ -48,6 +48,7 @@ const fpsClass = (fps: number) => (fps >= 55 ? 'good' : fps >= 40 ? 'ok' : 'bad'
           <th>energy</th>
           <th>attention</th>
           <th>trust</th>
+          <th>rattled</th>
         </tr>
       </thead>
       <tbody>
@@ -58,7 +59,10 @@ const fpsClass = (fps: number) => (fps >= 55 ? 'good' : fps >= 40 ? 'ok' : 'bad'
             <span :class="['emotion', c.emotion]">{{ c.emotion }}</span> → {{ c.intent }}
           </td>
           <td class="muted">{{ c.stimulus }}</td>
-          <td v-for="(v, i) in [c.curiosity, c.boldness, c.energy, c.attention, c.trust]" :key="i">
+          <td
+            v-for="(v, i) in [c.curiosity, c.boldness, c.energy, c.attention, c.trust, c.rattled]"
+            :key="i"
+          >
             <span class="bar"><span :style="{ width: pct(v) }"></span></span>
           </td>
         </tr>

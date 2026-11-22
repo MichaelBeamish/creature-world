@@ -72,6 +72,9 @@ describe('held creatures shove at a limited speed', () => {
       since: 0,
       pullAngle: 0,
       squeakTimer: 1,
+      handSpeed: 0,
+      shake: 0,
+      stress: 0,
     }
   }
 

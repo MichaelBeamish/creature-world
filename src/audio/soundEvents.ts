@@ -10,7 +10,8 @@ import type { VoiceKind } from './voice'
 
 export interface SoundEvent {
   creature: Creature
-  kind: VoiceKind
+  /** A chirp, or the ink puff. */
+  kind: VoiceKind | 'ink'
 }
 
 /** Returns a function that reports each emote and interaction sound exactly once (each is a new object). */

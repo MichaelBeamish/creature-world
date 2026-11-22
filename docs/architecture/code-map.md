@@ -30,9 +30,9 @@
 | `src/simulation/creature.ts` | Creature data, body proportions, spawn footprint, seeded spawning | `Creature`, `BODY`, `CREATURE_LIMITS`, `footprint`, `createCreature` |
 | `src/simulation/traits.ts` | Personality: archetypes on trait dials, dealt without replacement | `Archetype`, `ARCHETYPES`, `dealArchetypes`, `createTraits` |
 | `src/simulation/presence.ts` | The visitor (cursor/finger) as data; smoothed velocity; press/release edges | `Presence`, `setPresenceInput`, `updatePresence` |
-| `src/simulation/interaction.ts` | Boop and grab-and-drag: hit-testing (head + tentacle zone), boop-vs-hold, the held spring + rhythmic pull + wriggle, tether with a top speed, interaction sound events (own random stream) | `INTERACTION`, `Interaction`, `creatureAt`, `stepInteraction`, `heldForce`, `pullOffset`, `applyTether`, `struggleLevel`, `isHeld` |
-| `src/simulation/perception.ts` | What a creature notices: attention, trust, pressure, startle → stimulus | `Perception`, `Stimulus`, `PERCEPTION`, `stepPerception` |
-| `src/simulation/emotion.ts` | Utility-scored emotions, smoothing, hysteresis, fear reflex | `EmotionKind`, `EMOTION`, `scoreEmotions`, `stepEmotion` |
+| `src/simulation/interaction.ts` | Boop and grab-and-drag: hit-testing (head + tentacle zone), boop-vs-hold, the held spring + rhythmic pull + wriggle, tether with a top speed, shake stress → ink escape, interaction sound events (own random stream) | `INTERACTION`, `Interaction`, `creatureAt`, `stepInteraction`, `heldForce`, `pullOffset`, `applyTether`, `struggleLevel`, `stressLimit`, `stressFraction`, `standsItsGround`, `jetLimit`, `isHeld` |
+| `src/simulation/perception.ts` | What a creature notices: attention, trust, pressure, startle → stimulus; `rattled` (after inking) caps trust | `Perception`, `Stimulus`, `PERCEPTION`, `stepPerception` |
+| `src/simulation/emotion.ts` | Utility-scored emotions, smoothing, hysteresis, fear reflex; being rattled dampens curiosity (and keeps a Grumpy grumpy) | `EmotionKind`, `EMOTION`, `scoreEmotions`, `stepEmotion` |
 | `src/simulation/mindState.ts` | The mind's state as data (split out to avoid an import cycle) | `IntentKind`, `MindState`, `createMindState` |
 | `src/simulation/mind.ts` | `Mind` interface + `ruleMind`: emotion → intent; calm wander/rest rhythm | `Mind`, `MIND`, `ruleMind`, `stepActivity` |
 | `src/simulation/expression.ts` | Gaze, emote events, mood-scaled animation speed | `Expression`, `EmoteKind`, `EXPRESSION`, `stepExpression`, `showEmote` |
@@ -40,6 +40,7 @@
 | `src/simulation/steering.ts` | Reynolds steering behaviors as pure force functions | `STEERING`, `wander`, `stayInBounds`, `separate`, `arrive`, `seek`, `flee`, `brake` |
 | `src/simulation/constraints.ts` | Position-based pass: no overlaps, stay in bounds; a held creature shoves others at a limited speed (else it is blocked) | `CONSTRAINTS`, `resolveConstraints` |
 | `src/simulation/scenery.ts` | Sea floor: sand height, the swimmable area, seeded rocks/shells/seaweed (own random stream) | `SceneryItem`, `FLOOR`, `SCENERY`, `floorHeight`, `swimBounds`, `createScenery` |
+| `src/simulation/ink.ts` | Ink clouds: fixed 72-slot pool of puffs with analytic motion, squirted when a shaken creature inks (own random stream) | `INK`, `InkSystem`, `createInk`, `spawnInk`, `stepInk`, `inkPuffAt` |
 | `src/simulation/bubbles.ts` | Bubble particles: fixed 64-slot pool, analytic motion, spawned on flee/hide/standoff (own random stream) | `BUBBLES`, `BubbleSystem`, `createBubbles`, `stepBubbles`, `bubbleAt` |
 | `src/simulation/animation.ts` | Breathing/sway oscillators, the blink state machine, the boop squash spring | `CreatureAnimation`, `ANIMATION`, `stepAnimation` |
 | `src/simulation/rng.ts` | Seeded PRNG (mulberry32) — the only randomness in the simulation | `Rng`, `createRng`, `next`, `range`, `int`, `pick` |
@@ -50,10 +51,11 @@
 
 | File | Purpose | Key exports |
 |---|---|---|
-| `src/render/scene.ts` | Draws one frame: background → floor → creatures (back to front) → bubbles → emotes → vignette → debug | `drawScene`, `SceneOptions` |
+| `src/render/scene.ts` | Draws one frame: background → floor → creatures (back to front) → ink → bubbles → emotes → vignette → debug | `drawScene`, `SceneOptions` |
 | `src/render/floor.ts` | "Moonlit reef" sea floor: sand, mossy rocks, glowing shells, swaying seaweed | `drawFloor` |
 | `src/render/drawCreature.ts` | The "little octopus": body, fur, tentacles, eyes, mood body language; squash, dangling and the grabbed tentacle | `drawCreature`, `HeldPose`, `mantleRadii`, `tentacleRoot`, `tentacleOutline`, `grabbedTentacle`, `TENTACLE_ROOT` |
 | `src/render/bubbles.ts` | Draws live bubbles (rim + highlight) and their pop rings | `drawBubbles` |
+| `src/render/ink.ts` | Draws ink clouds: soft deep-indigo radial-gradient puffs | `drawInk` |
 | `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade | `drawEmotes` |
 | `src/render/background.ts` | Water, caustics, floating motes (pure function of time), vignette | `drawBackground`, `drawVignette`, `motePosition` |
 | `src/render/motion.ts` | Decorative-motion settings (full vs reduced motion) | `MotionSettings`, `FULL_MOTION`, `REDUCED_MOTION`, `motionSettings` |
@@ -71,9 +73,9 @@
 
 | File | Purpose | Key exports |
 |---|---|---|
-| `src/audio/voice.ts` | Pure voice design: pitch/timbre/contour per creature and emote or interaction sound | `chirpFor`, `panFor`, `pentatonicHz`, `ChirpSpec`, `VoiceKind` |
+| `src/audio/voice.ts` | Pure voice design: pitch/timbre/contour per creature and emote or interaction sound; the ink puff | `chirpFor`, `puffFor`, `panFor`, `pentatonicHz`, `ChirpSpec`, `PuffSpec`, `VoiceKind` |
 | `src/audio/soundEvents.ts` | Detects each new emote and interaction sound exactly once | `createEmoteWatcher` |
-| `src/audio/synth.ts` | Plays chirp specs (oscillator → filter → envelope → pan → master) | `createSynth`, `Synth` |
+| `src/audio/synth.ts` | Plays chirp specs (oscillator → filter → envelope → pan → master) and noise puffs (white-noise buffer → sweeping band-pass) | `createSynth`, `Synth` |
 
 ### `src/app/` — Vue shell, game loop, wiring
 
@@ -85,7 +87,7 @@
 | `src/app/fixedStep.ts` | Pure fixed-timestep accumulator (steps + interpolation alpha) | `advanceFixedStep`, `DEFAULT_FIXED_STEP` |
 | `src/app/seed.ts` | `?seed=` from the URL, or a random seed per visit | `resolveSeed` |
 | `src/app/fpsMeter.ts` | Rolling FPS and frame work time | `createFpsMeter`, `FrameStats` |
-| `src/app/debugSnapshot.ts` | World → plain snapshot for the debug panel; 5 Hz publisher | `createDebugSnapshot`, `createPublisher` |
+| `src/app/debugSnapshot.ts` | World → plain snapshot for the debug panel (incl. `rattled`); 5 Hz publisher | `createDebugSnapshot`, `createPublisher` |
 | `src/app/reducedMotion.ts` | Live watcher for the OS "reduce motion" setting | `watchReducedMotion` |
 | `src/app/DebugPanel.vue` | Display-only debug panel (press D / `?debug`) | — |
 | `src/app/MuteToggle.vue` | Accessible sound on/off button (starts muted) | — |
@@ -106,10 +108,13 @@
 | What counts as a calm presence | `PERCEPTION.calmSpeed` | `src/simulation/perception.ts` |
 | How fast trust builds | `PERCEPTION.trustBuild` | `src/simulation/perception.ts` |
 | How fast chasing pressure builds | `PERCEPTION.pressureBuild` | `src/simulation/perception.ts` |
+| How long a creature stays rattled after inking | `PERCEPTION.rattledFade` | `src/simulation/perception.ts` |
 | **Emotion & mind** | | |
 | How quickly a Scaredy relaxes (wariness) | `EMOTION.wariness` | `src/simulation/emotion.ts` |
 | How strongly everyone flinches at a flick | `EMOTION.flinch` | `src/simulation/emotion.ts` |
 | How "sticky" moods are (anti-flicker) | `EMOTION.minHold` | `src/simulation/emotion.ts` |
+| How much being rattled dampens curiosity | `EMOTION.rattledDamp` | `src/simulation/emotion.ts` |
+| How long a Grumpy holds a grudge after inking | `EMOTION.grudge` | `src/simulation/emotion.ts` |
 | When a timid creature hides instead of fleeing | `MIND.hideThreshold` | `src/simulation/mind.ts` |
 | How close a Peeker creeps before darting back | `MIND.peekNear` | `src/simulation/mind.ts` |
 | How long creatures wander / rest when calm | `MIND.wanderDuration` | `src/simulation/mind.ts` |
@@ -143,6 +148,18 @@
 | Trickle rate while darting | `BUBBLES.trickleEvery` | `src/simulation/bubbles.ts` |
 | How fast bubbles rise | `BUBBLES.riseSpeed` | `src/simulation/bubbles.ts` |
 | Max bubbles alive at once (pool size) | `BUBBLES.capacity` | `src/simulation/bubbles.ts` |
+| **Shake → ink** | | |
+| What counts as shaking (hand speed jolts, px/s²) | `INTERACTION.shakeAccel` | `src/simulation/interaction.ts` |
+| How fast stress drains when you stop | `INTERACTION.stressLeak` | `src/simulation/interaction.ts` |
+| How much shaking each personality puts up with | `INTERACTION.stressLimit` | `src/simulation/interaction.ts` |
+| When the warning (tremble, faster squeaks) starts | `INTERACTION.stressWarning` | `src/simulation/interaction.ts` |
+| How fast (and how long) it jets away after inking | `INTERACTION.jetSpeed` | `src/simulation/interaction.ts` |
+| The Grumpy's second squirt (delay, aim) | `INTERACTION.followUpDelay` | `src/simulation/interaction.ts` |
+| How dark / how much it trembles before inking | `MOOD.tremble` | `src/render/drawCreature.ts` |
+| Puffs per squirt / pool size | `INK.burst` | `src/simulation/ink.ts` |
+| How long the ink cloud lasts | `INK.life` | `src/simulation/ink.ts` |
+| How far the ink spreads | `INK.spread` | `src/simulation/ink.ts` |
+| The ink "pfft" sound | `puffFor` | `src/audio/voice.ts` |
 | **Scene** | | |
 | Number of floating motes | `MOTE_COUNT` | `src/render/background.ts` |
 | Number of light patches (caustics) | `CAUSTIC_COUNT` | `src/render/background.ts` |

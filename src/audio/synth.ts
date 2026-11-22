@@ -1,18 +1,21 @@
 /**
- * A tiny Web Audio synthesizer that plays `ChirpSpec`s.
+ * A tiny Web Audio synthesizer that plays `ChirpSpec`s and `PuffSpec`s.
  *
  * Signal chain per note: oscillator (+ optional vibrato LFO) → low-pass filter → gain envelope
  * → stereo panner → master volume → speakers. No audio files: every chirp is generated live.
+ * Puffs (the ink "pfft"): a white-noise buffer (generated once) → band-pass sweeping down → envelope → panner.
  *
  * Autoplay policy: browsers only allow sound after a user gesture, so the AudioContext is created
  * lazily — on the first unmute click — and not a moment earlier.
  */
-import type { ChirpSpec } from './voice'
+import type { ChirpSpec, PuffSpec } from './voice'
 
 export interface Synth {
   /** Must be called from a user gesture (click/tap/key) the first time it unmutes. */
   setMuted(muted: boolean): void
   play(spec: ChirpSpec, pan: number): void
+  /** A noise burst (the ink "pfft"). */
+  puff(spec: PuffSpec, pan: number): void
   close(): void
 }
 
@@ -27,6 +30,8 @@ export function createSynth(): Synth {
   let master: GainNode | null = null
   let muted = true
   let voices = 0
+  /** One second of white noise, made once and replayed (sliced) by every puff. */
+  let noise: AudioBuffer | null = null
 
   function ensureStarted(): void {
     if (ctx) return
@@ -95,6 +100,42 @@ export function createSynth(): Synth {
             voices--
           }
         }
+      }
+    },
+
+    puff(spec, pan) {
+      if (muted || !ctx || !master || voices >= MAX_VOICES) return
+      if (!noise) {
+        noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate)
+        const data = noise.getChannelData(0)
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+      }
+      const now = ctx.currentTime
+      const end = now + spec.duration
+      const source = ctx.createBufferSource()
+      source.buffer = noise
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.Q.value = spec.q
+      filter.frequency.setValueAtTime(spec.startHz, now)
+      filter.frequency.exponentialRampToValueAtTime(spec.endHz, end)
+      const env = ctx.createGain()
+      env.gain.setValueAtTime(0, now)
+      env.gain.linearRampToValueAtTime(spec.volume, now + ATTACK)
+      env.gain.exponentialRampToValueAtTime(0.0001, end)
+      const panner = ctx.createStereoPanner()
+      panner.pan.value = pan
+      source.connect(filter).connect(env).connect(panner).connect(master)
+
+      voices++
+      source.start(now)
+      source.stop(end + 0.02)
+      source.onended = () => {
+        source.disconnect()
+        filter.disconnect()
+        env.disconnect()
+        panner.disconnect()
+        voices--
       }
     },
 

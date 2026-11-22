@@ -1,4 +1,5 @@
 import { BODY, type Creature } from '../simulation/creature'
+import { INTERACTION } from '../simulation/interaction'
 import { MOVEMENT } from '../simulation/movement'
 import { FULL_MOTION, type MotionSettings } from './motion'
 import { hash2 } from './noise'
@@ -14,6 +15,8 @@ import { hash2 } from './noise'
 export interface HeldPose {
   hand: { x: number; y: number }
   part: 'head' | 'tentacle'
+  /** 0..1 — how close it is to inking (task #21): past the warning level it trembles and flushes darker. */
+  stress: number
 }
 
 export function drawCreature(
@@ -44,7 +47,11 @@ export function drawCreature(
   // Grumpy flushes toward red; scared goes pale.
   const hue = mixHue(creature.hue, 2, grumpy * MOOD.flush)
   const sat = (base: number) => base + 20 * grumpy - 15 * scared
-  const light = (base: number) => base - 6 * grumpy + 6 * scared
+  // Warning tell before inking: darker as stress nears the limit.
+  const warning = held
+    ? Math.max(0, held.stress - INTERACTION.stressWarning) / (1 - INTERACTION.stressWarning)
+    : 0
+  const light = (base: number) => base - 6 * grumpy + 6 * scared - MOOD.stressDarken * warning
   const colors = {
     tentacle: `hsl(${hue} ${sat(40)}% ${light(60)}%)`,
     fuzz: `hsl(${hue} ${sat(42)}% ${light(64)}%)`,
@@ -56,7 +63,12 @@ export function drawCreature(
   // Everything below is drawn in this local frame, with the mantle center at (0, 0).
   const leanAmount = Math.max(-1, Math.min(1, velocity.x / MOVEMENT.baseSpeed))
   ctx.save()
-  ctx.translate(screenX, screenY)
+  // Tremble (warning tell): a fast, small jitter from the breathing phase (deterministic, no randomness).
+  const tremble = size * MOOD.tremble * warning * motion.tremble
+  ctx.translate(
+    screenX + tremble * Math.sin(anim.breathPhase * 41),
+    screenY + tremble * 0.6 * Math.sin(anim.breathPhase * 53),
+  )
   const lean = leanAmount * MOTION.maxLean * motion.lean
   ctx.rotate(lean)
   const x = 0
@@ -139,6 +151,10 @@ const MOOD = {
   puff: 0.12,
   shrink: 0.06,
   stretch: 0.1,
+  /** Warning tell before inking (past `INTERACTION.stressWarning`): darken by up to this much lightness (%),
+   *  tremble by up to this fraction of the size. */
+  stressDarken: 14,
+  tremble: 0.07,
   /** Boop squash at full squash: this much wider / flatter. */
   squashWide: 0.3,
   squashFlat: 0.25,

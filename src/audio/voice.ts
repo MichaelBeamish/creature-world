@@ -16,8 +16,8 @@ import { hash2 } from '../render/noise'
 
 export type Waveform = 'sine' | 'triangle' | 'square' | 'sawtooth'
 
-/** Everything a creature can voice: emotes and interaction sounds. */
-export type VoiceKind = EmoteKind | InteractionSoundKind
+/** Everything a creature *chirps*: emotes and interaction sounds (ink is a noise puff instead: `puffFor`). */
+export type VoiceKind = EmoteKind | Exclude<InteractionSoundKind, 'ink'>
 
 export interface ChirpNote {
   /** Seconds after the chirp starts. */
@@ -165,6 +165,34 @@ export function chirpFor(creature: Creature, emote: VoiceKind): ChirpSpec {
     vibratoDepth,
     filterHz: timbre.filterHz,
     volume: timbre.volume,
+  }
+}
+
+/** A filtered-noise burst — the ink "pfft". Plain description; `synth.ts` plays it. */
+export interface PuffSpec {
+  /** Seconds. */
+  duration: number
+  /** Band-pass centre sweeps from start to end (Hz): a falling "pfff". */
+  startHz: number
+  endHz: number
+  /** Band-pass resonance: higher = more pitched, lower = more breathy. */
+  q: number
+  /** Relative loudness 0..1 (before the master volume). */
+  volume: number
+}
+
+/** The ink puff: smaller creatures puff higher, a Grumpy's is lower and rougher. Pure and deterministic. */
+export function puffFor(creature: Creature): PuffSpec {
+  const { minSize, maxSize } = CREATURE_LIMITS
+  const smallness = 1 - (creature.size - minSize) / (maxSize - minSize) // 0 (big) .. 1 (small)
+  const grumpy = creature.archetype === 'grumpy'
+  const start = (1400 + 900 * smallness) * (grumpy ? 0.7 : 1) * detune(creature)
+  return {
+    duration: 0.38 + hash2(creature.id, 902) * 0.08,
+    startHz: start,
+    endHz: start * 0.25,
+    q: grumpy ? 0.6 : 1.1,
+    volume: 0.55,
   }
 }
 

@@ -19,6 +19,8 @@ export interface Perception {
   pressure: number
   /** 0..1 — jumps to 1 on a sudden fast movement nearby, then fades. */
   startle: number
+  /** 0..1 — set to 1 when shaken until it inked (task #21), fades slowly; trust can't rise above 1 − rattled. */
+  rattled: number
   stimulus: Stimulus
   /** Distance to the visitor (px); Infinity when absent. */
   distance: number
@@ -46,13 +48,23 @@ export const PERCEPTION = {
   /** Seconds for trust to build from 0 to 1 / fade from 1 to 0. */
   trustBuild: 4,
   trustFade: 8,
+  /** Seconds for being rattled (after inking) to fade from 1 to 0. */
+  rattledFade: 30,
   /** Thresholds for classifying the current stimulus. */
   startleThreshold: 0.3,
   pressureThreshold: 0.5,
 } as const
 
 export function createPerception(): Perception {
-  return { attention: 0, trust: 0, pressure: 0, startle: 0, stimulus: 'none', distance: Infinity }
+  return {
+    attention: 0,
+    trust: 0,
+    pressure: 0,
+    startle: 0,
+    rattled: 0,
+    stimulus: 'none',
+    distance: Infinity,
+  }
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
@@ -105,6 +117,9 @@ export function stepPerception(
   // Calm presence: nearby and slow → trust builds slowly.
   const calm = inRange && speed < P.calmSpeed
   perception.trust = clamp01(perception.trust + (calm ? dt / P.trustBuild : -dt / P.trustFade))
+  // A rattled creature (it inked) remembers: trust can't fully rebuild until that fades.
+  perception.rattled = Math.max(0, perception.rattled - dt / P.rattledFade)
+  perception.trust = Math.min(perception.trust, 1 - perception.rattled)
 
   perception.stimulus =
     perception.startle > P.startleThreshold
