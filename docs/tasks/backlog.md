@@ -32,6 +32,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 30 | Dress-up + inventory pages | done |
 | 31 | Glow sticks | dropped |
 | 33 | Held items: kandi cuffs + things to hold | done |
+| 34 | Chest navigation: ‹ › arrows + page dots | done |
 | 32 | Party: disco ball + club lights + music | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
@@ -405,6 +406,14 @@ drop on / press to take off, 3 of each, fallen items return to the chest; on the
   to the side; 8 items) and `cuffs` (kandi on a few tentacles; **its own spot**, so cuffs + a glow stick combine).
   `drawTentacles` returns its curves; held items sit at the raised tip, rotated to its tangent. Bubble pipe: a
   *new* `releaseBubble` in `bubbles.ts`, every ~1.2–2 s while held. Balloon floats above on a lagging string.
+
+### 34. Chest navigation: ‹ › arrows + page dots — owner request 2026-11-22 — done
+With 10 pages, the one-way ↻ circle takes forever to reach the end. Replace it with two side-by-side circles, **‹**
+(previous) and **›** (next), both wrapping; make the **page dots pressable** to jump straight to a page.
+- **Accept:** ‹ › page both ways and wrap; a dot jumps to its page (items pop in); misses between dots do nothing;
+  arrows and dots count as the chest (an item dropped there goes back in); all checks pass.
+- **Approved spec (owner, 2026-11-22):** `slotAt` returns 'prev' / 'next'; *new* `pageDotAt`, `goToPage`,
+  `arrowPosition`, `pageDotPosition`; `turnPage(world, step)`; bigger dots (r 4, gap 14) with a forgiving hit area.
 
 ### 32. Party: disco ball + club lights + music
 The disco ball and club lights come out together: the pool dims, the disco ball throws moving spots of light, colored

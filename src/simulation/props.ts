@@ -145,10 +145,17 @@ export function pageItems(world: World): readonly PropKind[] {
   return CHEST_PAGES[world.props.chest.page % CHEST_PAGES.length]!
 }
 
-/** Turn the chest to its next page (wrapping round). */
-export function turnPage(world: World): void {
+/** Turn the chest's page: +1 next, −1 previous (wrapping round at both ends). */
+export function turnPage(world: World, step = 1): void {
+  const n = CHEST_PAGES.length
+  goToPage(world, (((world.props.chest.page + step) % n) + n) % n)
+}
+
+/** Jump straight to page `page` (0-based) — a page dot. */
+export function goToPage(world: World, page: number): void {
   const chest = world.props.chest
-  chest.page = (chest.page + 1) % CHEST_PAGES.length
+  if (chest.page === page) return
+  chest.page = page
   chest.pageChangedAt = world.time
 }
 
@@ -163,6 +170,14 @@ export const CHEST = {
    *  window's left edge); a circle's grab radius (px). */
   slotDistance: 100,
   slotRadius: 24,
+  /** The ‹ › page arrows, side by side where the 4th circle would be: radius and offset (px) from that spot. */
+  arrowRadius: 16,
+  arrowGap: 18,
+  /** Page dots: this far (px) below the arrows, spaced `dotGap` apart; drawn `dotRadius`, pressable within `dotHit`. */
+  dotsBelow: 30,
+  dotGap: 14,
+  dotRadius: 4,
+  dotHit: 7,
 } as const
 
 export const PROPS = {
@@ -269,15 +284,43 @@ export function countOf(world: World, kind: PropKind): number {
   return world.props.items.filter((p) => p.kind === kind).length
 }
 
-/** The item whose slot is under (x, y) while the chest is open, or null. */
-export function slotAt(world: World, x: number, y: number): PropKind | 'next' | null {
+/** Where the ‹ (previous) and › (next) page arrows float (px), side by side in the last circle's place. */
+export function arrowPosition(world: World, which: 'prev' | 'next'): Vec2 {
+  const s = slotPosition(world, SLOT_COUNT - 1)
+  return { x: s.x + (which === 'prev' ? -CHEST.arrowGap : CHEST.arrowGap), y: s.y }
+}
+
+/** Where page dot `page` sits (px): a row under the arrows, starting below the ‹ one. */
+export function pageDotPosition(world: World, page: number): Vec2 {
+  const s = slotPosition(world, SLOT_COUNT - 1)
+  return {
+    // Left-aligned under the ‹ arrow (centered, a long row would run into the chest).
+    x: s.x - CHEST.arrowGap - CHEST.arrowRadius + CHEST.dotRadius + page * CHEST.dotGap,
+    y: s.y + CHEST.dotsBelow,
+  }
+}
+
+/** The item (or ‹ › arrow) under (x, y) while the chest is open, or null. */
+export function slotAt(world: World, x: number, y: number): PropKind | 'prev' | 'next' | null {
   if (!world.props.chest.open) return null
   const items = pageItems(world)
-  for (let i = 0; i < SLOT_COUNT; i++) {
+  for (let i = 0; i < SLOT_COUNT - 1; i++) {
     const s = slotPosition(world, i)
-    if (Math.hypot(x - s.x, y - s.y) > CHEST.slotRadius) continue
-    if (i === SLOT_COUNT - 1) return 'next'
-    return items[i] ?? null
+    if (Math.hypot(x - s.x, y - s.y) <= CHEST.slotRadius) return items[i] ?? null
+  }
+  for (const which of ['prev', 'next'] as const) {
+    const a = arrowPosition(world, which)
+    if (Math.hypot(x - a.x, y - a.y) <= CHEST.arrowRadius) return which
+  }
+  return null
+}
+
+/** The page dot under (x, y) while the chest is open (its page, 0-based), or null. */
+export function pageDotAt(world: World, x: number, y: number): number | null {
+  if (!world.props.chest.open) return null
+  for (let i = 0; i < CHEST_PAGES.length; i++) {
+    const d = pageDotPosition(world, i)
+    if (Math.hypot(x - d.x, y - d.y) <= CHEST.dotHit) return i
   }
   return null
 }
@@ -288,7 +331,7 @@ export function overChest(world: World, x: number, y: number): boolean {
   const pad = 8
   if (x >= b.x - pad && x <= b.x + b.width + pad && y >= b.y - pad && y <= b.y + b.height + pad)
     return true
-  return slotAt(world, x, y) !== null
+  return slotAt(world, x, y) !== null || pageDotAt(world, x, y) !== null
 }
 
 /** Drop an item into the pool at (x, y): it sinks from there (or lies on the sand if dropped on the sand). */

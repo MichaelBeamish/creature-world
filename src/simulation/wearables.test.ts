@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { setPresenceInput } from './presence'
 import {
+  arrowPosition,
   canTake,
+  CHEST,
   CHEST_PAGES,
   chestBox,
   countOf,
   dropProp,
   outCount,
+  pageDotAt,
+  pageDotPosition,
   pageItems,
   PROPS,
   slotAt,
@@ -53,21 +57,55 @@ function dragTo(w: World, from: { x: number; y: number }, to: { x: number; y: nu
 }
 
 describe('chest pages', () => {
-  it('the ↻ circle turns to the next page, wrapping round', () => {
+  /** Press and release at a point. */
+  const tap = (w: World, at: { x: number; y: number }) =>
+    hand(w, [
+      [at.x, at.y, false],
+      [at.x, at.y, true],
+      [at.x, at.y, false],
+    ])
+
+  it('› turns to the next page and ‹ to the previous one, wrapping round at both ends', () => {
     const w = make([])
     toggleChest(w)
-    expect(pageItems(w)).toEqual(['shrimp', 'duck', 'ball'])
-    const next = slotPosition(w, SLOT_COUNT - 1)
+    const next = arrowPosition(w, 'next')
+    const prev = arrowPosition(w, 'prev')
     expect(slotAt(w, next.x, next.y)).toBe('next')
+    expect(slotAt(w, prev.x, prev.y)).toBe('prev')
     for (let i = 1; i <= CHEST_PAGES.length; i++) {
-      hand(w, [
-        [next.x, next.y, false],
-        [next.x, next.y, true],
-        [next.x, next.y, false],
-      ])
+      tap(w, next)
       expect(w.props.chest.page).toBe(i % CHEST_PAGES.length)
     }
     expect(pageItems(w)).toEqual(['shrimp', 'duck', 'ball']) // back to the start
+    tap(w, prev)
+    expect(w.props.chest.page).toBe(CHEST_PAGES.length - 1) // ‹ on the first page: the last page
+    tap(w, prev)
+    expect(w.props.chest.page).toBe(CHEST_PAGES.length - 2)
+  })
+
+  it('pressing a page dot jumps straight to that page', () => {
+    const w = make([])
+    toggleChest(w)
+    const last = CHEST_PAGES.length - 1
+    tap(w, pageDotPosition(w, last))
+    expect(w.props.chest.page).toBe(last)
+    expect(w.props.chest.pageChangedAt).toBeGreaterThan(0) // the new items pop in
+    tap(w, pageDotPosition(w, 3))
+    expect(w.props.chest.page).toBe(3)
+    // Between two dots (outside both hit circles) or with the chest closed: nothing.
+    const a = pageDotPosition(w, 5)
+    expect(pageDotAt(w, a.x, a.y + CHEST.dotHit + 2)).toBeNull()
+    toggleChest(w)
+    expect(pageDotAt(w, a.x, a.y)).toBeNull()
+  })
+
+  it('the arrows and dots are part of the chest: a carried item dropped there goes back in', () => {
+    const w = make([])
+    toggleChest(w)
+    const shrimp = slotPosition(w, 0)
+    dragTo(w, shrimp, pageDotPosition(w, 2))
+    expect(w.interaction.carry).toBeNull()
+    expect(countOf(w, 'shrimp')).toBe(0)
   })
 
   it('every page shows at most 3 items, and every item is on exactly one page', () => {

@@ -8,7 +8,7 @@ import { FULL_MOTION, motionSettings } from '../render/motion'
 import { drawScene } from '../render/scene'
 import { createStage, type Stage } from '../render/stage'
 import { creatureAt } from '../simulation/interaction'
-import { canTake, chestBox, slotAt, toggleChest } from '../simulation/props'
+import { canTake, chestBox, pageDotAt, slotAt, toggleChest } from '../simulation/props'
 import { wornAt } from '../simulation/wearables'
 import type { World } from '../simulation/world'
 import { setPresenceInput } from '../simulation/presence'
@@ -160,7 +160,9 @@ onMounted(() => {
     const next =
       w.interaction.hold || w.interaction.carry
         ? 'grabbing'
-        : slot === 'next'
+        : slot === 'prev' ||
+            slot === 'next' ||
+            (p.active && pageDotAt(w, p.position.x, p.position.y) !== null)
           ? 'pointer'
           : slot
             ? canTake(w, slot)
