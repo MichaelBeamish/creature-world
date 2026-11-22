@@ -33,6 +33,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 31 | Glow sticks | dropped |
 | 33 | Held items: kandi cuffs + things to hold | done |
 | 34 | Chest navigation: ‹ › arrows + page dots | done |
+| 35 | Fix: kandi cuffs drawn in front of the beard | done |
 | 32 | Party: disco ball + club lights + music | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |

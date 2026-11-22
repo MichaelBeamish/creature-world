@@ -2,6 +2,13 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #35: Fix — kandi cuffs in front of the beard ✅
+- Kandi cuffs were drawn after the worn items, so they floated over a beard. Draw order is now cuffs → worn items
+  (beard, hats, glasses) → held item, so cuffs sit on the tentacles but behind the beard.
+- **Verified:** a beard + cuffs + glow stick creature drawn in Chrome; owner: "verified". All five checks pass
+  (309 tests).
+- **Learned:** painter's algorithm again — layering is purely draw order.
+
 ## 2026-11-22 — Task #34: Chest navigation ✅
 - The one-way ↻ circle took forever to reach page 10. Now two side-by-side **‹ ›** circles page both ways (wrapping),
   and the **page dots are pressable** to jump straight to a page (bigger: r 4, gap 14; a forgiving 7 px hit area).
