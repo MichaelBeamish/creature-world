@@ -28,7 +28,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 21 | Shake → ink | done |
 | 27 | Ink reactions: Grumpy chase, Friendly dizzy | done |
 | 28 | Treasure chest + shrimp (feeding) | done |
-| 29 | Toys: rubber duck + soccer ball | todo |
+| 29 | Toys: rubber duck + soccer ball | done |
 | 30 | Dress-up: hats, sunglasses, fake beards | todo |
 | 31 | Glow sticks | todo |
 | 32 | Party: disco ball + club lights + music | todo |
@@ -359,6 +359,13 @@ A rubber duck floats and bobs at the surface; a soccer ball sinks slowly and bou
 creatures nudge them around (the duck drifts and spins). Both can be dragged back into the chest.
 - **Accept:** float/sink/bounce physics stay in the pool; creatures nudge them by personality; deterministic;
   all checks pass.
+- **Approved spec decisions (2026-11-22):** **fetch, peek, swat, avoid** (owner): Friendly nudges a toy toward the
+  cursor (♥ on delivery), Peeker nudges once then darts back, Grumpy swats toys that come close (💢), Scaredy keeps
+  its distance (flinch if the ball lands near). **Soft duck squeak** (owner) on a creature bump, ≤ every ~0.6 s, fixed
+  tone (not a creature voice). Toys get real physics in `props.ts` (duck: buoyant spring to the surface; ball: sinks,
+  bounces with restitution, rolls with friction; spin) and **contact pushes** from creatures; *new* `simulation/play.ts`
+  (*new* intent `play`, "kick from behind" steering), after food; each toy exists once; toys can be dragged from the
+  water (press order: slots → toys → creatures).
 
 ### 30. Dress-up: hats, sunglasses, fake beards
 Drop an accessory on a creature and it wears it (drawn on the creature, moving with it); it reacts by personality —

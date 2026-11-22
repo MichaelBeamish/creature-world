@@ -6,13 +6,20 @@
  * - **Props** are plain data — kind, position, velocity — with simple closed-loop physics: a shrimp sinks with a gentle
  *   side-to-side drift and comes to rest on the sand. Creatures perceive and eat them (see `feeding.ts`).
  * - **Bounded:** at most `PROPS.maxShrimp` shrimp in the water; the chest's shrimp slot greys out at the cap.
+ * - **Toys** (task #29) have real (simple) physics so creatures can push them: velocity and spin. The duck has
+ *   neutral buoyancy (it stays at whatever depth it is, drifting to a stop); the ball sinks, bounces with restitution
+ *   and rolls with friction. A gentle current near the walls eases toys back toward open water (no stuck corners).
+ *   Each toy exists once. Creature contact and play live in `play.ts`.
  */
 import type { Creature } from './creature'
 import { floorHeight } from './scenery'
 import type { Vec2 } from './vec2'
 import type { World } from './world'
 
-export type PropKind = 'shrimp'
+export type PropKind = 'shrimp' | 'duck' | 'ball'
+
+/** The toys: each exists once; creatures can push them around. */
+export const TOYS: readonly PropKind[] = ['duck', 'ball']
 
 export interface Prop {
   id: number
@@ -23,6 +30,14 @@ export interface Prop {
   dropX: number
   /** Sinking, or lying on the sand. */
   resting: boolean
+  /** Toys: velocity (px/s), rotation (rad) and spin (rad/s). */
+  velocity: Vec2
+  angle: number
+  spin: number
+  /** Ball: when it last bounced hard on the sand (world time) — a nearby Scaredy flinches. */
+  bouncedAt: number
+  /** Duck: when it last squeaked (world time) — at most every `PLAY.squeakEvery`. */
+  squeakedAt: number
 }
 
 export interface Props {
@@ -33,7 +48,7 @@ export interface Props {
 }
 
 /** The chest's items, in slot order (more kinds join in later tasks). */
-export const CHEST_ITEMS: readonly PropKind[] = ['shrimp']
+export const CHEST_ITEMS: readonly PropKind[] = ['shrimp', 'duck', 'ball']
 
 export const CHEST = {
   /** The chest box: left edge (px from the window's left), width and height (px). */
@@ -57,6 +72,24 @@ export const PROPS = {
   driftHz: 0.45,
   /** A resting shrimp lies this far below the sand line (fraction of the sand band). */
   restDepth: 0.12,
+} as const
+
+export const TOY = {
+  /** Radius (px). */
+  radius: { duck: 16, ball: 14 } as Record<'duck' | 'ball', number>,
+  /** Near a wall (within `edgeMargin` px), a gentle current (px/s² at the wall) eases toys back toward open water,
+   *  where creatures can reach them — so a toy never stays stuck in a corner. */
+  edgeMargin: 80,
+  edgePush: 160,
+  /** Water drag on toys (1/s), and spin damping (1/s). */
+  drag: 0.9,
+  spinDamping: 1.5,
+  /** Ball: sinks with this gravity (px/s²) in water; bounces with this restitution; rolls with this friction (1/s). */
+  ballGravity: 90,
+  restitution: 0.45,
+  rollFriction: 1.1,
+  /** A bounce faster than this (px/s) counts as a hard landing (a nearby Scaredy flinches). */
+  hardBounce: 45,
 } as const
 
 export function createProps(): Props {
@@ -96,7 +129,8 @@ export function toggleChest(world: World): void {
 /** Can the visitor take this kind out right now? (Shrimp: only while fewer than the cap are in the water.) */
 export function canTake(world: World, kind: PropKind): boolean {
   if (kind === 'shrimp') return countOf(world, 'shrimp') < PROPS.maxShrimp
-  return true
+  // Each toy exists once (it's either in the chest, in the water, or in the visitor's hand).
+  return countOf(world, kind) === 0 && world.interaction.carry?.kind !== kind
 }
 
 export function countOf(world: World, kind: PropKind): number {
@@ -125,13 +159,22 @@ export function overChest(world: World, x: number, y: number): boolean {
 /** Drop an item into the pool at (x, y): it sinks from there (or lies on the sand if dropped on the sand). */
 export function dropProp(world: World, kind: PropKind, x: number, y: number): Prop {
   const rest = restY(world)
+  const toy = kind !== 'shrimp'
   const prop: Prop = {
     id: world.props.nextId++,
     kind,
-    position: { x: Math.max(8, Math.min(world.width - 8, x)), y: Math.min(y, rest) },
+    position: {
+      x: Math.max(8, Math.min(world.width - 8, x)),
+      y: toy ? Math.min(y, toyFloor(world, kind)) : Math.min(y, rest),
+    },
     droppedAt: world.time,
     dropX: x,
-    resting: y >= rest,
+    resting: !toy && y >= rest,
+    velocity: { x: 0, y: 0 },
+    angle: 0,
+    spin: 0,
+    bouncedAt: -Infinity,
+    squeakedAt: -Infinity,
   }
   world.props.items.push(prop)
   return prop
@@ -147,10 +190,80 @@ export function restY(world: World): number {
   return sandTop(world) + floorHeight(world.height) * PROPS.restDepth
 }
 
-/** Advance one fixed step: shrimp sink with a gentle drift and settle on the sand. */
+/** The lowest a toy's center can go (px): resting on the sand. */
+export function toyFloor(world: World, kind: PropKind): number {
+  const r = kind === 'duck' || kind === 'ball' ? TOY.radius[kind] : 0
+  return restY(world) - r * 0.6
+}
+
+/** The toy under (x, y) in the water, or null (topmost = last dropped). */
+export function toyAt(world: World, x: number, y: number): Prop | null {
+  for (let i = world.props.items.length - 1; i >= 0; i--) {
+    const p = world.props.items[i]!
+    if (p.kind === 'duck' || p.kind === 'ball') {
+      if (Math.hypot(x - p.position.x, y - p.position.y) <= TOY.radius[p.kind] + 8) return p
+    }
+  }
+  return null
+}
+
+/** Toy physics for one step: the duck floats to the surface, the ball sinks, bounces and rolls. */
+function stepToy(world: World, p: Prop, dt: number): void {
+  const kind = p.kind as 'duck' | 'ball'
+  const r = TOY.radius[kind]
+  const v = p.velocity
+  // The duck has neutral buoyancy (no vertical force: it stays at its depth); the ball sinks.
+  if (kind === 'ball') v.y += TOY.ballGravity * dt
+  // The edge current: stronger the closer to a wall (left, right, top; the ball's floor is the sand).
+  const m = TOY.edgeMargin
+  const edge = (gap: number) => Math.max(0, 1 - gap / m)
+  v.x += TOY.edgePush * (edge(p.position.x) - edge(world.width - p.position.x)) * dt
+  v.y += TOY.edgePush * edge(p.position.y) * dt
+  if (kind === 'duck') v.y -= TOY.edgePush * edge(toyFloor(world, kind) - p.position.y) * dt
+  const drag = Math.exp(-TOY.drag * dt)
+  v.x *= drag
+  v.y *= kind === 'ball' ? Math.exp(-TOY.drag * 0.5 * dt) : drag
+  p.position.x += v.x * dt
+  p.position.y += v.y * dt
+
+  // Walls: bounce softly off the sides; never above the water.
+  if (p.position.x < r) {
+    p.position.x = r
+    v.x = Math.abs(v.x) * TOY.restitution
+  } else if (p.position.x > world.width - r) {
+    p.position.x = world.width - r
+    v.x = -Math.abs(v.x) * TOY.restitution
+  }
+  if (p.position.y < r * 0.5) {
+    p.position.y = r * 0.5
+    v.y = Math.abs(v.y) * TOY.restitution
+  }
+  // The sand: the ball bounces (lower each time) and rolls with friction; the duck just can't go below it.
+  const floor = toyFloor(world, kind)
+  if (p.position.y >= floor) {
+    p.position.y = floor
+    if (kind === 'ball') {
+      if (v.y > TOY.hardBounce) p.bouncedAt = world.time
+      v.y = v.y > 20 ? -v.y * TOY.restitution : 0
+      v.x *= Math.exp(-TOY.rollFriction * dt)
+      p.spin = v.x / r // rolling without slipping
+    } else {
+      v.y = Math.min(0, v.y)
+    }
+  }
+  p.spin *= Math.exp(-TOY.spinDamping * dt)
+
+  p.angle += p.spin * dt
+}
+
+/** Advance one fixed step: shrimp sink with a gentle drift and settle on the sand; toys move. */
 export function stepProps(world: World, dt: number): void {
   const rest = restY(world)
   for (const p of world.props.items) {
+    if (p.kind === 'duck' || p.kind === 'ball') {
+      stepToy(world, p, dt)
+      continue
+    }
     if (p.resting) {
       p.position.y = rest // follows the sand line on resize
       continue

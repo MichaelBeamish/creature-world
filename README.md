@@ -7,8 +7,10 @@ swaying seaweed, soft, furry, octopus-like creatures breathe, blink, wander and 
 and when you move your cursor near them, each one reacts in its own way. You can boop them, or pick them up
 and drag them around (they wriggle and squeak — gently). Shake one too hard and it squirts ink and keeps its
 distance for a while — except the Grumpy, which gets mad and chases you, squirting whenever you get close, and the
-Friendly, which just hiccups, gets dizzy and forgives you. A treasure chest on the sand holds treats: drop a
-shrimp in and each personality goes for it in its own way.
+Friendly, which just hiccups, gets dizzy and forgives you. A treasure chest on the sand holds treats and toys:
+drop a shrimp in and each personality goes for it in its own way, or toss in the rubber duck or the soccer ball and
+watch the Friendly play fetch, the Peeker nudge it, the Grumpy swat it away and the Scaredy sneak a
+nudge when nobody's looking.
 
 It should feel like **discovering something alive**, not using a website.
 
@@ -36,7 +38,8 @@ pnpm dev        # http://localhost:5173
 
 - **Click** a creature to boop it; **press and hold** (head or tentacle) to pick it up and drag it. Works with touch too.
   Shake it hard and it inks — each personality has its own limit (watch for the tremble).
-- Click the **treasure chest** (bottom-left) to open it, and drag a **shrimp** into the water — watch who goes for it.
+- Click the **treasure chest** (bottom-left) to open it, and drag a **shrimp**, the **rubber duck** or the **soccer
+  ball** into the water. Drag a toy back onto the chest to put it away.
 - Click the 🔈 button (bottom-right) for sound — it always starts muted.
 - Press **D** (dev) or add `?debug` to the URL to see what each creature perceives and feels, plus FPS.
 - Add `?seed=42` to revisit a specific world (each visit otherwise gets a random one).
@@ -95,6 +98,6 @@ decisions; [Claude Code](https://claude.com/claude-code) planned, implemented, t
 
 The MVP — "The Tide Pool" ([scope & success criteria](docs/product/mvp.md)) — is complete (success criteria 1–5 verified; the informal
 first-viewer test is pending), and a sea floor and bubbles have since been added. Now in progress: the **interaction milestone** — boop, drag and
-shake → ink (with a reaction per personality) and the treasure chest with shrimp are in; toys, dress-up, glow
+shake → ink (with a reaction per personality) and the treasure chest with shrimp and toys are in; dress-up, glow
 sticks and a disco party are next, then petting, names and moving shells — then a public
 deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md) (social life, an LLM-guided mind, …).

@@ -46,7 +46,12 @@ describe('the treasure chest', () => {
     toggleChest(w)
     expect(w.props.chest.open).toBe(true)
     expect(slotAt(w, s.x, s.y)).toBe('shrimp')
-    expect(slotAt(w, s.x + CHEST.slotRadius * 2, s.y)).toBeNull()
+    const toys = [
+      slotAt(w, slotPosition(w, 1).x, slotPosition(w, 1).y),
+      slotAt(w, slotPosition(w, 2).x, slotPosition(w, 2).y),
+    ]
+    expect(toys).toEqual(['duck', 'ball'])
+    expect(slotAt(w, s.x, s.y - CHEST.slotRadius * 2)).toBeNull() // just above it: empty water
     toggleChest(w)
     expect(slotAt(w, s.x, s.y)).toBeNull()
   })

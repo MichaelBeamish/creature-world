@@ -9,6 +9,7 @@ import { stepPerception } from './perception'
 import { createPresence, updatePresence, type Presence } from './presence'
 import { createRng, range, type Rng } from './rng'
 import { createInk, stepInk, type InkSystem } from './ink'
+import { resolveToyContacts } from './play'
 import { createProps, stepProps, type Props } from './props'
 import {
   applyTether,
@@ -112,6 +113,7 @@ export function stepWorld(world: World, dt: number): void {
   }
   applyTether(world, dt) // the held creature never trails the hand by more than the tether
   resolveConstraints(world, dt)
+  resolveToyContacts(world) // creatures push toys they touch (and squeak the duck)
   stepBubbles(world, dt)
   stepInk(world)
   for (const creature of world.creatures) {

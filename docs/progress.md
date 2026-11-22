@@ -2,6 +2,29 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #29: Toys — rubber duck + soccer ball ✅
+- **Toys in the chest:** the duck and the ball join the shrimp in the chest's arc; each exists once (its slot greys
+  out while it's in the pool); toys can be picked up in the water and moved or dropped back on the chest (press order:
+  slots → toys → creatures).
+- **Physics** (`props.ts`): the duck has **neutral buoyancy** (stays at its depth, drifts to a stop); the ball sinks,
+  bounces with restitution, rolls with friction, and **pops up when hit**; both spin, stay in the pool, and a gentle
+  **edge current** eases them out of corners (creatures keep a margin from walls, so cornered toys were unreachable).
+- **Play** (*new* `play.ts`, a mind layer after food, intent `play`), by trait dials: the Friendly plays **fetch**
+  toward the hand (♥ on delivery), the Peeker **nudges** (`?`) and backs off, the Grumpy **swats** toys that come close
+  (💢; a swatted ball flies), the Scaredy plays **shyly** — only when nobody's watching — otherwise keeps away and
+  flinches at hard landings. Sessions ~12 s, then bored ~6 s; food beats play. A soft **duck squeak** on a bump
+  (≤ every 0.6 s, the same for everyone).
+- Pushing is **emergent from contact** (`resolveToyContacts`): any creature body touching a toy pushes it; fetch is
+  "kick from behind" steering. Timestamps (squeak, swat) live in world data, not module state.
+- **Owner feedback → changes:** duck neutral buoyancy (was a spring to the surface); livelier ball that flies up;
+  no stuck corners (edge current); more interest (Scaredy plays shyly; boredom 12 → 6 s).
+- **Verified:** 283 tests (+19): duck depth/drift, ball bounce/settle/pop-up, walls and corners, contact push,
+  fetch/nudge/swat/shy/avoid scenarios, boredom, food beats play, chest each-toy-once and pick-up-from-water, duck
+  squeak voice. Real-Chrome run (open chest with three items, duck and ball in the pool, Peeker nudging). Owner: "love
+  it. verified". All five checks pass; code map, overview, README updated.
+- **Learned:** contact physics + a simple steering trick gives believable play without scripting each personality's
+  pushes; keep per-object timers in the world's data so determinism tests and debugging see everything.
+
 ## 2026-11-22 — Task #28: Treasure chest + shrimp (feeding) ✅
 - **The chest:** a sunken wooden chest (brass, moss, barnacles) on the sand, bottom-left; the mute button moved to the
   bottom-right. Open (click / tap / Tab + Enter): the lid stands up with a golden glow and the items float into slots

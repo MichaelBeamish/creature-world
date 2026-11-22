@@ -41,8 +41,9 @@
 | `src/simulation/constraints.ts` | Position-based pass: no overlaps, stay in bounds; a held creature shoves others at a limited speed (else it is blocked) | `CONSTRAINTS`, `resolveConstraints` |
 | `src/simulation/scenery.ts` | Sea floor: sand height, the swimmable area, seeded rocks/shells/seaweed (own random stream) | `SceneryItem`, `FLOOR`, `SCENERY`, `floorHeight`, `swimBounds`, `createScenery` |
 | `src/simulation/ink.ts` | Ink clouds: fixed 128-slot pool of puffs with analytic motion, squirted when a shaken creature inks (own random stream) | `INK`, `InkSystem`, `createInk`, `spawnInk`, `stepInk`, `inkPuffAt` |
-| `src/simulation/props.ts` | The treasure chest (open/closed, its box, item slots, hit-tests) and props — items in the water: shrimp sink with a drift and rest on the sand; at most 3 shrimp | `CHEST`, `CHEST_ITEMS`, `PROPS`, `Props`, `Prop`, `PropKind`, `createProps`, `chestBox`, `slotPosition`, `slotAt`, `overChest`, `toggleChest`, `canTake`, `dropProp`, `removeProp`, `stepProps`, `nearestShrimp`, `sandTop`, `restY` |
+| `src/simulation/props.ts` | The treasure chest (open/closed, its box, item slots, hit-tests) and props — items in the water: shrimp sink with a drift and rest on the sand (at most 3); toys (duck, ball) have real physics (neutral buoyancy / sink, bounce, roll, spin, an edge current) and exist once | `CHEST`, `CHEST_ITEMS`, `PROPS`, `TOY`, `TOYS`, `toyAt`, `toyFloor`, `Props`, `Prop`, `PropKind`, `createProps`, `chestBox`, `slotPosition`, `slotAt`, `overChest`, `toggleChest`, `canTake`, `dropProp`, `removeProp`, `stepProps`, `nearestShrimp`, `sandTop`, `restY` |
 | `src/simulation/feeding.ts` | Who goes for a shrimp and how, by trait dials (race / sneak / creep / guard); eating (♥, squish, "nom") | `FEEDING`, `feedingStyle`, `chooseMeal`, `mealTarget`, `mealSpeed`, `inReach` |
+| `src/simulation/play.ts` | Toys by personality (fetch / nudge / swat / shy, a mind layer after food); creature–toy contact pushes, the duck's squeak, a Scaredy's flinch | `PLAY`, `playStyle`, `choosePlay`, `playTarget`, `resolveToyContacts` |
 | `src/simulation/bubbles.ts` | Bubble particles: fixed 64-slot pool, analytic motion, spawned on flee/hide/standoff (own random stream) | `BUBBLES`, `BubbleSystem`, `createBubbles`, `stepBubbles`, `bubbleAt` |
 | `src/simulation/animation.ts` | Breathing/sway oscillators, the blink state machine, the boop squash spring | `CreatureAnimation`, `ANIMATION`, `stepAnimation` |
 | `src/simulation/rng.ts` | Seeded PRNG (mulberry32) — the only randomness in the simulation | `Rng`, `createRng`, `next`, `range`, `int`, `pick` |
@@ -59,7 +60,7 @@
 | `src/render/bubbles.ts` | Draws live bubbles (rim + highlight) and their pop rings | `drawBubbles` |
 | `src/render/ink.ts` | Draws ink clouds: soft deep-indigo radial-gradient puffs | `drawInk` |
 | `src/render/chest.ts` | Draws the treasure chest (wood, brass, moss; lid swings open with a golden glow), its floating item slots, and the carried item | `drawChest`, `drawChestItems` |
-| `src/render/props.ts` | Draws items in the water: the shrimp (curled segments, fan tail, eye, antennae) | `drawProps`, `drawShrimp` |
+| `src/render/props.ts` | Draws items in the water: the shrimp, the rubber duck (bobs, turns with its spin) and the soccer ball (patches roll) | `drawProps`, `drawShrimp`, `drawDuck`, `drawBall` |
 | `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade | `drawEmotes` |
 | `src/render/background.ts` | Water, caustics, floating motes (pure function of time), vignette | `drawBackground`, `drawVignette`, `motePosition` |
 | `src/render/motion.ts` | Decorative-motion settings (full vs reduced motion) | `MotionSettings`, `FULL_MOTION`, `REDUCED_MOTION`, `motionSettings` |
@@ -163,6 +164,17 @@
 | How far the hand must be before a Peeker / Scaredy goes for food | `FEEDING.peekerClear` | `src/simulation/feeding.ts` |
 | How long a Grumpy guards food before eating it | `FEEDING.guardSeconds` | `src/simulation/feeding.ts` |
 | How far a creature can reach to eat | `FEEDING.reachDown` | `src/simulation/feeding.ts` |
+| **Toys** | | |
+| How strongly toys are eased away from walls (no stuck corners) | `TOY.edgePush` | `src/simulation/props.ts` |
+| How much a hit launches the ball (and how hard it takes hits) | `PLAY.ballLift` | `src/simulation/play.ts` |
+| When a Scaredy dares to play (hand / others away from the toy) | `PLAY.shyClear` | `src/simulation/play.ts` |
+| How bouncy the ball is / how far it rolls | `TOY.restitution` | `src/simulation/props.ts` |
+| How long a creature plays before getting bored | `PLAY.sessionSeconds` | `src/simulation/play.ts` |
+| How close the Friendly brings a toy before its ♥ | `PLAY.deliver` | `src/simulation/play.ts` |
+| How hard a creature pushes a toy it bumps | `PLAY.push` | `src/simulation/play.ts` |
+| How hard / how close the Grumpy swats toys | `PLAY.swatSpeed` | `src/simulation/play.ts` |
+| How far a Scaredy keeps from toys while watched | `PLAY.avoid` | `src/simulation/play.ts` |
+| How often the duck may squeak | `PLAY.squeakEvery` | `src/simulation/play.ts` |
 | **Shake → ink** | | |
 | What counts as shaking (hand speed jolts, px/s²) | `INTERACTION.shakeAccel` | `src/simulation/interaction.ts` |
 | How fast stress drains when you stop | `INTERACTION.stressLeak` | `src/simulation/interaction.ts` |
