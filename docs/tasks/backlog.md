@@ -34,7 +34,10 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 33 | Held items: kandi cuffs + things to hold | done |
 | 34 | Chest navigation: ‹ › arrows + page dots | done |
 | 35 | Fix: kandi cuffs drawn in front of the beard | done |
-| 32 | Party: disco ball + club lights + music | todo |
+| 32a | Party: disco ball + lights | done |
+| 32b | Party: music (+ "turn on sound" nudge) | todo |
+| 32c | Party: neon reef (seaweed + shells) | todo |
+| 32d | Party: dancing by personality | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | dropped |
@@ -417,6 +420,18 @@ With 10 pages, the one-way ↻ circle takes forever to reach the end. Replace it
   `arrowPosition`, `pageDotPosition`; `turnPage(world, step)`; bigger dots (r 4, gap 14) with a forgiving hit area.
 
 ### 32. Party: disco ball + club lights + music
+**Approved plan (owner, 2026-11-22): four steps, each its own branch + PR + feel-check.** The disco ball is one more
+chest item (one at a time); let go in the water, it slowly floats up to just below the top where it was placed and
+slowly spins; drag it back to the chest to end the party. One beat clock in the simulation (`world.party`) drives
+everything. Extras approved: bubbles rise on the beat (32d), the Grumpy secretly taps a tentacle to the beat (32d), a
+"🔈 turn on sound for music" nudge when the party starts muted (32b), chirps tuned to the music's key (32b).
+- **32a Disco ball + lights:** the pool dims, mirror-ball light spots drift, soft colored spotlight beams sweep.
+- **32b Music:** original synthesized EDM/house groove (~124 BPM: four-on-the-floor kick, offbeat hats, rolling
+  bass, chord stabs); starts with the ball, fades when it goes back; only when unmuted.
+- **32c Neon reef:** seaweed turns neon and pulses to the beat, more strands grow; shells sparkle and glint.
+- **32d Dancing:** creatures notice and dance in their own style and chirp now and then — Friendly bouncy bops,
+  Peeker sways and edges closer, Scaredy shy wiggles at the edge (braver over time), the Grumpy goes to the
+  bottom-right corner and grumps (💢); a held glow stick waves to the beat.
 The disco ball and club lights come out together: the pool dims, the disco ball throws moving spots of light, colored
 beams sweep, an **original synthesized tech-house / bass-house groove** plays (four-on-the-floor kick, offbeat hats,
 rolling bassline, chord stabs — the vibe of an Austin dance festival, not a copy of any real track or artist; no

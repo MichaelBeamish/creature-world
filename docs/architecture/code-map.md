@@ -44,6 +44,7 @@
 | `src/simulation/props.ts` | The treasure chest (open/closed, pages of 3 + ‹ › arrows and pressable page dots, its box, item slots, hit-tests); the wearables catalog (26, by spot — head / eyes / face / hand / cuffs; 3 of each out; fallen items can be picked up; auto-return after 8 s on the sand, blinking for the last 3) and props — items in the water: shrimp sink with a drift and rest on the sand (at most 3); toys (duck, ball) have real physics (neutral buoyancy / sink, bounce, roll, spin, an edge current) and exist once | `CHEST`, `CHEST_ITEMS`, `CHEST_PAGES`, `SLOT_COUNT`, `pageItems`, `turnPage`, `goToPage`, `arrowPosition`, `pageDotPosition`, `pageDotAt`, `WEARABLES`, `WearableKind`, `WearSpot`, `isWearable`, `outCount`, `PROPS`, `TOY`, `TOYS`, `itemAt`, `toyFloor`, `Props`, `Prop`, `PropKind`, `createProps`, `chestBox`, `slotPosition`, `slotAt`, `overChest`, `toggleChest`, `canTake`, `dropProp`, `removeProp`, `stepProps`, `nearestShrimp`, `sandTop`, `restY` |
 | `src/simulation/feeding.ts` | Who goes for a shrimp and how, by trait dials (race / sneak / creep / guard); eating (♥, squish, "nom") | `FEEDING`, `feedingStyle`, `chooseMeal`, `mealTarget`, `mealSpeed`, `inReach` |
 | `src/simulation/wearables.ts` | Dress-up: wearing one item per spot (head / eyes / face / hand / cuffs; two-spot items), the raised hand's position, creatures picking up dropped items by personality, swapping, taking off, hit-testing worn items, the Grumpy shaking things off | `WEAR`, `HAND`, `COLLECT`, `chooseCollect`, `collectTarget`, `spotPosition`, `spotsOf`, `isDressed`, `wearOn`, `takeOff`, `dropOff`, `wornAt`, `shakeAmount`, `stepWearables` |
+| `src/simulation/party.ts` | The party (task #32): on while the disco ball is out (in the water or carried), its fade level, and the one beat clock that lights, music and dancing share | `PARTY`, `Party`, `createParty`, `discoBallOut`, `beatsAt`, `stepParty` |
 | `src/simulation/play.ts` | Toys by personality (fetch / nudge / swat / shy, a mind layer after food); creature–toy contact pushes, the duck's squeak, a Scaredy's flinch | `PLAY`, `playStyle`, `choosePlay`, `playTarget`, `resolveToyContacts` |
 | `src/simulation/bubbles.ts` | Bubble particles: fixed 64-slot pool, analytic motion, spawned on flee/hide/standoff (own random stream) | `BUBBLES`, `BubbleSystem`, `createBubbles`, `stepBubbles`, `bubbleAt` |
 | `src/simulation/animation.ts` | Breathing/sway oscillators, the blink state machine, the boop squash spring | `CreatureAnimation`, `ANIMATION`, `stepAnimation` |
@@ -60,6 +61,7 @@
 | `src/render/drawCreature.ts` | The "little octopus": body, fur, tentacles, eyes, mood body language; squash, dangling and the grabbed tentacle; the dizzy look; jet swimming when fast | `drawCreature`, `CreaturePose`, `HeldPose`, `propulsion`, `swimAngle`, `mantleRadii`, `tentacleRoot`, `tentacleOutline`, `grabbedTentacle`, `TENTACLE_ROOT` |
 | `src/render/bubbles.ts` | Draws live bubbles (rim + highlight) and their pop rings | `drawBubbles` |
 | `src/render/ink.ts` | Draws ink clouds: soft deep-indigo radial-gradient puffs | `drawInk` |
+| `src/render/party.ts` | Party lights (task #32a): dims the pool, soft sweeping spotlight beams, mirror-ball light spots (light-safe twinkle), and the disco ball on top | `LIGHTS`, `twinkle`, `drawParty`, `drawDiscoBall` |
 | `src/render/chest.ts` | Draws the treasure chest (wood, brass, moss; lid swings open with a golden glow), its floating item slots, and the carried item | `drawChest`, `drawChestItems` |
 | `src/render/wearables.ts` | Drawings of the 26 wearables (and the let-go balloon) (held items drawn at the raised tentacle tip; kandi cuffs across tentacle curves), relative to their spot (some hats sit lower: `SIT_LOWER`; rave gear glows); drawn on creatures (in their local frame) or as centered icons | `drawWorn`, `drawHeld`, `drawCuffs`, `drawFloatingBalloon`, `drawWearableIcon`, `WearExtras`, `Curve` |
 | `src/render/props.ts` | Draws items in the water: the shrimp, the rubber duck (bobs, turns with its spin) and the soccer ball (patches roll) | `drawProps`, `drawShrimp`, `drawDuck`, `drawBall` |
@@ -182,6 +184,11 @@
 | How many of each wearable can be out | `PROPS.maxEach` | `src/simulation/props.ts` |
 | When a fallen item blinks / returns to the chest | `PROPS.blinkAfter` | `src/simulation/props.ts` |
 | How often the Grumpy shakes things off | `WEAR.shakeEvery` | `src/simulation/wearables.ts` |
+| Party tempo (one beat clock for everything) | `PARTY.bpm` | `src/simulation/party.ts` |
+| How fast the party fades in / out | `PARTY.fadeIn` | `src/simulation/party.ts` |
+| Where the disco ball hangs, how fast it rises and spins | `DISCO.hangY` | `src/simulation/props.ts` |
+| How dark the party gets | `LIGHTS.dim` | `src/render/party.ts` |
+| The fastest a party light may twinkle (light safety, < 3/s) | `LIGHTS.maxFlashHz` | `src/render/party.ts` |
 | Where the raised tentacle holds things | `HAND.x` | `src/simulation/wearables.ts` |
 | How fast a let-go balloon rises away | `PROPS.balloonLift` | `src/simulation/props.ts` |
 | Who picks up dropped items, and when | `COLLECT.notice` | `src/simulation/wearables.ts` |

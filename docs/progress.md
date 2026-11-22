@@ -2,6 +2,23 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #32a: Party — disco ball + lights ✅
+- **Plan:** the party (#32) is split into four steps, each its own PR: 32a disco ball + lights, 32b music, 32c neon
+  reef, 32d dancing. All four of Claude's extra ideas approved (beat bubbles, the Grumpy's secret toe-tap, a "turn on
+  sound" nudge, chirps in the music's key).
+- **Disco ball:** one more chest item (last page, one at a time). Let go in the water, it floats slowly straight up and
+  eases to a stop just below the surface, then hangs there spinning (mirror tiles slide round, soft glints).
+- **Party:** *new* `simulation/party.ts` — on while the ball is out (in the water or carried), a fade `level`, and
+  **one beat clock** (`beatsAt`, 124 BPM) for lights, music and dancing. *New* `render/party.ts`: the pool dims, four
+  soft colored beams sweep, mirror-ball spots scatter across the scene — drawn additively; the ball on top.
+- **Light safety:** no strobes; every light changes smoothly at under 1/s (`LIGHTS.maxFlashHz`), and a test counts
+  brightness peaks to prove < 3/s (WCAG 2.3.1). Reduced motion: beams and spots hold still.
+- **Owner feedback:** the ball 1.5× bigger (r 45) and hanging higher; light spots made bigger, brighter, more of them.
+- **Verified:** 316 tests (+7): rise + hang + spin, one ball, party on/off + fades, stays on while carried, the beat
+  clock, light safety. Real drag in Chrome. Owner: "awesome. verified." All five checks pass; docs updated.
+- **Learned:** one master clock keeps music and visuals in sync; additive blending makes light add up like light;
+  scripted drags need a pause after the press so the next frame sees it at the press point.
+
 ## 2026-11-22 — Task #35: Fix — kandi cuffs in front of the beard ✅
 - Kandi cuffs were drawn after the worn items, so they floated over a beard. Draw order is now cuffs → worn items
   (beard, hats, glasses) → held item, so cuffs sit on the tentacles but behind the beard.

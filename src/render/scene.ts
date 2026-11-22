@@ -10,6 +10,7 @@ import { drawEmotes } from './emotes'
 import { drawFloor } from './floor'
 import { drawInk } from './ink'
 import { drawProps } from './props'
+import { drawParty } from './party'
 import { FULL_MOTION, type MotionSettings } from './motion'
 
 export interface SceneOptions {
@@ -67,6 +68,7 @@ export function drawScene(
   drawInk(ctx, world, motion) // in front of the creatures: a smoke screen
   for (const creature of ordered) if (creature.id === charging) draw(creature)
   drawBubbles(ctx, world, motion)
+  drawParty(ctx, world, width, height, motion) // dims the pool, then the lights and the disco ball on top
   drawChestItems(ctx, world, motion) // the open chest's items + the one being carried, above everything else
   drawEmotes(ctx, world, alpha, motion)
   drawVignette(ctx, width, height)

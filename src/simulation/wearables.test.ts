@@ -112,7 +112,7 @@ describe('chest pages', () => {
     const all = CHEST_PAGES.flat()
     for (const page of CHEST_PAGES) expect(page.length).toBeLessThanOrEqual(3)
     expect(new Set(all).size).toBe(all.length)
-    expect(all).toHaveLength(29) // shrimp, duck, ball + 26 wearables (incl. 8 held items, task #33)
+    expect(all).toHaveLength(30) // shrimp, duck, ball, disco ball + 26 wearables (incl. 8 held items, task #33)
   })
 
   it('a circle with no item on its page gives nothing', () => {

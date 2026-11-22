@@ -12,6 +12,7 @@ import { createInk, stepInk, type InkSystem } from './ink'
 import { resolveToyContacts } from './play'
 import { stepWearables } from './wearables'
 import { createProps, stepProps, type Props } from './props'
+import { createParty, stepParty, type Party } from './party'
 import {
   applyTether,
   createInteraction,
@@ -49,6 +50,8 @@ export interface World {
   ink: InkSystem
   /** The treasure chest and the items the visitor brought into the pool (task #28). */
   props: Props
+  /** The party while the disco ball is out: on/off, its beat clock, and how far it has faded in (task #32). */
+  party: Party
 }
 
 export interface WorldConfig {
@@ -82,6 +85,7 @@ export function createWorld(config: WorldConfig): World {
     interaction: createInteraction(config.seed),
     ink: createInk(config.seed),
     props: createProps(),
+    party: createParty(),
   }
 }
 
@@ -95,6 +99,7 @@ export function stepWorld(world: World, dt: number): void {
   stepInteraction(world, dt)
   stepWearables(world) // a dressed Grumpy shakes things off
   stepProps(world, dt)
+  stepParty(world, dt) // the disco ball switches the party on and off
   for (const creature of world.creatures) {
     copyVec2(creature.prevPosition, creature.position)
     stepPerception(

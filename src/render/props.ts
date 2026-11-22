@@ -23,7 +23,9 @@ export function drawProps(
   world: World,
   motion: MotionSettings,
 ): void {
-  for (const p of world.props.items) drawProp(ctx, p, world.time, motion)
+  // (The disco ball is drawn later, above the party's dimming — see party.ts.)
+  for (const p of world.props.items)
+    if (p.kind !== 'discoBall') drawProp(ctx, p, world.time, motion)
 }
 
 function drawProp(
