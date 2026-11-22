@@ -17,6 +17,8 @@ export interface MotionSettings {
   emoteFloat: number
   /** Background animation speed (0 = still). */
   background: number
+  /** Bubble side-to-side wobble (0 = bubbles rise straight up). */
+  bubbleWobble: number
 }
 
 export const FULL_MOTION: MotionSettings = {
@@ -27,6 +29,7 @@ export const FULL_MOTION: MotionSettings = {
   emotePop: true,
   emoteFloat: 1,
   background: 1,
+  bubbleWobble: 1,
 }
 
 export const REDUCED_MOTION: MotionSettings = {
@@ -37,6 +40,7 @@ export const REDUCED_MOTION: MotionSettings = {
   emotePop: false,
   emoteFloat: 0.3,
   background: 0,
+  bubbleWobble: 0,
 }
 
 export function motionSettings(reduced: boolean): MotionSettings {
