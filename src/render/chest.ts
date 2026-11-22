@@ -5,12 +5,16 @@
  */
 import {
   CHEST,
-  CHEST_ITEMS,
+  CHEST_PAGES,
   canTake,
   chestBox,
+  isWearable,
+  pageItems,
+  SLOT_COUNT,
   slotPosition,
   type PropKind,
 } from '../simulation/props'
+import { drawWearableIcon } from './wearables'
 import type { World } from '../simulation/world'
 import type { MotionSettings } from './motion'
 import { drawBall, drawDuck, drawShrimp } from './props'
@@ -24,7 +28,7 @@ const LOOK = {
   moss: 'rgba(96, 160, 118, 0.75)',
   barnacle: '#c9d6d2',
   glow: 'rgba(255, 210, 120, ',
-  slotFill: 'rgba(12, 28, 40, 0.55)',
+  slotFill: 'rgba(52, 86, 104, 0.6)',
   slotRim: 'rgba(255, 214, 140, 0.8)',
 } as const
 
@@ -178,13 +182,18 @@ export function drawChestItems(
   const b = chestBox(world)
   const from = { x: b.x + b.width / 2, y: b.y + b.height * 0.4 }
   if (k > 0.01) {
-    CHEST_ITEMS.forEach((kind, i) => {
+    const items = pageItems(world)
+    // A new page's items pop in (a quick swell) when the page turns.
+    const pop = Math.min(1, (world.time - world.props.chest.pageChangedAt) / 0.25)
+    for (let i = 0; i < SLOT_COUNT; i++) {
+      const isNext = i === SLOT_COUNT - 1
+      const kind = isNext ? null : items[i]
+      if (!isNext && !kind) continue // the last page may have fewer items
       const slot = slotPosition(world, i)
       // Float up out of the chest, then bob gently (no bob under reduced motion).
       const bob = Math.sin(world.time * 2 + i) * 2.5 * motion.sway
       const x = from.x + (slot.x - from.x) * k
       const y = from.y + (slot.y - from.y) * k + bob
-      const available = canTake(world, kind)
       ctx.save()
       ctx.globalAlpha = k
       ctx.fillStyle = LOOK.slotFill
@@ -194,9 +203,19 @@ export function drawChestItems(
       ctx.arc(x, y, CHEST.slotRadius, 0, Math.PI * 2)
       ctx.fill()
       ctx.stroke()
-      drawItem(ctx, kind, x, y, available ? 1 : 0.3)
+      if (isNext) drawNextArrows(ctx, x, y)
+      else if (kind) drawItem(ctx, kind, x, y, canTake(world, kind) ? 1 : 0.3, 0.6 + 0.4 * pop)
       ctx.restore()
-    })
+    }
+    // Page dots under the ↻ circle.
+    const next = slotPosition(world, SLOT_COUNT - 1)
+    drawPageDots(
+      ctx,
+      world,
+      from.x + (next.x - from.x) * k,
+      from.y + (next.y - from.y) * k + CHEST.slotRadius + 10,
+      k,
+    )
   }
   const carry = world.interaction.carry
   if (carry) {
@@ -215,7 +234,62 @@ function drawItem(
 ): void {
   if (kind === 'shrimp') drawShrimp(ctx, x + 2, y, scale, 0.15, alpha)
   else if (kind === 'duck') drawDuck(ctx, x, y + 2, scale * 0.95, 1, 0, alpha)
-  else drawBall(ctx, x, y, scale * 1.1, 0.4, alpha)
+  else if (kind === 'ball') drawBall(ctx, x, y, scale * 1.1, 0.4, alpha)
+  else if (isWearable(kind)) drawWearableIcon(ctx, kind, x, y, 18 * scale, 0, alpha)
+}
+
+/** The ↻ "next page" circle: two curved arrows chasing each other. */
+function drawNextArrows(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  ctx.strokeStyle = LOOK.slotRim
+  ctx.fillStyle = LOOK.slotRim
+  ctx.lineWidth = 2.5
+  ctx.lineCap = 'round'
+  const r = CHEST.slotRadius * 0.5
+  for (const start of [0.2, Math.PI + 0.2]) {
+    ctx.beginPath()
+    ctx.arc(x, y, r, start, start + 2.3)
+    ctx.stroke()
+    // Arrowhead at the end of the arc.
+    const a = start + 2.3
+    const hx = x + Math.cos(a) * r
+    const hy = y + Math.sin(a) * r
+    const tx = -Math.sin(a)
+    const ty = Math.cos(a)
+    ctx.beginPath()
+    ctx.moveTo(hx + tx * 5, hy + ty * 5)
+    ctx.lineTo(hx + Math.cos(a) * 4, hy + Math.sin(a) * 4)
+    ctx.lineTo(hx - Math.cos(a) * 4, hy - Math.sin(a) * 4)
+    ctx.closePath()
+    ctx.fill()
+  }
+}
+
+/** Page dots: ● for the current page, ○ for the others. */
+function drawPageDots(
+  ctx: CanvasRenderingContext2D,
+  world: World,
+  cx: number,
+  y: number,
+  k: number,
+): void {
+  const n = CHEST_PAGES.length
+  const gap = 10
+  ctx.save()
+  ctx.globalAlpha = k
+  for (let i = 0; i < n; i++) {
+    const x = cx + (i - (n - 1) / 2) * gap
+    ctx.beginPath()
+    ctx.arc(x, y, 3, 0, Math.PI * 2)
+    if (i === world.props.chest.page) {
+      ctx.fillStyle = LOOK.slotRim
+      ctx.fill()
+    } else {
+      ctx.strokeStyle = LOOK.slotRim
+      ctx.lineWidth = 1
+      ctx.stroke()
+    }
+  }
+  ctx.restore()
 }
 
 function roundRect(

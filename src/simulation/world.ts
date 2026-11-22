@@ -10,6 +10,7 @@ import { createPresence, updatePresence, type Presence } from './presence'
 import { createRng, range, type Rng } from './rng'
 import { createInk, stepInk, type InkSystem } from './ink'
 import { resolveToyContacts } from './play'
+import { stepWearables } from './wearables'
 import { createProps, stepProps, type Props } from './props'
 import {
   applyTether,
@@ -92,6 +93,7 @@ export function createWorld(config: WorldConfig): World {
 export function stepWorld(world: World, dt: number): void {
   updatePresence(world.presence, dt)
   stepInteraction(world, dt)
+  stepWearables(world) // a dressed Grumpy shakes things off
   stepProps(world, dt)
   for (const creature of world.creatures) {
     copyVec2(creature.prevPosition, creature.position)

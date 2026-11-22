@@ -6,6 +6,10 @@
  * - **Props** are plain data — kind, position, velocity — with simple closed-loop physics: a shrimp sinks with a gentle
  *   side-to-side drift and comes to rest on the sand. Creatures perceive and eat them (see `feeding.ts`).
  * - **Bounded:** at most `PROPS.maxShrimp` shrimp in the water; the chest's shrimp slot greys out at the cap.
+ * - **Dress-up** (task #30): wearables sink like shrimp; one dropped or shaken off returns to the chest by itself
+ *   (it blinks after `PROPS.blinkAfter` s on the sand, gone at `PROPS.returnAfter` s); it can be picked up meanwhile.
+ *   At most 3 of each are out.
+ * - **Pages:** the chest shows 3 items at a time plus a ↻ circle that turns to the next page (wrapping).
  * - **Toys** (task #29) have real (simple) physics so creatures can push them: velocity and spin. The duck has
  *   neutral buoyancy (it stays at whatever depth it is, drifting to a stop); the ball sinks, bounces with restitution
  *   and rolls with friction. A gentle current near the walls eases toys back toward open water (no stuck corners).
@@ -16,7 +20,56 @@ import { floorHeight } from './scenery'
 import type { Vec2 } from './vec2'
 import type { World } from './world'
 
-export type PropKind = 'shrimp' | 'duck' | 'ball'
+/** Dress-up items (task #30). */
+export type WearableKind =
+  | 'wizardHat'
+  | 'propellerBeanie'
+  | 'cowboyHat'
+  | 'partyHat'
+  | 'pirateHat'
+  | 'bouffantWig'
+  | 'tiara'
+  | 'ledCatEars'
+  | 'mouseEars'
+  | 'clownWig'
+  | 'starGlasses'
+  | 'heartGlasses'
+  | 'shutterShades'
+  | 'monocle'
+  | 'snorkelMask'
+  | 'beard'
+  | 'noseGlasses'
+  | 'clownNose'
+
+/** Where a wearable goes on a creature ('eyesFace' = both: the nose glasses). */
+export type WearSpot = 'head' | 'eyes' | 'face'
+
+export const WEARABLES: Record<WearableKind, WearSpot | 'eyesFace'> = {
+  wizardHat: 'head',
+  propellerBeanie: 'head',
+  cowboyHat: 'head',
+  partyHat: 'head',
+  pirateHat: 'head',
+  bouffantWig: 'head',
+  tiara: 'head',
+  ledCatEars: 'head',
+  mouseEars: 'head',
+  clownWig: 'head',
+  starGlasses: 'eyes',
+  heartGlasses: 'eyes',
+  shutterShades: 'eyes',
+  monocle: 'eyes',
+  snorkelMask: 'eyes',
+  beard: 'face',
+  noseGlasses: 'eyesFace',
+  clownNose: 'eyesFace',
+}
+
+export type PropKind = 'shrimp' | 'duck' | 'ball' | WearableKind
+
+export function isWearable(kind: PropKind): kind is WearableKind {
+  return kind in WEARABLES
+}
 
 /** The toys: each exists once; creatures can push them around. */
 export const TOYS: readonly PropKind[] = ['duck', 'ball']
@@ -34,6 +87,8 @@ export interface Prop {
   velocity: Vec2
   angle: number
   spin: number
+  /** When it came to rest on the sand (world time): a wearable returns to the chest a while later. */
+  restedAt: number
   /** Ball: when it last bounced hard on the sand (world time) — a nearby Scaredy flinches. */
   bouncedAt: number
   /** Duck: when it last squeaked (world time) — at most every `PLAY.squeakEvery`. */
@@ -42,13 +97,39 @@ export interface Prop {
 
 export interface Props {
   /** Open or closed, and when it last changed (world time) — the renderer eases the lid and the items from it. */
-  chest: { open: boolean; changedAt: number }
+  chest: { open: boolean; changedAt: number; page: number; pageChangedAt: number }
   items: Prop[]
   nextId: number
 }
 
-/** The chest's items, in slot order (more kinds join in later tasks). */
-export const CHEST_ITEMS: readonly PropKind[] = ['shrimp', 'duck', 'ball']
+/** The chest's pages: 3 items each (food & toys first, then dress-up). Adding an item = adding it here. */
+export const CHEST_PAGES: readonly (readonly PropKind[])[] = [
+  ['shrimp', 'duck', 'ball'],
+  ['wizardHat', 'cowboyHat', 'pirateHat'],
+  ['partyHat', 'propellerBeanie', 'bouffantWig'],
+  ['tiara', 'ledCatEars', 'mouseEars'],
+  ['starGlasses', 'heartGlasses', 'shutterShades'],
+  ['monocle', 'snorkelMask', 'noseGlasses'],
+  ['clownNose', 'clownWig', 'beard'],
+]
+
+/** Every item the chest holds. */
+export const CHEST_ITEMS: readonly PropKind[] = CHEST_PAGES.flat()
+
+/** The circles above the open chest: 3 item slots, then the ↻ "next page" circle. */
+export const SLOT_COUNT = 4
+
+/** The items on the chest's current page. */
+export function pageItems(world: World): readonly PropKind[] {
+  return CHEST_PAGES[world.props.chest.page % CHEST_PAGES.length]!
+}
+
+/** Turn the chest to its next page (wrapping round). */
+export function turnPage(world: World): void {
+  const chest = world.props.chest
+  chest.page = (chest.page + 1) % CHEST_PAGES.length
+  chest.pageChangedAt = world.time
+}
 
 export const CHEST = {
   /** The chest box: left edge (px from the window's left), width and height (px). */
@@ -57,9 +138,9 @@ export const CHEST = {
   height: 54,
   /** The chest's bottom sits this far into the sand band (fraction of the band, from the sand line). */
   sink: 0.55,
-  /** Open: slots float this far (px) from the top-center of the chest, on an arc leaning right (away from the
-   *  window's left edge); a slot's grab radius (px). */
-  slotDistance: 78,
+  /** Open: the circles float this far (px) from the top-center of the chest, on an arc leaning right (away from the
+   *  window's left edge); a circle's grab radius (px). */
+  slotDistance: 100,
   slotRadius: 24,
 } as const
 
@@ -72,6 +153,13 @@ export const PROPS = {
   driftHz: 0.45,
   /** A resting shrimp lies this far below the sand line (fraction of the sand band). */
   restDepth: 0.12,
+  /** At most this many of each wearable out at once (in the water, worn, or in the hand). */
+  maxEach: 3,
+  /** A dress-up item in the water can be picked up within this distance (px). */
+  wearableReach: 22,
+  /** A wearable resting on the sand blinks after this long (s) and returns to the chest after `returnAfter` s. */
+  blinkAfter: 5,
+  returnAfter: 8,
 } as const
 
 export const TOY = {
@@ -93,7 +181,11 @@ export const TOY = {
 } as const
 
 export function createProps(): Props {
-  return { chest: { open: false, changedAt: -Infinity }, items: [], nextId: 1 }
+  return {
+    chest: { open: false, changedAt: -Infinity, page: 0, pageChangedAt: -Infinity },
+    items: [],
+    nextId: 1,
+  }
 }
 
 /** The sand line's y (px): the top of the sand band. */
@@ -109,11 +201,11 @@ export function chestBox(world: World): { x: number; y: number; width: number; h
 }
 
 /** Where slot `index` floats when the chest is open (px). One item: straight up; more: an arc leaning right. */
-export function slotPosition(world: World, index: number, count = CHEST_ITEMS.length): Vec2 {
+export function slotPosition(world: World, index: number, count = SLOT_COUNT): Vec2 {
   const box = chestBox(world)
   const cx = box.x + box.width / 2
   const cy = box.y
-  const angle = count <= 1 ? -Math.PI / 2 : (-105 + (85 * index) / (count - 1)) * (Math.PI / 180) // −105° … −20°
+  const angle = count <= 1 ? -Math.PI / 2 : (-98 + (96 * index) / (count - 1)) * (Math.PI / 180) // −98° … −2°
   return {
     x: cx + Math.cos(angle) * CHEST.slotDistance,
     y: cy + Math.sin(angle) * CHEST.slotDistance,
@@ -129,8 +221,17 @@ export function toggleChest(world: World): void {
 /** Can the visitor take this kind out right now? (Shrimp: only while fewer than the cap are in the water.) */
 export function canTake(world: World, kind: PropKind): boolean {
   if (kind === 'shrimp') return countOf(world, 'shrimp') < PROPS.maxShrimp
+  if (isWearable(kind)) return outCount(world, kind) < PROPS.maxEach
   // Each toy exists once (it's either in the chest, in the water, or in the visitor's hand).
   return countOf(world, kind) === 0 && world.interaction.carry?.kind !== kind
+}
+
+/** How many of a wearable are out of the chest: in the water, worn, or in the visitor's hand. */
+export function outCount(world: World, kind: WearableKind): number {
+  const worn = world.creatures.filter(
+    (c) => c.dress.head === kind || c.dress.eyes === kind || c.dress.face === kind,
+  ).length
+  return countOf(world, kind) + worn + (world.interaction.carry?.kind === kind ? 1 : 0)
 }
 
 export function countOf(world: World, kind: PropKind): number {
@@ -138,11 +239,14 @@ export function countOf(world: World, kind: PropKind): number {
 }
 
 /** The item whose slot is under (x, y) while the chest is open, or null. */
-export function slotAt(world: World, x: number, y: number): PropKind | null {
+export function slotAt(world: World, x: number, y: number): PropKind | 'next' | null {
   if (!world.props.chest.open) return null
-  for (let i = 0; i < CHEST_ITEMS.length; i++) {
+  const items = pageItems(world)
+  for (let i = 0; i < SLOT_COUNT; i++) {
     const s = slotPosition(world, i)
-    if (Math.hypot(x - s.x, y - s.y) <= CHEST.slotRadius) return CHEST_ITEMS[i]!
+    if (Math.hypot(x - s.x, y - s.y) > CHEST.slotRadius) continue
+    if (i === SLOT_COUNT - 1) return 'next'
+    return items[i] ?? null
   }
   return null
 }
@@ -170,6 +274,7 @@ export function dropProp(world: World, kind: PropKind, x: number, y: number): Pr
     droppedAt: world.time,
     dropX: x,
     resting: !toy && y >= rest,
+    restedAt: !toy && y >= rest ? world.time : Infinity,
     velocity: { x: 0, y: 0 },
     angle: 0,
     spin: 0,
@@ -196,13 +301,18 @@ export function toyFloor(world: World, kind: PropKind): number {
   return restY(world) - r * 0.6
 }
 
-/** The toy under (x, y) in the water, or null (topmost = last dropped). */
-export function toyAt(world: World, x: number, y: number): Prop | null {
+/** The item under (x, y) in the water that can be picked up — a toy, or a dress-up item that's sinking or lying on
+ *  the sand — or null (topmost = last dropped). Shrimp are for eating, not for carrying around. */
+export function itemAt(world: World, x: number, y: number): Prop | null {
   for (let i = world.props.items.length - 1; i >= 0; i--) {
     const p = world.props.items[i]!
-    if (p.kind === 'duck' || p.kind === 'ball') {
-      if (Math.hypot(x - p.position.x, y - p.position.y) <= TOY.radius[p.kind] + 8) return p
-    }
+    const reach =
+      p.kind === 'duck' || p.kind === 'ball'
+        ? TOY.radius[p.kind] + 8
+        : isWearable(p.kind)
+          ? PROPS.wearableReach
+          : -1
+    if (reach > 0 && Math.hypot(x - p.position.x, y - p.position.y) <= reach) return p
   }
   return null
 }
@@ -278,8 +388,15 @@ export function stepProps(world: World, dt: number): void {
         p.dropX + PROPS.driftAmp * Math.sin(t * PROPS.driftHz * Math.PI * 2),
       ),
     )
-    if (p.position.y >= rest) p.resting = true
+    if (p.position.y >= rest) {
+      p.resting = true
+      p.restedAt = world.time
+    }
   }
+  // A wearable left on the sand goes back to the chest by itself (after blinking — see the renderer).
+  world.props.items = world.props.items.filter(
+    (p) => !(isWearable(p.kind) && p.resting && world.time - p.restedAt >= PROPS.returnAfter),
+  )
 }
 
 /** The nearest shrimp to a creature (or null). */

@@ -21,7 +21,18 @@ import { BODY, type Creature } from './creature'
 import { showEmote, type EmoteKind } from './expression'
 import type { IntentKind } from './mindState'
 import { spawnInk } from './ink'
-import { canTake, dropProp, overChest, removeProp, slotAt, toyAt, type PropKind } from './props'
+import {
+  canTake,
+  dropProp,
+  isWearable,
+  overChest,
+  removeProp,
+  slotAt,
+  itemAt,
+  turnPage,
+  type PropKind,
+} from './props'
+import { takeOff, wearOn, wornAt } from './wearables'
 import { createRng, int, range, type Rng } from './rng'
 import { vec2, type Vec2 } from './vec2'
 import type { World } from './world'
@@ -291,11 +302,15 @@ export function stepInteraction(world: World, dt: number): void {
   }
 
   // Carrying an item from the chest: released over the water → it goes in; over the chest → it goes back.
+  // A wearable released on a creature is put on it (dress-up, task #30).
   if (it.carry && !p.pressed) {
+    const kind = it.carry.kind
+    it.carry = null // (out of the hand first, so it isn't counted twice)
     if (!overChest(world, p.position.x, p.position.y)) {
-      dropProp(world, it.carry.kind, p.position.x, p.position.y)
+      const onto = isWearable(kind) ? creatureAt(world, p.position.x, p.position.y) : null
+      if (onto && isWearable(kind)) wearOn(world, onto.creature, kind)
+      else dropProp(world, kind, p.position.x, p.position.y)
     }
-    it.carry = null
   }
 
   if (it.hold && !p.pressed) {
@@ -333,13 +348,19 @@ export function stepInteraction(world: World, dt: number): void {
     }
   }
 
-  // A press on an open chest's item takes it (if available), then a toy in the water is picked up —
-  // both checked before the creatures.
+  // Press order: the open chest's circles (an item, or ↻ for the next page), then an item a creature is wearing,
+  // then a toy in the water — all before the creatures.
   const pressing = p.justPressed && !it.hold && !it.press && !it.carry
   const slot = pressing ? slotAt(world, p.position.x, p.position.y) : null
-  const toy = pressing && !slot ? toyAt(world, p.position.x, p.position.y) : null
-  if (slot) {
+  const worn = pressing && !slot ? wornAt(world, p.position.x, p.position.y) : null
+  const toy = pressing && !slot && !worn ? itemAt(world, p.position.x, p.position.y) : null
+  if (slot === 'next') {
+    turnPage(world) // the ↻ circle: the chest's next page
+  } else if (slot) {
     if (canTake(world, slot)) it.carry = { kind: slot }
+  } else if (worn) {
+    const kind = takeOff(worn.creature, worn.spot) // take it off: it's in the hand now
+    if (kind) it.carry = { kind }
   } else if (toy) {
     removeProp(world, toy.id) // in the hand now: dropped in the water again, or back in the chest
     it.carry = { kind: toy.kind }

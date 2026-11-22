@@ -41,8 +41,9 @@
 | `src/simulation/constraints.ts` | Position-based pass: no overlaps, stay in bounds; a held creature shoves others at a limited speed (else it is blocked) | `CONSTRAINTS`, `resolveConstraints` |
 | `src/simulation/scenery.ts` | Sea floor: sand height, the swimmable area, seeded rocks/shells/seaweed (own random stream) | `SceneryItem`, `FLOOR`, `SCENERY`, `floorHeight`, `swimBounds`, `createScenery` |
 | `src/simulation/ink.ts` | Ink clouds: fixed 128-slot pool of puffs with analytic motion, squirted when a shaken creature inks (own random stream) | `INK`, `InkSystem`, `createInk`, `spawnInk`, `stepInk`, `inkPuffAt` |
-| `src/simulation/props.ts` | The treasure chest (open/closed, its box, item slots, hit-tests) and props — items in the water: shrimp sink with a drift and rest on the sand (at most 3); toys (duck, ball) have real physics (neutral buoyancy / sink, bounce, roll, spin, an edge current) and exist once | `CHEST`, `CHEST_ITEMS`, `PROPS`, `TOY`, `TOYS`, `toyAt`, `toyFloor`, `Props`, `Prop`, `PropKind`, `createProps`, `chestBox`, `slotPosition`, `slotAt`, `overChest`, `toggleChest`, `canTake`, `dropProp`, `removeProp`, `stepProps`, `nearestShrimp`, `sandTop`, `restY` |
+| `src/simulation/props.ts` | The treasure chest (open/closed, pages of 3 + a ↻ circle, its box, item slots, hit-tests); the wearables catalog (18, by spot; 3 of each out; fallen items can be picked up; auto-return after 8 s on the sand, blinking for the last 3) and props — items in the water: shrimp sink with a drift and rest on the sand (at most 3); toys (duck, ball) have real physics (neutral buoyancy / sink, bounce, roll, spin, an edge current) and exist once | `CHEST`, `CHEST_ITEMS`, `CHEST_PAGES`, `SLOT_COUNT`, `pageItems`, `turnPage`, `WEARABLES`, `WearableKind`, `WearSpot`, `isWearable`, `outCount`, `PROPS`, `TOY`, `TOYS`, `itemAt`, `toyFloor`, `Props`, `Prop`, `PropKind`, `createProps`, `chestBox`, `slotPosition`, `slotAt`, `overChest`, `toggleChest`, `canTake`, `dropProp`, `removeProp`, `stepProps`, `nearestShrimp`, `sandTop`, `restY` |
 | `src/simulation/feeding.ts` | Who goes for a shrimp and how, by trait dials (race / sneak / creep / guard); eating (♥, squish, "nom") | `FEEDING`, `feedingStyle`, `chooseMeal`, `mealTarget`, `mealSpeed`, `inReach` |
+| `src/simulation/wearables.ts` | Dress-up: wearing one item per spot (head / eyes / face; the nose glasses take two), swapping, taking off, hit-testing worn items, the Grumpy shaking things off | `WEAR`, `spotPosition`, `spotsOf`, `isDressed`, `wearOn`, `takeOff`, `dropOff`, `wornAt`, `shakeAmount`, `stepWearables` |
 | `src/simulation/play.ts` | Toys by personality (fetch / nudge / swat / shy, a mind layer after food); creature–toy contact pushes, the duck's squeak, a Scaredy's flinch | `PLAY`, `playStyle`, `choosePlay`, `playTarget`, `resolveToyContacts` |
 | `src/simulation/bubbles.ts` | Bubble particles: fixed 64-slot pool, analytic motion, spawned on flee/hide/standoff (own random stream) | `BUBBLES`, `BubbleSystem`, `createBubbles`, `stepBubbles`, `bubbleAt` |
 | `src/simulation/animation.ts` | Breathing/sway oscillators, the blink state machine, the boop squash spring | `CreatureAnimation`, `ANIMATION`, `stepAnimation` |
@@ -60,6 +61,7 @@
 | `src/render/bubbles.ts` | Draws live bubbles (rim + highlight) and their pop rings | `drawBubbles` |
 | `src/render/ink.ts` | Draws ink clouds: soft deep-indigo radial-gradient puffs | `drawInk` |
 | `src/render/chest.ts` | Draws the treasure chest (wood, brass, moss; lid swings open with a golden glow), its floating item slots, and the carried item | `drawChest`, `drawChestItems` |
+| `src/render/wearables.ts` | Drawings of the 18 wearables, relative to their spot (some hats sit lower: `SIT_LOWER`; rave gear glows); drawn on creatures (in their local frame) or as centered icons | `drawWorn`, `drawWearableIcon`, `WearExtras` |
 | `src/render/props.ts` | Draws items in the water: the shrimp, the rubber duck (bobs, turns with its spin) and the soccer ball (patches roll) | `drawProps`, `drawShrimp`, `drawDuck`, `drawBall` |
 | `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade | `drawEmotes` |
 | `src/render/background.ts` | Water, caustics, floating motes (pure function of time), vignette | `drawBackground`, `drawVignette`, `motePosition` |
@@ -174,6 +176,13 @@
 | How hard a creature pushes a toy it bumps | `PLAY.push` | `src/simulation/play.ts` |
 | How hard / how close the Grumpy swats toys | `PLAY.swatSpeed` | `src/simulation/play.ts` |
 | How far a Scaredy keeps from toys while watched | `PLAY.avoid` | `src/simulation/play.ts` |
+| **Dress-up & chest pages** | | |
+| Which items are on which chest page (add an item here) | `CHEST_PAGES` | `src/simulation/props.ts` |
+| Where a wearable goes (head / eyes / face) | `WEARABLES` | `src/simulation/props.ts` |
+| How many of each wearable can be out | `PROPS.maxEach` | `src/simulation/props.ts` |
+| When a fallen item blinks / returns to the chest | `PROPS.blinkAfter` | `src/simulation/props.ts` |
+| How often the Grumpy shakes things off | `WEAR.shakeEvery` | `src/simulation/wearables.ts` |
+| How the Grumpy's shake looks | `WEAR.shakeSeconds` | `src/simulation/wearables.ts` |
 | How often the duck may squeak | `PLAY.squeakEvery` | `src/simulation/play.ts` |
 | **Shake → ink** | | |
 | What counts as shaking (hand speed jolts, px/s²) | `INTERACTION.shakeAccel` | `src/simulation/interaction.ts` |
@@ -268,6 +277,12 @@
 1. `src/simulation/interaction.ts`: extend `InteractionSoundKind` and record it with `sound()` where it happens.
 2. `src/audio/voice.ts`: give it a contour in `chirpFor` (`soundEvents.ts` already reports it).
 3. Tests: `src/simulation/interaction.test.ts`, and add it to the list in `src/audio/voice.test.ts`.
+
+**Add a new wearable (e.g. a crown)**
+
+1. `src/simulation/props.ts`: add it to `WearableKind`, `WEARABLES` (its spot) and a page in `CHEST_PAGES`.
+2. `src/render/wearables.ts`: add its drawing to `DRAW` (relative to its spot, in units of the creature's size).
+3. Tests: `src/simulation/wearables.test.ts` (the page/catalog counts).
 
 **Add a new chest item (e.g. a toy)**
 

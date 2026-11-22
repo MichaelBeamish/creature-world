@@ -4,7 +4,8 @@
  * the surface (its spin turns it to face left/right), and a soccer ball whose patches rotate as it rolls.
  * Pure function of the world: reads state, never mutates it.
  */
-import { TOY, type Prop } from '../simulation/props'
+import { isWearable, PROPS, TOY, type Prop } from '../simulation/props'
+import { drawWearableIcon } from './wearables'
 import type { World } from '../simulation/world'
 import type { MotionSettings } from './motion'
 
@@ -31,6 +32,22 @@ function drawProp(
   time: number,
   motion: MotionSettings,
 ): void {
+  if (isWearable(p.kind)) {
+    // A fallen item: tumbles while it sinks; on the sand it blinks before going back to the chest
+    // (a slow fade under reduced motion instead of flashing).
+    const tumble = p.resting ? 0.3 : Math.sin((time - p.droppedAt) * 1.5 + p.id) * 0.7 * motion.sway
+    const lying = p.resting ? time - p.restedAt : 0
+    let alpha = 1
+    if (lying > PROPS.blinkAfter) {
+      const left = PROPS.returnAfter - lying
+      alpha =
+        motion.tremble > 0
+          ? 0.3 + 0.7 * (Math.sin(lying * Math.PI * 5) > 0 ? 1 : 0) // blinking
+          : Math.max(0, left / (PROPS.returnAfter - PROPS.blinkAfter)) // fading
+    }
+    drawWearableIcon(ctx, p.kind, p.position.x, p.position.y, 20, tumble, alpha)
+    return
+  }
   if (p.kind === 'duck') {
     // Bob at the surface (toned down under reduced motion); the spin turns it to face left / right.
     const bob = Math.sin(time * 2.2 + p.id) * 2 * motion.sway
