@@ -42,7 +42,7 @@ pnpm dev        # http://localhost:5173
   Shake it hard and it inks — each personality has its own limit (watch for the tremble).
 - Click the **treasure chest** (bottom-left) to open it, and drag a **shrimp**, the **rubber duck** or the **soccer
   ball** into the water. Drag a toy back onto the chest to put it away.
-  Click ↻ for the next page: **dress-up** items — drop one on a creature to put it on, press it to take it off. Items
+  Turn the pages with ‹ › or jump straight to one with the dots below them: **dress-up** items and things to hold — drop one on a creature to put it on, press it to take it off. Items
   left on the sand go back into the chest by themselves.
 - Click the 🔈 button (bottom-right) for sound — it always starts muted.
 - Press **D** (dev) or add `?debug` to the URL to see what each creature perceives and feels, plus FPS.

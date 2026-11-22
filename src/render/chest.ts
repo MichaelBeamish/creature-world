@@ -4,11 +4,13 @@
  * can be taken). The item being carried follows the hand. Pure function of the world: reads state, never mutates it.
  */
 import {
+  arrowPosition,
   CHEST,
   CHEST_PAGES,
   canTake,
   chestBox,
   isWearable,
+  pageDotPosition,
   pageItems,
   SLOT_COUNT,
   slotPosition,
@@ -185,10 +187,13 @@ export function drawChestItems(
     const items = pageItems(world)
     // A new page's items pop in (a quick swell) when the page turns.
     const pop = Math.min(1, (world.time - world.props.chest.pageChangedAt) / 0.25)
-    for (let i = 0; i < SLOT_COUNT; i++) {
-      const isNext = i === SLOT_COUNT - 1
-      const kind = isNext ? null : items[i]
-      if (!isNext && !kind) continue // the last page may have fewer items
+    const lerp = (p: { x: number; y: number }) => ({
+      x: from.x + (p.x - from.x) * k,
+      y: from.y + (p.y - from.y) * k,
+    })
+    for (let i = 0; i < SLOT_COUNT - 1; i++) {
+      const kind = items[i]
+      if (!kind) continue // the last page may have fewer items
       const slot = slotPosition(world, i)
       // Float up out of the chest, then bob gently (no bob under reduced motion).
       const bob = Math.sin(world.time * 2 + i) * 2.5 * motion.sway
@@ -203,19 +208,19 @@ export function drawChestItems(
       ctx.arc(x, y, CHEST.slotRadius, 0, Math.PI * 2)
       ctx.fill()
       ctx.stroke()
-      if (isNext) drawNextArrows(ctx, x, y)
-      else if (kind) drawItem(ctx, kind, x, y, canTake(world, kind) ? 1 : 0.3, 0.6 + 0.4 * pop)
+      drawItem(ctx, kind, x, y, canTake(world, kind) ? 1 : 0.3, 0.6 + 0.4 * pop)
       ctx.restore()
     }
-    // Page dots under the ↻ circle.
-    const next = slotPosition(world, SLOT_COUNT - 1)
-    drawPageDots(
-      ctx,
-      world,
-      from.x + (next.x - from.x) * k,
-      from.y + (next.y - from.y) * k + CHEST.slotRadius + 10,
-      k,
-    )
+    // The ‹ › page arrows, side by side, and the (pressable) page dots under them.
+    const bob = Math.sin(world.time * 2 + SLOT_COUNT - 1) * 2.5 * motion.sway
+    for (const which of ['prev', 'next'] as const) {
+      const a = lerp(arrowPosition(world, which))
+      drawArrowCircle(ctx, a.x, a.y + bob, which === 'prev' ? -1 : 1, k)
+    }
+    for (let i = 0; i < CHEST_PAGES.length; i++) {
+      const d = lerp(pageDotPosition(world, i))
+      drawPageDot(ctx, d.x, d.y + bob, i === world.props.chest.page, k)
+    }
   }
   const carry = world.interaction.carry
   if (carry) {
@@ -238,56 +243,57 @@ function drawItem(
   else if (isWearable(kind)) drawWearableIcon(ctx, kind, x, y, 18 * scale, 0, alpha)
 }
 
-/** The ↻ "next page" circle: two curved arrows chasing each other. */
-function drawNextArrows(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-  ctx.strokeStyle = LOOK.slotRim
-  ctx.fillStyle = LOOK.slotRim
-  ctx.lineWidth = 2.5
-  ctx.lineCap = 'round'
-  const r = CHEST.slotRadius * 0.5
-  for (const start of [0.2, Math.PI + 0.2]) {
-    ctx.beginPath()
-    ctx.arc(x, y, r, start, start + 2.3)
-    ctx.stroke()
-    // Arrowhead at the end of the arc.
-    const a = start + 2.3
-    const hx = x + Math.cos(a) * r
-    const hy = y + Math.sin(a) * r
-    const tx = -Math.sin(a)
-    const ty = Math.cos(a)
-    ctx.beginPath()
-    ctx.moveTo(hx + tx * 5, hy + ty * 5)
-    ctx.lineTo(hx + Math.cos(a) * 4, hy + Math.sin(a) * 4)
-    ctx.lineTo(hx - Math.cos(a) * 4, hy - Math.sin(a) * 4)
-    ctx.closePath()
-    ctx.fill()
-  }
-}
-
-/** Page dots: ● for the current page, ○ for the others. */
-function drawPageDots(
+/** A ‹ or › page arrow in a small circle (dir −1: previous, +1: next). */
+function drawArrowCircle(
   ctx: CanvasRenderingContext2D,
-  world: World,
-  cx: number,
+  x: number,
   y: number,
+  dir: -1 | 1,
   k: number,
 ): void {
-  const n = CHEST_PAGES.length
-  const gap = 10
   ctx.save()
   ctx.globalAlpha = k
-  for (let i = 0; i < n; i++) {
-    const x = cx + (i - (n - 1) / 2) * gap
-    ctx.beginPath()
-    ctx.arc(x, y, 3, 0, Math.PI * 2)
-    if (i === world.props.chest.page) {
-      ctx.fillStyle = LOOK.slotRim
-      ctx.fill()
-    } else {
-      ctx.strokeStyle = LOOK.slotRim
-      ctx.lineWidth = 1
-      ctx.stroke()
-    }
+  ctx.fillStyle = LOOK.slotFill
+  ctx.strokeStyle = LOOK.slotRim
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.arc(x, y, CHEST.arrowRadius, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // A chevron.
+  ctx.lineWidth = 3
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  const w = CHEST.arrowRadius * 0.3
+  ctx.beginPath()
+  ctx.moveTo(x - dir * w * 0.6, y - w * 1.4)
+  ctx.lineTo(x + dir * w, y)
+  ctx.lineTo(x - dir * w * 0.6, y + w * 1.4)
+  ctx.stroke()
+  ctx.restore()
+}
+
+/** A page dot: ● for the current page, ○ for the others. */
+function drawPageDot(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  current: boolean,
+  k: number,
+): void {
+  ctx.save()
+  ctx.globalAlpha = k
+  ctx.beginPath()
+  ctx.arc(x, y, CHEST.dotRadius, 0, Math.PI * 2)
+  if (current) {
+    ctx.fillStyle = LOOK.slotRim
+    ctx.fill()
+  } else {
+    ctx.fillStyle = LOOK.slotFill
+    ctx.fill()
+    ctx.strokeStyle = LOOK.slotRim
+    ctx.lineWidth = 1.2
+    ctx.stroke()
   }
   ctx.restore()
 }

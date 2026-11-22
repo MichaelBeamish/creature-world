@@ -2,6 +2,17 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #34: Chest navigation ✅
+- The one-way ↻ circle took forever to reach page 10. Now two side-by-side **‹ ›** circles page both ways (wrapping),
+  and the **page dots are pressable** to jump straight to a page (bigger: r 4, gap 14; a forgiving 7 px hit area).
+  The dot row starts under ‹ (centered, it ran into the chest lid). Pointer cursor over both; dropping a carried item
+  on them puts it back in the chest.
+- `slotAt` returns 'prev' / 'next'; new `pageDotAt`, `goToPage`, `arrowPosition`, `pageDotPosition`;
+  `turnPage(world, step)`.
+- **Verified:** 309 tests (+2 net): arrows both ways with wrapping, dot jumps, misses, closed chest, drop on dots.
+  Real clicks in Chrome (dot 9 → page 9, ‹ → page 8). Owner: "perfect verified". All five checks pass; docs updated.
+- **Learned:** a control's hit area needn't match its drawing — invisible padding makes small targets easy to hit.
+
 ## 2026-11-22 — Task #33: Held items ✅
 - **Two new spots:** `hand`, a **raised arm** (the rightmost tentacle lifts up and out) holding one of 8 items:
   glow stick (neon glow), pirate cutlass, soda can (straw + fizz), magic wand (sparkling star), balloon, rose, tiny

@@ -27,6 +27,8 @@ import {
   isWearable,
   overChest,
   removeProp,
+  goToPage,
+  pageDotAt,
   slotAt,
   itemAt,
   turnPage,
@@ -348,14 +350,18 @@ export function stepInteraction(world: World, dt: number): void {
     }
   }
 
-  // Press order: the open chest's circles (an item, or ↻ for the next page), then an item a creature is wearing,
-  // then a toy in the water — all before the creatures.
+  // Press order: the open chest's circles (an item, or ‹ › to turn the page) and page dots, then an item a creature
+  // is wearing, then a toy in the water — all before the creatures.
   const pressing = p.justPressed && !it.hold && !it.press && !it.carry
   const slot = pressing ? slotAt(world, p.position.x, p.position.y) : null
-  const worn = pressing && !slot ? wornAt(world, p.position.x, p.position.y) : null
-  const toy = pressing && !slot && !worn ? itemAt(world, p.position.x, p.position.y) : null
-  if (slot === 'next') {
-    turnPage(world) // the ↻ circle: the chest's next page
+  const dot = pressing && !slot ? pageDotAt(world, p.position.x, p.position.y) : null
+  const onChest = slot !== null || dot !== null
+  const worn = pressing && !onChest ? wornAt(world, p.position.x, p.position.y) : null
+  const toy = pressing && !onChest && !worn ? itemAt(world, p.position.x, p.position.y) : null
+  if (slot === 'prev' || slot === 'next') {
+    turnPage(world, slot === 'prev' ? -1 : 1)
+  } else if (dot !== null) {
+    goToPage(world, dot) // jump straight to that page
   } else if (slot) {
     if (canTake(world, slot)) it.carry = { kind: slot }
   } else if (worn) {

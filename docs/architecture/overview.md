@@ -85,8 +85,8 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   drift and rests on the sand (at most 3 shrimp). Feeding (`feeding.ts`) is a layer in the mind, only when calm:
   by trait dials the Friendly races, the Peeker sneaks in while the hand is away, the Scaredy waits for the hand to
   leave, the Grumpy guards (others keep off) then eats — new intents `eat`, `guard`. Eating: ♥, squish, "nom".
-- **Dress-up & chest pages** (task #30) — the chest shows 3 items per page plus a ↻ circle (`CHEST_PAGES`, wrapping;
-  page dots), so the inventory can grow without the arc growing. 18 wearables (incl. glowing rave gear), one per spot
+- **Dress-up & chest pages** (task #30) — the chest shows 3 items per page plus ‹ › arrows (`CHEST_PAGES`, wrapping;
+  pressable page dots jump straight to a page — task #34), so the inventory can grow without the arc growing. 18 wearables (incl. glowing rave gear), one per spot
   (head / eyes / face; the nose glasses and the clown nose take eyes + face): dropped on a creature they're worn (`creature.dress`, plain data), swapping out
   whatever filled the spot; pressed on a creature they come off (press order: circles → worn items → toys →
   creatures). The renderer draws them inside `drawCreature`'s local frame, so they follow every pose for free. Only
