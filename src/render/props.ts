@@ -5,7 +5,7 @@
  * Pure function of the world: reads state, never mutates it.
  */
 import { isWearable, PROPS, TOY, type Prop } from '../simulation/props'
-import { drawWearableIcon } from './wearables'
+import { drawFloatingBalloon, drawWearableIcon } from './wearables'
 import type { World } from '../simulation/world'
 import type { MotionSettings } from './motion'
 
@@ -32,6 +32,11 @@ function drawProp(
   time: number,
   motion: MotionSettings,
 ): void {
+  if (p.kind === 'balloon') {
+    // Let go of: full size (as when held), floating up and away.
+    drawFloatingBalloon(ctx, p.position.x, p.position.y, 40, time)
+    return
+  }
   if (isWearable(p.kind)) {
     // A fallen item: tumbles while it sinks; on the sand it blinks before going back to the chest
     // (a slow fade under reduced motion instead of flashing).

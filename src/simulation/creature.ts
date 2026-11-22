@@ -53,6 +53,9 @@ export interface Dress {
   head: WearableKind | null
   eyes: WearableKind | null
   face: WearableKind | null
+  /** Held in a raised tentacle (task #33), and kandi cuffs on a few tentacles. */
+  hand: WearableKind | null
+  cuffs: WearableKind | null
   shakeAt: number
   shakingSince: number
 }
@@ -156,7 +159,15 @@ export function createCreature(
     traits,
     mind: createMindState(),
     expression: createExpression(),
-    dress: { head: null, eyes: null, face: null, shakeAt: Infinity, shakingSince: -Infinity },
+    dress: {
+      head: null,
+      eyes: null,
+      face: null,
+      hand: null,
+      cuffs: null,
+      shakeAt: Infinity,
+      shakingSince: -Infinity,
+    },
   }
 }
 

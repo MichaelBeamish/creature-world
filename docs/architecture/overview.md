@@ -93,6 +93,14 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   the Grumpy minds (bold + incurious): it shakes one item off every few seconds (`stepWearables`). Fallen items sink and
   can be picked up again (`itemAt`); after 5 s on the sand they blink for 3 s, then return to the chest. At most 3 of
   each are out.
+- **Held items** (task #33) — two more spots: `hand` (glow stick, cutlass, soda can, magic wand, balloon,
+  rose, trident) and `cuffs` (kandi), so cuffs + a held item combine. A tentacle tip only exists in the renderer, so
+  `drawTentacles` now returns every curve: the holding tentacle is bent into a raised arm and the item is drawn at its
+  tip, rotated to the curve's tangent (the balloon floats straight up on its string); kandi beads are drawn across a
+  few curves. The simulation estimates the raised tip (`HAND`) for hit-testing. A let-go balloon floats up off
+  the screen (and is back in the chest). Calm creatures **pick up dropped items** by the same trait dials as food
+  (`chooseCollect`, a mind layer after food and play): bold + curious goes straight for it, timid + curious waits for the
+  hand to move away, timid + incurious only when nobody's around; the Grumpy never — and only into a free spot.
 - **Toys** (task #29) — the duck and the ball are props with real (simple) physics: the duck has neutral buoyancy
   (stays at its depth); the ball sinks, bounces with restitution, rolls with friction and pops up when hit; both
   spin, stay in the pool, and a gentle current near the walls eases them out of corners,

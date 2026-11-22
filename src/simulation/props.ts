@@ -38,11 +38,21 @@ export type WearableKind =
   | 'monocle'
   | 'snorkelMask'
   | 'beard'
+  // Held in a raised tentacle (task #33)
+  | 'glowStick'
+  | 'cutlass'
+  | 'sodaCan'
+  | 'magicWand'
+  | 'balloon'
+  | 'rose'
+  | 'trident'
+  // On a few tentacles
+  | 'kandiCuffs'
   | 'noseGlasses'
   | 'clownNose'
 
 /** Where a wearable goes on a creature ('eyesFace' = both: the nose glasses). */
-export type WearSpot = 'head' | 'eyes' | 'face'
+export type WearSpot = 'head' | 'eyes' | 'face' | 'hand' | 'cuffs'
 
 export const WEARABLES: Record<WearableKind, WearSpot | 'eyesFace'> = {
   wizardHat: 'head',
@@ -61,6 +71,14 @@ export const WEARABLES: Record<WearableKind, WearSpot | 'eyesFace'> = {
   monocle: 'eyes',
   snorkelMask: 'eyes',
   beard: 'face',
+  glowStick: 'hand',
+  cutlass: 'hand',
+  sodaCan: 'hand',
+  magicWand: 'hand',
+  balloon: 'hand',
+  rose: 'hand',
+  trident: 'hand',
+  kandiCuffs: 'cuffs',
   noseGlasses: 'eyesFace',
   clownNose: 'eyesFace',
 }
@@ -111,6 +129,9 @@ export const CHEST_PAGES: readonly (readonly PropKind[])[] = [
   ['starGlasses', 'heartGlasses', 'shutterShades'],
   ['monocle', 'snorkelMask', 'noseGlasses'],
   ['clownNose', 'clownWig', 'beard'],
+  ['glowStick', 'magicWand', 'balloon'],
+  ['cutlass', 'trident', 'rose'],
+  ['sodaCan', 'kandiCuffs'],
 ]
 
 /** Every item the chest holds. */
@@ -157,6 +178,11 @@ export const PROPS = {
   maxEach: 3,
   /** A dress-up item in the water can be picked up within this distance (px). */
   wearableReach: 22,
+  /** A let-go balloon rises with this acceleration (px/s²) up to this speed (px/s), and is gone this far (px) above
+   *  the top of the screen. */
+  balloonLift: 260,
+  balloonTopSpeed: 420,
+  balloonGone: 80,
   /** A wearable resting on the sand blinks after this long (s) and returns to the chest after `returnAfter` s. */
   blinkAfter: 5,
   returnAfter: 8,
@@ -229,7 +255,12 @@ export function canTake(world: World, kind: PropKind): boolean {
 /** How many of a wearable are out of the chest: in the water, worn, or in the visitor's hand. */
 export function outCount(world: World, kind: WearableKind): number {
   const worn = world.creatures.filter(
-    (c) => c.dress.head === kind || c.dress.eyes === kind || c.dress.face === kind,
+    (c) =>
+      c.dress.head === kind ||
+      c.dress.eyes === kind ||
+      c.dress.face === kind ||
+      c.dress.hand === kind ||
+      c.dress.cuffs === kind,
   ).length
   return countOf(world, kind) + worn + (world.interaction.carry?.kind === kind ? 1 : 0)
 }
@@ -374,6 +405,13 @@ export function stepProps(world: World, dt: number): void {
       stepToy(world, p, dt)
       continue
     }
+    if (p.kind === 'balloon') {
+      // Let go of, a balloon shoots up (faster and faster), drifting a little, and floats off the top of the screen.
+      p.velocity.y = Math.max(-PROPS.balloonTopSpeed, p.velocity.y - PROPS.balloonLift * dt)
+      p.position.y += p.velocity.y * dt
+      p.position.x += Math.sin((world.time - p.droppedAt) * 1.6 + p.id) * 18 * dt
+      continue
+    }
     if (p.resting) {
       p.position.y = rest // follows the sand line on resize
       continue
@@ -395,7 +433,9 @@ export function stepProps(world: World, dt: number): void {
   }
   // A wearable left on the sand goes back to the chest by itself (after blinking — see the renderer).
   world.props.items = world.props.items.filter(
-    (p) => !(isWearable(p.kind) && p.resting && world.time - p.restedAt >= PROPS.returnAfter),
+    (p) =>
+      !(isWearable(p.kind) && p.resting && world.time - p.restedAt >= PROPS.returnAfter) &&
+      !(p.kind === 'balloon' && p.position.y < -PROPS.balloonGone), // floated away: back in the chest
   )
 }
 

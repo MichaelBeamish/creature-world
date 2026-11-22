@@ -83,7 +83,13 @@ export function createBubbles(seed: number): BubbleSystem {
     phase: 0,
     life: 0,
   }))
-  return { pool, next: 0, rng: createRng(seed ^ BUBBLES.streamSalt), lastIntent: {}, trickle: {} }
+  return {
+    pool,
+    next: 0,
+    rng: createRng(seed ^ BUBBLES.streamSalt),
+    lastIntent: {},
+    trickle: {},
+  }
 }
 
 /** Advance one fixed step: release new bubbles from intent changes / trickles, retire finished ones. */

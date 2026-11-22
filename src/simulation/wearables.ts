@@ -9,7 +9,16 @@
  */
 import type { Creature, Dress } from './creature'
 import { showEmote } from './expression'
-import { dropProp, WEARABLES, type WearableKind, type WearSpot } from './props'
+import {
+  dropProp,
+  isWearable,
+  removeProp,
+  WEARABLES,
+  type Prop,
+  type WearableKind,
+  type WearSpot,
+} from './props'
+import type { IntentKind } from './mindState'
 import type { Vec2 } from './vec2'
 import type { World } from './world'
 
@@ -24,13 +33,19 @@ export const WEAR = {
 } as const
 
 /** Spots in the order the Grumpy shakes them off: hats first. */
-const SPOTS: readonly WearSpot[] = ['head', 'eyes', 'face']
+const SPOTS: readonly WearSpot[] = ['head', 'eyes', 'face', 'hand', 'cuffs']
 
 /** Where a spot is on a creature, roughly, in world coordinates (for hit-testing and for items falling off). */
 export function spotPosition(c: Creature, spot: WearSpot): Vec2 {
-  const y = spot === 'head' ? -1.15 : spot === 'eyes' ? 0.35 : 0.75
+  // The hand: the raised tentacle's tip, up and out to the right (matches the renderer's raised arm).
+  if (spot === 'hand')
+    return { x: c.position.x + c.size * HAND.x, y: c.position.y + c.size * HAND.y }
+  const y = spot === 'head' ? -1.15 : spot === 'eyes' ? 0.35 : spot === 'face' ? 0.75 : 2.0
   return { x: c.position.x, y: c.position.y + c.size * y }
 }
+
+/** Where the raised tentacle's tip is, relative to the mantle center (× size). */
+export const HAND = { x: 1.75, y: 0.05 } as const
 
 /** The spots an item fills. */
 export function spotsOf(kind: WearableKind): readonly WearSpot[] {
@@ -40,7 +55,9 @@ export function spotsOf(kind: WearableKind): readonly WearSpot[] {
 
 /** Is the creature wearing anything? */
 export function isDressed(d: Dress): boolean {
-  return d.head !== null || d.eyes !== null || d.face !== null
+  return (
+    d.head !== null || d.eyes !== null || d.face !== null || d.hand !== null || d.cuffs !== null
+  )
 }
 
 /** Put an item on: whatever fills those spots falls off first. */
@@ -84,6 +101,89 @@ export function wornAt(
     }
   }
   return null
+}
+
+/** Picking up dropped items (task #33): who goes for a wearable lying around — by the same trait dials as food. */
+export const COLLECT = {
+  /** Items within this distance (px) are noticed. */
+  notice: 600,
+  /** Timid + curious only while the hand is at least this far from the item; timid + incurious only while the hand
+   *  is at least `shyClear` px away (or gone) and no other creature is within `shyAlone` px of it. */
+  peekerClear: 150,
+  shyClear: 250,
+  shyAlone: 150,
+  /** In reach to grab it (× size): sideways, and below its center (tentacles stretched toward it). */
+  reachX: 1.4,
+  reachDown: 5,
+  /** Swim-speed multiplier on the way. */
+  speed: 2.2,
+} as const
+
+/** Could this creature wear this item right now? (Only into free spots — no stealing back and forth.) */
+function hasRoomFor(c: Creature, kind: WearableKind): boolean {
+  return spotsOf(kind).every((s) => c.dress[s] === null)
+}
+
+/**
+ * Decide whether to go and pick up a dropped item this step (called by the mind when calm and not eating or playing).
+ * Puts it on when in reach. Returns 'collect', or null to keep the mind's choice.
+ */
+export function chooseCollect(c: Creature, world: World): IntentKind | null {
+  if (minds(c)) return null // the Grumpy never picks this stuff up
+  let item: Prop | null = null
+  let best: number = COLLECT.notice
+  for (const p of world.props.items) {
+    if (!isWearable(p.kind) || p.kind === 'balloon' || !hasRoomFor(c, p.kind)) continue
+    const d = Math.hypot(p.position.x - c.position.x, p.position.y - c.position.y)
+    if (d < best) {
+      best = d
+      item = p
+    }
+  }
+  if (!item) {
+    c.mind.collect = null
+    return null
+  }
+  const hand = world.presence
+  const handGap = hand.active
+    ? Math.hypot(hand.position.x - item.position.x, hand.position.y - item.position.y)
+    : Infinity
+  const curious = c.traits.curiosity >= 0.5
+  const bold = c.traits.boldness >= 0.5
+  if (!bold && curious && handGap < COLLECT.peekerClear) return null
+  if (!bold && !curious) {
+    const crowded = world.creatures.some(
+      (o) =>
+        o !== c &&
+        Math.hypot(o.position.x - item!.position.x, o.position.y - item!.position.y) <
+          COLLECT.shyAlone,
+    )
+    if (handGap < COLLECT.shyClear || crowded) return null
+  }
+  c.mind.collect = { propId: item.id }
+  const dx = Math.abs(item.position.x - c.position.x)
+  const dy = item.position.y - c.position.y
+  if (
+    dx <= c.size * COLLECT.reachX &&
+    dy >= -c.size * COLLECT.reachX &&
+    dy <= c.size * COLLECT.reachDown
+  ) {
+    removeProp(world, item.id)
+    wearOn(world, c, item.kind as WearableKind)
+    c.mind.collect = null
+    showEmote(c, 'heart')
+    return null
+  }
+  return 'collect'
+}
+
+/** Where to steer to pick the item up: just above it (tentacles reach down to it). */
+export function collectTarget(world: World, c: Creature, out: Vec2): Vec2 | null {
+  const item = world.props.items.find((p) => p.id === c.mind.collect?.propId)
+  if (!item) return null
+  out.x = item.position.x
+  out.y = item.position.y - c.size * 2.4
+  return out
 }
 
 /** Does this creature mind wearing things? (Bold + incurious: the Grumpy.) */
