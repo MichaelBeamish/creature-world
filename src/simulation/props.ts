@@ -83,7 +83,7 @@ export const WEARABLES: Record<WearableKind, WearSpot | 'eyesFace'> = {
   clownNose: 'eyesFace',
 }
 
-export type PropKind = 'shrimp' | 'duck' | 'ball' | WearableKind
+export type PropKind = 'shrimp' | 'duck' | 'ball' | 'discoBall' | WearableKind
 
 export function isWearable(kind: PropKind): kind is WearableKind {
   return kind in WEARABLES
@@ -131,7 +131,7 @@ export const CHEST_PAGES: readonly (readonly PropKind[])[] = [
   ['clownNose', 'clownWig', 'beard'],
   ['glowStick', 'magicWand', 'balloon'],
   ['cutlass', 'trident', 'rose'],
-  ['sodaCan', 'kandiCuffs'],
+  ['sodaCan', 'kandiCuffs', 'discoBall'],
 ]
 
 /** Every item the chest holds. */
@@ -178,6 +178,17 @@ export const CHEST = {
   dotGap: 14,
   dotRadius: 4,
   dotHit: 7,
+} as const
+
+/** The disco ball (task #32): its size (px), where it hangs (px below the top), and how it rises and spins. */
+export const DISCO = {
+  radius: 45,
+  hangY: 60,
+  /** Rise speed (px/s), slowing down over the last px (speed ≤ distance × ease). */
+  riseSpeed: 45,
+  ease: 0.8,
+  /** Spin (rad/s) — slow. */
+  spin: 0.6,
 } as const
 
 export const PROPS = {
@@ -342,7 +353,10 @@ export function dropProp(world: World, kind: PropKind, x: number, y: number): Pr
     id: world.props.nextId++,
     kind,
     position: {
-      x: Math.max(8, Math.min(world.width - 8, x)),
+      x:
+        kind === 'discoBall'
+          ? Math.max(DISCO.radius + 10, Math.min(world.width - DISCO.radius - 10, x))
+          : Math.max(8, Math.min(world.width - 8, x)),
       y: toy ? Math.min(y, toyFloor(world, kind)) : Math.min(y, rest),
     },
     droppedAt: world.time,
@@ -383,9 +397,11 @@ export function itemAt(world: World, x: number, y: number): Prop | null {
     const reach =
       p.kind === 'duck' || p.kind === 'ball'
         ? TOY.radius[p.kind] + 8
-        : isWearable(p.kind)
-          ? PROPS.wearableReach
-          : -1
+        : p.kind === 'discoBall'
+          ? DISCO.radius + 8
+          : isWearable(p.kind)
+            ? PROPS.wearableReach
+            : -1
     if (reach > 0 && Math.hypot(x - p.position.x, y - p.position.y) <= reach) return p
   }
   return null
@@ -446,6 +462,15 @@ export function stepProps(world: World, dt: number): void {
   for (const p of world.props.items) {
     if (p.kind === 'duck' || p.kind === 'ball') {
       stepToy(world, p, dt)
+      continue
+    }
+    if (p.kind === 'discoBall') {
+      // Floats slowly up to just below the surface, wherever it was let go, easing in as it arrives — then hangs
+      // there, spinning slowly.
+      const gap = p.position.y - DISCO.hangY
+      p.velocity.y = -Math.min(DISCO.riseSpeed, Math.max(0, gap) * DISCO.ease)
+      p.position.y += p.velocity.y * dt
+      p.angle += DISCO.spin * dt
       continue
     }
     if (p.kind === 'balloon') {

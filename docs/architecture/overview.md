@@ -93,6 +93,12 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   the Grumpy minds (bold + incurious): it shakes one item off every few seconds (`stepWearables`). Fallen items sink and
   can be picked up again (`itemAt`); after 5 s on the sand they blink for 3 s, then return to the chest. At most 3 of
   each are out.
+- **Party** (task #32, in steps a–d) — the disco ball is one more chest item; let go in the water it floats slowly up
+  to just below the surface and hangs there spinning. While it's out, `world.party` is on: one **beat clock**
+  (`beatsAt`, `PARTY.bpm`) that the lights, the music (32b), the neon reef (32c) and the dancing (32d) all read, so
+  they stay in sync, and a fade `level`. The lights are render-only (`render/party.ts`): a dimming layer, sweeping
+  beams and mirror-ball spots drawn additively (`'lighter'`), with a light-safe twinkle (smooth, < 3 per second,
+  tested); reduced motion holds them still.
 - **Held items** (task #33) — two more spots: `hand` (glow stick, cutlass, soda can, magic wand, balloon,
   rose, trident) and `cuffs` (kandi), so cuffs + a held item combine. A tentacle tip only exists in the renderer, so
   `drawTentacles` now returns every curve: the holding tentacle is bent into a raised arm and the item is drawn at its

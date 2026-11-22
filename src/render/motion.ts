@@ -27,6 +27,8 @@ export interface MotionSettings {
   inkDrift: number
   /** Dizzy wobble tilt and star-orbit speed multiplier (the loop swimming itself is behavior and stays). */
   dizzyWobble: number
+  /** Party lights: sweeping beams and drifting light spots (0 = a calm, still colored glow). */
+  partyLights: number
 }
 
 export const FULL_MOTION: MotionSettings = {
@@ -42,6 +44,7 @@ export const FULL_MOTION: MotionSettings = {
   tremble: 1,
   inkDrift: 1,
   dizzyWobble: 1,
+  partyLights: 1,
 }
 
 export const REDUCED_MOTION: MotionSettings = {
@@ -57,6 +60,7 @@ export const REDUCED_MOTION: MotionSettings = {
   tremble: 0,
   inkDrift: 0.3,
   dizzyWobble: 0.3,
+  partyLights: 0,
 }
 
 export function motionSettings(reduced: boolean): MotionSettings {
