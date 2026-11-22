@@ -24,6 +24,8 @@ export interface CreatureSnapshot {
   energy: number
   attention: number
   trust: number
+  /** After inking (task #21): fades over ~30 s; caps trust. */
+  rattled: number
 }
 
 export interface DebugSnapshot {
@@ -51,6 +53,7 @@ export function createDebugSnapshot(world: World, seed: number, frame: FrameStat
       energy: c.traits.energy,
       attention: c.perception.attention,
       trust: c.perception.trust,
+      rattled: c.perception.rattled,
     })),
   }
 }

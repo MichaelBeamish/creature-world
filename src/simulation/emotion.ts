@@ -32,6 +32,10 @@ export const EMOTION = {
   flinch: 0.25,
   /** Being watched by a not-yet-trusted visitor feeds wariness. */
   wariness: 0.5,
+  /** A rattled creature (it inked, task #21) loses this much of its curiosity — it comes back as that fades. */
+  rattledDamp: 0.8,
+  /** …and a bold, incurious one (the Grumpy) holds a grudge: being rattled keeps it this grumpy (× its dials). */
+  grudge: 0.6,
   /** Envelope time constants (s). */
   attack: 0.1,
   release: 0.6,
@@ -54,17 +58,23 @@ export function createEmotionState(): EmotionState {
 
 /** Target scores (utility) for each emotion. Pure: same perception + traits → same scores. */
 export function scoreEmotions(perception: Perception, traits: Traits): EmotionLevels {
-  const { attention, trust, pressure, startle } = perception
+  const { attention, trust, pressure, startle, rattled } = perception
   const { curiosity, boldness } = traits
   const disturbance = clamp01(startle + pressure)
   const wary = attention * (1 - trust) * EMOTION.wariness
 
   return {
     content: EMOTION.contentBaseline,
-    curious: clamp01(attention * curiosity * (0.6 + 0.4 * trust) * (1 - startle)),
+    curious: clamp01(
+      attention *
+        curiosity *
+        (0.6 + 0.4 * trust) *
+        (1 - startle) *
+        (1 - EMOTION.rattledDamp * rattled),
+    ),
     // Total threat is capped at 1 before timidity scales it, so stacked threats can't overflow.
     scared: clamp01(clamp01(disturbance + wary) * (1 - boldness) + startle * EMOTION.flinch),
-    grumpy: clamp01(disturbance * boldness * (1 - curiosity)),
+    grumpy: clamp01((disturbance + rattled * EMOTION.grudge) * boldness * (1 - curiosity)),
   }
 }
 

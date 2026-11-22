@@ -5,7 +5,8 @@
 A tiny living tide pool in the browser. Above a moonlit sea floor of sand, mossy rocks, glowing shells and
 swaying seaweed, soft, furry, octopus-like creatures breathe, blink, wander and rest —
 and when you move your cursor near them, each one reacts in its own way. You can boop them, or pick them up
-and drag them around (they wriggle and squeak — gently).
+and drag them around (they wriggle and squeak — gently). Shake one too hard and it squirts ink and keeps its
+distance for a while (a Grumpy squirts twice and glares at you instead).
 
 It should feel like **discovering something alive**, not using a website.
 
@@ -32,6 +33,7 @@ pnpm dev        # http://localhost:5173
 ```
 
 - **Click** a creature to boop it; **press and hold** (head or tentacle) to pick it up and drag it. Works with touch too.
+  Shake it hard and it inks — each personality has its own limit (watch for the tremble).
 - Click the 🔈 button (bottom-left) for sound — it always starts muted.
 - Press **D** (dev) or add `?debug` to the URL to see what each creature perceives and feels, plus FPS.
 - Add `?seed=42` to revisit a specific world (each visit otherwise gets a random one).
@@ -63,7 +65,7 @@ fixed 60 Hz step: interaction (boop / hold) → perception → mind (emotion →
   so an LLM-guided mind could later sit *above* the fast rule-based reflexes. Being held is such a layer: it
   overrides what a creature *does* (a damped spring to your hand, plus a personality-scaled struggle) while its
   feelings keep running underneath.
-- **Sound** — Web Audio synthesis (no audio files): pentatonic per-creature voices.
+- **Sound** — Web Audio synthesis (no audio files): pentatonic per-creature voices, plus filtered-noise puffs (ink).
 
 Details: [architecture overview](docs/architecture/overview.md) (the *why*) ·
 [code map](docs/architecture/code-map.md) (the *where*, and "to change X, edit Y") · decisions:
@@ -89,6 +91,6 @@ decisions; [Claude Code](https://claude.com/claude-code) planned, implemented, t
 ## Status & roadmap
 
 The MVP — "The Tide Pool" ([scope & success criteria](docs/product/mvp.md)) — is complete (success criteria 1–5 verified; the informal
-first-viewer test is pending), and a sea floor and bubbles have since been added. Now in progress: the **interaction milestone** — boop and
-drag are in; shaking (→ ink), feeding, petting, popping bubbles, names and moving shells are next — then a public
+first-viewer test is pending), and a sea floor and bubbles have since been added. Now in progress: the **interaction milestone** — boop, drag and
+shake → ink are in; feeding, petting, popping bubbles, names and moving shells are next — then a public
 deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md) (social life, an LLM-guided mind, …).

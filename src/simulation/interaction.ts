@@ -9,17 +9,20 @@
  *   Movement follows a spring to the cursor, offset by a **pull**: rhythmic yanks in a slowly drifting direction
  *   (never beyond the tether), plus a sideways wriggle — both set by fear/grumpiness × energy, so a Friendly barely
  *   struggles. A top speed (`maxHeldSpeed`) keeps catch-ups fast but never instant.
- * - **Sound events** (grab, struggle squeaks, boop) are recorded here; the audio layer plays them.
+ * - **Shake → ink** (task #21): shaking the hand fills a **stress** bucket that leaks when calm; past the creature's
+ *   limit (bold/curious ones put up with more) it squirts ink, slips free, darts off and stays rattled for a while.
+ * - **Sound events** (grab, struggle squeaks, boop, ink) are recorded here; the audio layer plays them.
  * - Own random stream for squeak timing, so the creatures' randomness is unchanged.
  */
 import { BODY, type Creature } from './creature'
 import { showEmote, type EmoteKind } from './expression'
+import { spawnInk } from './ink'
 import { createRng, range, type Rng } from './rng'
 import { vec2, type Vec2 } from './vec2'
 import type { World } from './world'
 
 export type GrabPart = 'head' | 'tentacle'
-export type InteractionSoundKind = 'grab' | 'squeak' | 'boop'
+export type InteractionSoundKind = 'grab' | 'squeak' | 'boop' | 'ink'
 
 export interface InteractionSound {
   kind: InteractionSoundKind
@@ -47,6 +50,10 @@ export interface Hold {
   pullAngle: number
   /** Seconds until the next struggle squeak. */
   squeakTimer: number
+  /** Shake detection: the hand's (smoothed) velocity last step, its smoothed acceleration, and the stress bucket. */
+  handSpeed: number
+  shake: number
+  stress: number
 }
 
 export interface Interaction {
@@ -54,6 +61,10 @@ export interface Interaction {
   hold: Hold | null
   /** Recent sound events (newest last, capped). The audio layer reports each once. */
   sounds: InteractionSound[]
+  /** The creature jetting away after inking, and until when (world time). */
+  jet: { creatureId: number; until: number } | null
+  /** A Grumpy's second squirt, aimed at the hand: who, and when (world time). */
+  followUp: { creatureId: number; at: number } | null
   rng: Rng
 }
 
@@ -82,6 +93,31 @@ export const INTERACTION = {
   pullHz: [2.2, 0.9],
   /** How quickly the pull direction drifts (rad/s, roughly). */
   pullDrift: 0.8,
+  /**
+   * Shake → ink. The hand's *speed jolts* (how sharply its speed changes, px/s²) are smoothed (`shakeSmoothing`, s);
+   * above `shakeAccel` they fill the stress bucket at (excess / `shakeScale`) per second, and the bucket leaks
+   * `stressLeak` per second. Measured: gentle wiggles, sweeps and swirls stay below ~2,300; trackpad shakes are
+   * ~4,700–8,000. Ink when stress reaches the creature's limit:
+   * `stressLimit[0]` + boldness × `stressLimit[1]` + boldness × curiosity × `stressLimit[2]`
+   * (only the Friendly — bold *and* curious — gets the big bonus: it's patient; the others ink within 1–2 s).
+   */
+  shakeSmoothing: 0.1,
+  shakeAccel: 2500,
+  shakeScale: 2000,
+  stressLeak: 0.35,
+  /** The bucket fills at most this fast (per s): only *sustained* shaking inks — a single flick never does. */
+  stressFillMax: 1.5,
+  stressLimit: [0.76, 1.11, 2.29],
+  /** Near the limit (fraction of it), the warning tell starts: faster squeaks (and a tremble, in the renderer). */
+  stressWarning: 0.55,
+  /** After inking, a jet escape: this fast (px/s), easing off over this long (s), above the normal speed limit. */
+  jetSpeed: 380,
+  jetSeconds: 0.5,
+  /** A bold, incurious creature (the Grumpy) stands its ground instead: a small recoil (px/s), then a second
+   *  squirt aimed straight at the hand this long (s) after the first, with this much aim (0..1). */
+  recoil: 90,
+  followUpDelay: 0.35,
+  followUpAim: 0.85,
   /** Sideways wriggle (px/s² at full struggle). */
   wriggleForce: 160,
   wriggleHz: 2.5,
@@ -97,7 +133,14 @@ export const INTERACTION = {
 } as const
 
 export function createInteraction(seed: number): Interaction {
-  return { press: null, hold: null, sounds: [], rng: createRng(seed ^ INTERACTION.streamSalt) }
+  return {
+    press: null,
+    hold: null,
+    sounds: [],
+    jet: null,
+    followUp: null,
+    rng: createRng(seed ^ INTERACTION.streamSalt),
+  }
 }
 
 /** Which creature (and part) is under (x, y)? Head hits win over tentacles; the top-most creature wins. */
@@ -140,6 +183,16 @@ export function struggleLevel(c: Creature): number {
   )
 }
 
+/**
+ * Speed limit while jetting away after inking (easing from `jetSpeed` down to 0 over `jetSeconds`), or 0 if not.
+ * Movement uses the larger of this and the creature's normal limit.
+ */
+export function jetLimit(world: World, c: Creature): number {
+  const jet = world.interaction.jet
+  if (!jet || jet.creatureId !== c.id || world.time >= jet.until) return 0
+  return INTERACTION.jetSpeed * ((jet.until - world.time) / INTERACTION.jetSeconds)
+}
+
 export function isHeld(world: World, c: Creature): boolean {
   return world.interaction.hold?.creatureId === c.id
 }
@@ -149,6 +202,18 @@ export function stepInteraction(world: World, dt: number): void {
   const it = world.interaction
   const p = world.presence
   const find = (id: number) => world.creatures.find((c) => c.id === id)
+
+  // A Grumpy's second squirt: straight at the hand.
+  if (it.followUp && world.time >= it.followUp.at) {
+    const grump = find(it.followUp.creatureId)
+    it.followUp = null
+    if (grump) {
+      const [tx, ty] = towardHand(world, grump)
+      spawnInk(world.ink, grump, world.time, tx, ty, INTERACTION.followUpAim)
+      showEmote(grump, 'anger')
+      sound(it, 'ink', grump.id)
+    }
+  }
 
   if (it.hold && !p.pressed) {
     release(world, it.hold)
@@ -176,6 +241,9 @@ export function stepInteraction(world: World, dt: number): void {
         since: world.time,
         pullAngle: range(it.rng, 0, Math.PI * 2),
         squeakTimer: range(it.rng, INTERACTION.squeakEvery[0], INTERACTION.squeakEvery[1]),
+        handSpeed: Math.hypot(p.velocity.x, p.velocity.y),
+        shake: 0,
+        stress: 0,
       }
       it.press = null
       sound(it, 'grab', creature.id)
@@ -206,12 +274,92 @@ export function stepInteraction(world: World, dt: number): void {
       it.hold = null
       return
     }
-    it.hold.squeakTimer -= dt
-    if (it.hold.squeakTimer <= 0) {
-      if (struggleLevel(creature) >= INTERACTION.squeakThreshold) sound(it, 'squeak', creature.id)
-      it.hold.squeakTimer = range(it.rng, INTERACTION.squeakEvery[0], INTERACTION.squeakEvery[1])
+    const hold = it.hold
+    updateStress(hold, p.velocity, dt)
+    if (hold.stress >= stressLimit(creature)) {
+      squirtInk(world, creature)
+      it.hold = null // slips free (a fresh press is needed to grab again)
+      return
+    }
+
+    // Squeaks: while struggling, or as a warning when stress nears the limit — faster the closer it gets.
+    const stressed = stressFraction(world, creature)
+    const warning =
+      Math.max(0, stressed - INTERACTION.stressWarning) / (1 - INTERACTION.stressWarning)
+    hold.squeakTimer -= dt * (1 + 2 * warning)
+    if (hold.squeakTimer <= 0) {
+      if (struggleLevel(creature) >= INTERACTION.squeakThreshold || warning > 0) {
+        sound(it, 'squeak', creature.id)
+      }
+      hold.squeakTimer = range(it.rng, INTERACTION.squeakEvery[0], INTERACTION.squeakEvery[1])
     }
   }
+}
+
+/** Shake detection: smoothed hand acceleration above a threshold fills the (leaky) stress bucket. */
+function updateStress(hold: Hold, handVelocity: Vec2, dt: number): void {
+  const I = INTERACTION
+  // How sharply the hand's *speed* changes: a shake goes fast-stop-fast-stop, while a circle or a sweep keeps a
+  // steady speed (so swirling a creature around isn't shaking, however fast).
+  const speed = Math.hypot(handVelocity.x, handVelocity.y)
+  const jolt = Math.abs(speed - hold.handSpeed) / dt
+  hold.handSpeed = speed
+  // Exponential moving average, step-size independent (like the presence velocity).
+  hold.shake += (jolt - hold.shake) * (1 - Math.exp(-dt / I.shakeSmoothing))
+  const fill = Math.min(I.stressFillMax, Math.max(0, hold.shake - I.shakeAccel) / I.shakeScale)
+  hold.stress = Math.max(0, hold.stress + (fill - I.stressLeak) * dt)
+}
+
+/** How much shaking this creature puts up with before it inks (bold ones more; a Friendly — bold and curious — most). */
+export function stressLimit(c: Creature): number {
+  const [base, bold, friendly] = INTERACTION.stressLimit
+  const { boldness, curiosity } = c.traits
+  return base + bold * boldness + friendly * boldness * curiosity
+}
+
+/** 0..1 — how close the held creature is to inking (0 when not held). Read by the renderer for the warning tell. */
+export function stressFraction(world: World, c: Creature): number {
+  const hold = world.interaction.hold
+  if (!hold || hold.creatureId !== c.id) return 0
+  return Math.min(1, hold.stress / stressLimit(c))
+}
+
+/** Unit direction from the creature to the hand (straight up if they coincide). */
+function towardHand(world: World, c: Creature): [number, number] {
+  const hand = world.presence.position
+  const tx = hand.x - c.position.x
+  const ty = hand.y - c.position.y
+  const len = Math.hypot(tx, ty)
+  return len < 1e-6 ? [0, -1] : [tx / len, ty / len]
+}
+
+/** A bold, incurious creature (the Grumpy) doesn't run from a fight. */
+export function standsItsGround(c: Creature): boolean {
+  return c.traits.boldness >= 0.5 && c.traits.curiosity < 0.5
+}
+
+/**
+ * Squirt ink toward the hand, slip free, and remember it (rattled). Most creatures jet away and flee;
+ * a Grumpy recoils a little, squirts again straight at the hand, and stays to glare (its grudge is in the mood).
+ */
+function squirtInk(world: World, c: Creature): void {
+  const [tx, ty] = towardHand(world, c)
+  spawnInk(world.ink, c, world.time, tx, ty)
+  c.perception.startle = 1
+  c.perception.rattled = 1
+  c.perception.trust = 0
+  if (standsItsGround(c)) {
+    c.velocity.x = -tx * INTERACTION.recoil
+    c.velocity.y = -ty * INTERACTION.recoil
+    world.interaction.followUp = { creatureId: c.id, at: world.time + INTERACTION.followUpDelay }
+    showEmote(c, 'anger')
+  } else {
+    c.velocity.x = -tx * INTERACTION.jetSpeed
+    c.velocity.y = -ty * INTERACTION.jetSpeed
+    world.interaction.jet = { creatureId: c.id, until: world.time + INTERACTION.jetSeconds }
+    showEmote(c, 'exclaim')
+  }
+  sound(world.interaction, 'ink', c.id)
 }
 
 /**

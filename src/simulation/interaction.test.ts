@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BODY, footprint } from './creature'
 import { CONSTRAINTS } from './constraints'
-import { creatureAt, INTERACTION } from './interaction'
+import { creatureAt, INTERACTION, stressFraction } from './interaction'
 import { speedLimit } from './movement'
 import { setPresenceInput } from './presence'
 import { swimBounds } from './scenery'
@@ -355,5 +355,178 @@ describe('determinism', () => {
       return world
     }
     expect(run()).toEqual(run())
+  })
+})
+
+describe('shake → ink', () => {
+  /** Hold a creature, then move the hand along `path` (starting at 0.5 s). Returns when it inked (s), or -1. */
+  /** `path` gives the hand offset: a number (horizontal) or [dx, dy]. */
+  function shake(
+    archetype: Archetype,
+    path: (t: number) => number | [number, number],
+    seconds = 6,
+  ) {
+    const world = staged([{ archetype, x: 640, y: 360 }])
+    let inkAt = -1
+    let warnedAt = -1
+    play(
+      world,
+      (t) => {
+        const d = t < 0.5 ? 0 : path(t - 0.5)
+        const [dx, dy] = typeof d === 'number' ? [d, 0] : d
+        return { x: 640 + dx, y: 360 + dy, pressed: true }
+      },
+      seconds,
+      () => {
+        const c = world.creatures[0]!
+        if (warnedAt < 0 && stressFraction(world, c) > INTERACTION.stressWarning)
+          warnedAt = world.time
+        if (inkAt < 0 && sounds(world, 'ink').length > 0) inkAt = world.time
+      },
+    )
+    return { world, inkAt, warnedAt }
+  }
+  const hardShake = (t: number) => 100 * Math.sin(t * 2 * Math.PI * 4)
+
+  it('gentle wiggling, swirling in fast circles and long sweeps never ink — not even a Scaredy', () => {
+    expect(shake('scaredy', (t) => 20 * Math.sin(t * 2 * Math.PI * 2)).inkAt).toBe(-1)
+    const swirl = (t: number): [number, number] => [
+      120 * Math.cos(t * 2 * Math.PI * 1.5),
+      120 * Math.sin(t * 2 * Math.PI * 1.5),
+    ]
+    expect(shake('scaredy', swirl).inkAt).toBe(-1) // ~1100 px/s, but a steady speed: not shaking
+    expect(shake('scaredy', (t) => 400 * Math.sin(t * 2.5)).inkAt).toBe(-1)
+  })
+
+  it('a normal trackpad shake inks Scaredy, Peeker and Grumpy within 2 s; the Friendly is patient', () => {
+    const padShake = (t: number) => 50 * Math.sin(t * 2 * Math.PI * 4)
+    for (const a of ['scaredy', 'peeker', 'grumpy'] as Archetype[]) {
+      const { inkAt } = shake(a, padShake)
+      expect(inkAt, a).toBeGreaterThan(0)
+      expect(inkAt - 0.5, a).toBeLessThan(2)
+    }
+    expect(shake('friendly', padShake).inkAt - 0.5).toBeGreaterThan(2.5)
+  })
+
+  it('a single fast flick is not shaking', () => {
+    expect(shake('scaredy', (t) => (t < 0.15 ? 2000 * t : 300) - 0).inkAt).toBe(-1)
+  })
+
+  it('hard shaking inks every personality — Scaredy first, Friendly last', () => {
+    const times = (['scaredy', 'peeker', 'grumpy', 'friendly'] as Archetype[]).map(
+      (a) => shake(a, hardShake).inkAt,
+    )
+    for (const t of times) expect(t).toBeGreaterThan(0)
+    expect(times).toEqual([...times].sort((a, b) => a - b))
+    expect(times[0]! - 0.5).toBeLessThan(1.5) // a Scaredy can't take much
+    expect(times[3]! - 0.5).toBeGreaterThan(2) // a Friendly is patient
+  })
+
+  it('warns before it inks: stress passes the warning level well before, with squeaks', () => {
+    const { world, inkAt, warnedAt } = shake('friendly', hardShake)
+    expect(warnedAt).toBeGreaterThan(0)
+    expect(inkAt - warnedAt).toBeGreaterThan(0.4)
+    expect(sounds(world, 'squeak').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('after inking: it slips free (even with the button still down), darts off, and the ink spreads', () => {
+    const { world, inkAt } = shake('peeker', hardShake, 3)
+    expect(inkAt).toBeGreaterThan(0)
+    const c = world.creatures[0]!
+    expect(world.interaction.hold).toBeNull() // the button is still down, but it's free
+    expect(world.interaction.press).toBeNull() // and not re-grabbed without a fresh press
+    expect(['flee', 'hide']).toContain(c.mind.intent)
+    expect(world.ink.pool.some((p) => p.active)).toBe(true)
+    expect(c.perception.rattled).toBeGreaterThan(0.9)
+    expect(c.perception.trust).toBeLessThanOrEqual(1 - c.perception.rattled)
+    expect(c.expression.emote?.kind).toBe('exclaim')
+  })
+
+  it('a Grumpy squirts twice — the second straight at the hand — then stands its ground and glares', () => {
+    const world = staged([{ archetype: 'grumpy', x: 640, y: 360 }])
+    const c = world.creatures[0]!
+    let firstInk = -1
+    let secondInk = -1
+    let fled = false
+    let glaredUntil = -1
+    play(
+      world,
+      (t) => ({
+        x: 640 + (t < 0.5 ? 0 : 50 * Math.sin((t - 0.5) * 2 * Math.PI * 4)),
+        y: 360,
+        pressed: firstInk < 0,
+      }),
+      16,
+      () => {
+        const inks = sounds(world, 'ink').length
+        if (firstInk < 0 && inks >= 1) firstInk = world.time
+        if (secondInk < 0 && inks >= 2) secondInk = world.time
+        if (firstInk > 0 && ['flee', 'hide'].includes(c.mind.intent)) fled = true
+        if (firstInk > 0 && c.mind.intent === 'standoff') glaredUntil = world.time
+      },
+    )
+    expect(secondInk - firstInk).toBeCloseTo(INTERACTION.followUpDelay, 1)
+    expect(fled).toBe(false)
+    expect(glaredUntil - firstInk).toBeGreaterThan(8) // a grudge, not a flinch
+    expect(world.interaction.jet).toBeNull() // no jet escape for the Grumpy
+  })
+
+  it('jets away after inking: briefly faster than its normal flee speed, well clear within a second', () => {
+    const world = staged([{ archetype: 'scaredy', x: 640, y: 360 }])
+    const c = world.creatures[0]!
+    let inkedAt = -1
+    let from = { x: 0, y: 0 }
+    let fastest = 0
+    let clearedAfter1s = -1
+    play(
+      world,
+      (t) => ({ x: 640 + (t < 0.5 ? 0 : hardShake(t)), y: 360, pressed: true }),
+      4,
+      () => {
+        if (inkedAt < 0 && sounds(world, 'ink').length > 0) {
+          inkedAt = world.time
+          from = { x: c.position.x, y: c.position.y }
+        }
+        if (inkedAt > 0 && world.time - inkedAt < 0.3)
+          fastest = Math.max(fastest, Math.hypot(c.velocity.x, c.velocity.y))
+        if (inkedAt > 0 && clearedAfter1s < 0 && world.time - inkedAt >= 1) {
+          clearedAfter1s = Math.hypot(c.position.x - from.x, c.position.y - from.y)
+        }
+      },
+    )
+    expect(inkedAt).toBeGreaterThan(0)
+    expect(fastest).toBeGreaterThan(speedLimit(c) * 1.5) // a jet, not a normal swim
+    expect(clearedAfter1s).toBeGreaterThan(120)
+  })
+
+  it('stays rattled for a while: trust is capped, and a Friendly is slower to come back', () => {
+    /** After optionally inking, the hand rests calmly nearby; seconds until the Friendly approaches. */
+    function comeBack(inked: boolean) {
+      const world = staged([{ archetype: 'friendly', x: 640, y: 360 }])
+      if (inked) {
+        play(world, (t) => ({ x: 640 + (t < 0.5 ? 0 : hardShake(t)), y: 360, pressed: true }), 4)
+        expect(sounds(world, 'ink')).toHaveLength(1)
+      }
+      const start = world.time
+      let approachedAt = -1
+      let maxTrustOverCap = -Infinity
+      play(
+        world,
+        () => ({ x: 640, y: 300, pressed: false }),
+        40,
+        () => {
+          const p = world.creatures[0]!.perception
+          maxTrustOverCap = Math.max(maxTrustOverCap, p.trust - (1 - p.rattled))
+          if (approachedAt < 0 && world.creatures[0]!.mind.intent === 'approach')
+            approachedAt = world.time - start
+        },
+      )
+      return { approachedAt, maxTrustOverCap }
+    }
+    const calm = comeBack(false)
+    const inked = comeBack(true)
+    expect(inked.maxTrustOverCap).toBeLessThanOrEqual(1e-9) // trust never above 1 − rattled
+    expect(calm.approachedAt).toBeGreaterThanOrEqual(0)
+    expect(inked.approachedAt).toBeGreaterThan(calm.approachedAt + 3)
   })
 })

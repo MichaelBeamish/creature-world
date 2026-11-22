@@ -54,3 +54,13 @@ describe('interaction sounds', () => {
     expect(watch(world).map((e) => e.kind)).toEqual(['squeak', 'squeak'])
   })
 })
+
+describe('ink sound', () => {
+  it('reports an ink puff once, tagged so the canvas plays a noise puff instead of a chirp', () => {
+    const world = createWorld({ seed: 1, width: 800, height: 600, creatureCount: 2 })
+    const watch = createEmoteWatcher()
+    world.interaction.sounds.push({ kind: 'ink', creatureId: 1 })
+    expect(watch(world).map((e) => [e.kind, e.creature.id])).toEqual([['ink', 1]])
+    expect(watch(world)).toEqual([])
+  })
+})

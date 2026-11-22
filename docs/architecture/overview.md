@@ -70,7 +70,16 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   Constraints still win: a creature in the way can only be shoved at `CONSTRAINTS.shoveSpeed`; the rest of the
   overlap blocks the held creature (so it moves at cursor speed when the way is clear, and no faster than the
   obstacle can get out of the way when it isn't). Sound
-  *events* (grab, squeak, boop) are recorded as data and voiced by the audio layer.
+  *events* (grab, squeak, boop, ink) are recorded as data and voiced by the audio layer.
+- **Shake → ink** (task #21) — while held, the hand's *speed jolts* (how sharply its speed changes; smoothed twice,
+  so mouse-event jitter doesn't count, and steady-speed swirls and sweeps score ~0) above a threshold fill a **leaky
+  bucket** of stress, capped in fill rate so only *sustained* shaking counts. The limit: base + boldness +
+  boldness × curiosity (normal trackpad shake: Scaredy ≈ 1 s, Peeker 1.4 s, Grumpy 1.9 s; the Friendly ≈ 3 s). Near it: a warning
+  tell (tremble, darker flush, faster squeaks). Past it: ink (`ink.ts`, a second pooled particle system with analytic
+  motion, aimed toward the hand like a smoke screen), the hold ends, a short jet escape (briefly above the normal speed limit), and `perception.rattled = 1`, which
+  fades over ~30 s, caps trust at 1 − rattled and dampens curiosity — so even a Friendly keeps its distance for a while.
+  A bold, incurious creature (`standsItsGround`: the Grumpy) doesn't flee: it recoils, squirts a second time straight
+  at the hand, and glares (being rattled keeps its grumpiness up — `EMOTION.grudge` — about 14 s).
 - **Intent** — `wander`, `rest`, `approach`, `peek`, `flee`, `hide`, `standoff`, `held`; `movement.ts` maps each to
   steering (wander, arrive, flee, brake) with a personal speed limit (energy × intent).
 - **Steering** (`steering.ts`) — Reynolds steering behaviors as pure functions returning desired forces:
@@ -87,7 +96,7 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   `shallowRef`, so Vue never tracks simulation objects. `fpsMeter.ts` reports FPS and per-frame work time (the
   `frame` hook in `gameLoop.ts`). Zero cost while hidden.
 - **Audio** (`src/audio/`) — an output layer that observes the world: `createEmoteWatcher` turns new emotes and
-  interaction sound events into sounds; `chirpFor` (pure) designs each creature's voice (pentatonic pitch from size, timbre from archetype, contour
+  interaction sound events into sounds (the ink *pfft* is a noise puff: white-noise buffer → sweeping band-pass); `chirpFor` (pure) designs each creature's voice (pentatonic pitch from size, timbre from archetype, contour
   from emote); `synth.ts` plays it (oscillator → low-pass → envelope → stereo pan → quiet master, ≤ 4 voices). Muted by
   default; the AudioContext is created only on the unmute click (browser autoplay policy).
 - **Scene & motion** — `render/background.ts` draws water, drifting caustics and floating motes (a pure function of
@@ -102,7 +111,7 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   records (no per-frame allocation), analytic closed-form motion (`bubbleAt`), spawned when a creature's intent becomes
   flee/hide (burst), while it keeps darting (trickle), or on entering standoff (Grumpy huff); own random stream.
 - **UI shell** — Vue overlays: `DebugPanel`, `MuteToggle`, `FirstVisitHint` (fades out on first interaction).
-- **Step order** — presence (incl. press/release edges) → interaction (boop / hold) → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → tether → constraints → animation.
+- **Step order** — presence (incl. press/release edges) → interaction (boop / hold) → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → tether → constraints → bubbles → ink → animation.
 
 ## Game loop
 Fixed timestep (e.g. 60 Hz) with an accumulator, so behavior is deterministic and testable regardless of

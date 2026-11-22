@@ -4,7 +4,7 @@
  */
 import type { Creature } from './creature'
 import type { IntentKind } from './mindState'
-import { heldForce, INTERACTION } from './interaction'
+import { heldForce, INTERACTION, jetLimit } from './interaction'
 import { MIND } from './mind'
 import { PERCEPTION } from './perception'
 import { swimBounds } from './scenery'
@@ -66,7 +66,8 @@ const separationForce = vec2()
 export function stepMovement(creature: Creature, world: World, dt: number): void {
   const { weights } = MOVEMENT
   const intent = creature.mind.intent
-  const limit = speedLimit(creature)
+  // After inking, a short jet escape may exceed the normal limit.
+  const limit = Math.max(speedLimit(creature), jetLimit(world, creature))
   const visitor = world.presence.position
 
   switch (intent) {
