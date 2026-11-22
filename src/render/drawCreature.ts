@@ -175,15 +175,11 @@ export function drawCreature(
   })
   // Dress-up (task #30): drawn in this local frame, so worn items follow lean, squash, dizziness, jet swimming…
   const d = creature.dress
-  if (d.head || d.eyes || d.face) {
-    drawWorn(ctx, d, size, y - ry * 0.88, eyeY, {
-      time,
-      speed: Math.hypot(velocity.x, velocity.y),
-    })
-  }
-  // Held items (task #33): kandi cuffs on a few tentacles, and whatever the raised tentacle holds.
   const extras = { time, speed: Math.hypot(velocity.x, velocity.y), sparkle: motion.sway }
+  // Painter's order: kandi cuffs sit on the tentacles but behind a beard (task #35), so they go first…
   if (d.cuffs) drawCuffs(ctx, tentacles.curves, size, extras)
+  if (d.head || d.eyes || d.face) drawWorn(ctx, d, size, y - ry * 0.88, eyeY, extras)
+  // …and whatever the raised tentacle holds (task #33) goes in front.
   if (d.hand && tentacles.hold) drawHeld(ctx, d.hand, tentacles.hold, size, extras)
   if (dizzy > 0.01) drawDizzyStars(ctx, x, y - ry * 1.15, size, dizzy, time * motion.dizzyWobble)
   ctx.restore()
