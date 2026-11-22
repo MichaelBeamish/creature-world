@@ -66,7 +66,8 @@ export const BODY = {
   /** Mantle half-height (it is taller than wide). */
   mantleHalfHeight: 1.27,
   /** Where tentacles attach, below the mantle center. */
-  tentacleRootY: 0.75,
+  /** Kept high enough that the rounded root stays inside even the smallest (scared + exhaling) body. */
+  tentacleRootY: 0.6,
   /** Typical tentacle length. */
   tentacleLength: 2.9,
 } as const

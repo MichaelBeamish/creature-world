@@ -23,7 +23,8 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 17 | Code map + drift check | done |
 | 15 | Sea floor (sand, rocks, shells) | done |
 | 16 | Bubbles (particle system) | done |
-| 18 | Tentacle root corner peeks out (small fix) | todo |
+| 18 | Tentacle root corner peeks out (small fix) | done |
+| 19 | "Hear them?" sound nudge | todo |
 
 ---
 
@@ -215,6 +216,19 @@ the body shrinks (breathing inhale, scared shrink) a corner pokes out.
 - **Fix idea (owner's):** round the root end like the tip (a semicircle at `p0`); if needed, tuck outer roots in.
 - **Accept:** no root corner visible outside the body across breathing, scared shrink, grumpy puff, and lean
   (close-up screenshots); all checks pass. Low priority — do when convenient.
+- **Approved spec decisions (2026-11-22):** measured cause: at the body's smallest (scared shrink + breathing low
+  point) the outer root *center* (±0.75, 0.75 × size) is already outside the ellipse (≈ 1.08). Fix: rounded root cap
+  in `taperedCurve` (mirrors the tip) **and** outer roots tucked in slightly (values chosen by a test); outline math
+  extracted into a pure *new* `tentacleOutline` so a unit test (*new* `src/render/drawCreature.test.ts`) proves every
+  root-cap point stays inside the smallest body for 5–8 tentacles; before/after close-ups for the owner.
+
+### 19. "Hear them?" sound nudge
+Owner decision (2026-11-22): keep sound muted by default (browser autoplay policy + portfolio etiquette), but make
+it discoverable. When the first-visit hint fades (the visitor's first interaction — `hintVisible` in
+`src/app/WorldCanvas.vue`), show a small "hear them?" label beside the speaker button (`src/app/MuteToggle.vue`) for a
+few seconds; it disappears when sound is turned on or after the timeout, and appears only once per visit.
+- **Accept:** shown once, after the first interaction; gone on unmute or after ~5 s; never while sound is on;
+  accessible (doesn't steal focus; the button's label is unchanged); respects reduced motion; all checks pass.
 
 ### 13. CI with GitHub Actions
 `.github/workflows/ci.yml` runs on every push to `main` and every pull request: install with the locked

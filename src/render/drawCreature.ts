@@ -22,23 +22,11 @@ export function drawCreature(
   const scared = mood.scared
   const grumpy = mood.grumpy
 
-  // Puff up when grumpy, shrink a little when scared; stretch along a fast dart (squash & stretch).
-  const puff = 1 + MOOD.puff * grumpy - MOOD.shrink * scared
   const fast = MOVEMENT.baseSpeed * 2
-  const stretchX = 1 + MOOD.stretch * Math.min(1, Math.abs(velocity.x) / fast)
-  const stretchY = 1 + MOOD.stretch * Math.min(1, Math.abs(velocity.y) / fast)
-  // Breathing as gentle squash & stretch: taller ±3%, wider ±2%, slightly out of phase.
-  const rx =
-    size *
-    puff *
-    stretchX *
-    (1 + BREATH.width * motion.breath * Math.sin(anim.breathPhase - BREATH.widthLag))
-  const ry =
-    size *
-    puff *
-    stretchY *
-    BODY.mantleHalfHeight *
-    (1 + BREATH.height * motion.breath * Math.sin(anim.breathPhase))
+  const { rx, ry } = mantleRadii(size, scared, grumpy, anim.breathPhase, motion.breath, {
+    x: 1 + MOOD.stretch * Math.min(1, Math.abs(velocity.x) / fast),
+    y: 1 + MOOD.stretch * Math.min(1, Math.abs(velocity.y) / fast),
+  })
 
   // Grumpy flushes toward red; scared goes pale.
   const hue = mixHue(creature.hue, 2, grumpy * MOOD.flush)
@@ -84,6 +72,44 @@ export function drawCreature(
     lidColor: colors.body,
   })
   ctx.restore()
+}
+
+/**
+ * The mantle's half-width/half-height right now: puffed when grumpy, shrunk when scared, breathing
+ * (taller ±3%, wider ±2%, slightly out of phase), stretched along a fast dart. Pure — the tentacle-root
+ * test uses it to check that roots stay inside even the smallest body.
+ */
+export function mantleRadii(
+  size: number,
+  scared: number,
+  grumpy: number,
+  breathPhase: number,
+  breathScale = 1,
+  stretch = { x: 1, y: 1 },
+): { rx: number; ry: number } {
+  const puff = 1 + MOOD.puff * grumpy - MOOD.shrink * scared
+  const breathW = 1 + BREATH.width * breathScale * Math.sin(breathPhase - BREATH.widthLag)
+  const breathH = 1 + BREATH.height * breathScale * Math.sin(breathPhase)
+  return {
+    rx: size * puff * stretch.x * breathW,
+    ry: size * puff * stretch.y * BODY.mantleHalfHeight * breathH,
+  }
+}
+
+/** Where tentacles attach (multiples of size): outer roots at ±spread; the height is BODY.tentacleRootY. */
+export const TENTACLE_ROOT = {
+  /** Tucked in so the rounded root stays inside the body at its smallest (see drawCreature.test.ts). */
+  spread: 0.55,
+  /** Root width (the tentacle's thickest point); its rounded cap has radius width / 2. */
+  width: 0.36,
+  /** Tip width. */
+  tipWidth: 0.08,
+} as const
+
+/** Root position of tentacle i of n, relative to the mantle center. */
+export function tentacleRoot(size: number, i: number, n: number): { x: number; y: number } {
+  const s = n === 1 ? 0 : (i / (n - 1)) * 2 - 1 // -1 (left) .. 1 (right)
+  return { x: s * size * TENTACLE_ROOT.spread, y: size * BODY.tentacleRootY }
 }
 
 /** Mood → body language (multiples of size, or 0..1 blends). */
@@ -145,8 +171,9 @@ function drawTentacles(
     const s = n === 1 ? 0 : (i / (n - 1)) * 2 - 1 // -1 (left) .. 1 (right)
     const length = size * BODY.tentacleLength * (0.85 + hash2(id, i) * 0.3)
     const wave = (i % 2 === 0 ? -1 : 1) * size * (0.4 + hash2(id, i + 50) * 0.3)
-    const rootX = x + s * size * 0.75
-    const rootY = y + size * BODY.tentacleRootY
+    const root = tentacleRoot(size, i, n)
+    const rootX = x + root.x
+    const rootY = y + root.y
 
     // Traveling wave: each point further along lags in phase, so the swing runs root → tip.
     const phase = anim.swayPhase + i * SWAY.spread
@@ -165,34 +192,38 @@ function drawTentacles(
         rootY + length * 0.66 + trailY * 0.65,
       ],
       [rootX + s * size * 1.3 + wave * 0.5 + sway3 + trailX, rootY + length + trailY],
-      size * 0.36,
-      size * 0.08,
+      size * TENTACLE_ROOT.width,
+      size * TENTACLE_ROOT.tipWidth,
     )
   }
 }
 
-type Point = readonly [number, number]
+export type Point = readonly [number, number]
+
+const CURVE_SAMPLES = 16
+const CAP_STEPS = 8
 
 /**
- * Fills a shape along a cubic Bézier whose width tapers from `startWidth` to `endWidth`,
- * with a rounded tip. Built by offsetting sampled curve points along the curve's normal.
+ * The outline of a tapered tentacle along a cubic Bézier, as a closed polygon (pure, testable):
+ * left edge root → tip, a rounded cap around the tip, right edge tip → root, and a rounded cap
+ * around the root — so no flat, cornered end can ever poke out of the body.
+ * Edges come from offsetting sampled curve points along the curve's normal.
  */
-function taperedCurve(
-  ctx: CanvasRenderingContext2D,
+export function tentacleOutline(
   p0: Point,
   p1: Point,
   p2: Point,
   p3: Point,
   startWidth: number,
   endWidth: number,
-): void {
-  const SAMPLES = 16
+): Point[] {
   const left: Point[] = []
   const right: Point[] = []
+  let rootAngle = 0
   let tipAngle = 0
 
-  for (let i = 0; i <= SAMPLES; i++) {
-    const t = i / SAMPLES
+  for (let i = 0; i <= CURVE_SAMPLES; i++) {
+    const t = i / CURVE_SAMPLES
     const u = 1 - t
     // Position on the curve.
     const px = u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0]
@@ -208,15 +239,39 @@ function taperedCurve(
     const half = (startWidth + (endWidth - startWidth) * t) / 2
     left.push([px + nx * half, py + ny * half])
     right.push([px - nx * half, py - ny * half])
-    if (i === SAMPLES) tipAngle = Math.atan2(dy, dx)
+    if (i === 0) rootAngle = Math.atan2(dy, dx)
+    if (i === CURVE_SAMPLES) tipAngle = Math.atan2(dy, dx)
   }
 
+  /** Half-circle points around center, starting at angle from and sweeping by -π (ends excluded). */
+  const cap = (center: Point, radius: number, from: number): Point[] =>
+    Array.from({ length: CAP_STEPS - 1 }, (_, k) => {
+      const a = from - (Math.PI * (k + 1)) / CAP_STEPS
+      return [center[0] + Math.cos(a) * radius, center[1] + Math.sin(a) * radius] as const
+    })
+
+  return [
+    ...left,
+    ...cap(p3, endWidth / 2, tipAngle + Math.PI / 2), // around the front of the tip
+    ...right.reverse(),
+    ...cap(p0, startWidth / 2, rootAngle - Math.PI / 2), // around the back of the root
+  ]
+}
+
+/** Fills a tapered tentacle (see tentacleOutline). */
+function taperedCurve(
+  ctx: CanvasRenderingContext2D,
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  p3: Point,
+  startWidth: number,
+  endWidth: number,
+): void {
+  const outline = tentacleOutline(p0, p1, p2, p3, startWidth, endWidth)
   ctx.beginPath()
-  ctx.moveTo(left[0]![0], left[0]![1])
-  for (const [px, py] of left) ctx.lineTo(px, py)
-  // Rounded tip: half circle from the left edge, around the front, to the right edge.
-  ctx.arc(p3[0], p3[1], endWidth / 2, tipAngle + Math.PI / 2, tipAngle - Math.PI / 2, true)
-  for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i]![0], right[i]![1])
+  ctx.moveTo(outline[0]![0], outline[0]![1])
+  for (let i = 1; i < outline.length; i++) ctx.lineTo(outline[i]![0], outline[i]![1])
   ctx.closePath()
   ctx.fill()
 }
