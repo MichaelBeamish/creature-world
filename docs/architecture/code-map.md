@@ -51,7 +51,7 @@
 |---|---|---|
 | `src/render/scene.ts` | Draws one frame: background → floor → creatures (back to front) → bubbles → emotes → vignette → debug | `drawScene`, `SceneOptions` |
 | `src/render/floor.ts` | "Moonlit reef" sea floor: sand, mossy rocks, glowing shells, swaying seaweed | `drawFloor` |
-| `src/render/drawCreature.ts` | The "little octopus": body, fur, tentacles, eyes, mood body language | `drawCreature` |
+| `src/render/drawCreature.ts` | The "little octopus": body, fur, tentacles, eyes, mood body language | `drawCreature`, `mantleRadii`, `tentacleRoot`, `tentacleOutline`, `TENTACLE_ROOT` |
 | `src/render/bubbles.ts` | Draws live bubbles (rim + highlight) and their pop rings | `drawBubbles` |
 | `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade | `drawEmotes` |
 | `src/render/background.ts` | Water, caustics, floating motes (pure function of time), vignette | `drawBackground`, `drawVignette`, `motePosition` |
@@ -121,6 +121,8 @@
 | **Body, animation & looks** | | |
 | Creature size range | `CREATURE_LIMITS.minSize` | `src/simulation/creature.ts` |
 | Tentacle length | `BODY.tentacleLength` | `src/simulation/creature.ts` |
+| How far apart tentacle roots attach (kept inside the body) | `TENTACLE_ROOT.spread` | `src/render/drawCreature.ts` |
+| How high under the body tentacles attach | `BODY.tentacleRootY` | `src/simulation/creature.ts` |
 | Breathing speed | `ANIMATION.breathHz` | `src/simulation/animation.ts` |
 | How often creatures blink | `ANIMATION.blinkWait` | `src/simulation/animation.ts` |
 | Tentacle sway amount | `SWAY.amplitude` | `src/render/drawCreature.ts` |

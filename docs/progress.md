@@ -2,6 +2,21 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #18: Tentacle root corner ✅
+- **Owner observation:** a corner of an outer tentacle's root was sometimes visible outside the body.
+- **Measured cause:** roots ended in a flat edge (only tips were rounded), and at the body's smallest (scared shrink +
+  breathing low point) the outer root *center* (±0.75, 0.75 × size) was already outside the ellipse (≈ 1.08; the
+  whole flat end reached ≈ 1.49).
+- **Done:** rounded root cap (owner's idea) via a pure `tentacleOutline`; outer roots tucked to ±0.55 × size and
+  `BODY.tentacleRootY` 0.75 → 0.6 (computed as the widest spread keeping the whole cap inside the smallest body);
+  body size formula extracted to `mantleRadii` (shared by drawing and test).
+- **Verified:** first renderer unit test (`src/render/drawCreature.test.ts`): every root-cap point inside the smallest
+  body for 3 sizes × 5–8 tentacles — would have failed on the old code; caps rounded at both ends. Before/after
+  close-ups (12 worst-case poses) from a temporary harness page (deleted). 188/188 tests; code map updated.
+- **Learned / notes:** measure the geometry before tuning by eye; extract pure functions to make drawing testable;
+  a regression test should be shown to fail on the old code; delete tests that can't fail.
+- **Next:** task #19 ("hear them?" sound nudge) or deploy (roadmap #1).
+
 ## 2026-11-21 — Task #16: Bubbles ✅
 - **Done:** `simulation/bubbles.ts` — a particle system: fixed 64-slot ring-buffer pool (allocated once), analytic
   closed-form motion (`bubbleAt`: rise with gentle acceleration, wobble, growth, pop at the surface or end of life),
