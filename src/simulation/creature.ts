@@ -1,3 +1,4 @@
+import type { WearableKind } from './props'
 import { createAnimation, type CreatureAnimation } from './animation'
 import { createExpression, type Expression } from './expression'
 import { createMindState, type MindState } from './mindState'
@@ -43,6 +44,17 @@ export interface Creature {
   mind: MindState
   /** What it shows: gaze, emote, mood-driven animation speed (see expression.ts). */
   expression: Expression
+  /** What it's wearing (task #30), and a Grumpy's shaking-it-off timing (see wearables.ts). */
+  dress: Dress
+}
+
+/** Worn items by spot (the nose glasses fill both eyes and face), and when the next angry shake starts / started. */
+export interface Dress {
+  head: WearableKind | null
+  eyes: WearableKind | null
+  face: WearableKind | null
+  shakeAt: number
+  shakingSince: number
 }
 
 export interface Activity {
@@ -144,6 +156,7 @@ export function createCreature(
     traits,
     mind: createMindState(),
     expression: createExpression(),
+    dress: { head: null, eyes: null, face: null, shakeAt: Infinity, shakingSince: -Infinity },
   }
 }
 

@@ -2,6 +2,33 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #30: Dress-up + inventory pages ✅
+- **Chest pages:** 3 items per page plus a ↻ circle (wrapping) and page dots — the inventory can grow without the arc
+  growing (`CHEST_PAGES`; 7 pages: food & toys, then dress-up).
+- **18 wearables**, one per spot (`creature.dress`: head / eyes / face; two-spot items take eyes + face): wizard hat,
+  cowboy hat, buccaneer (pirate) hat, party hat, propeller beanie (spins with speed), bouffant wig, tiara, LED cat ears
+  (glow), mouse ears, star glasses, heart glasses, neon shutter shades (glow), monocle, see-through snorkel mask, nose
+  glasses, clown nose + blue eyeshadow, rainbow clown wig ("a colorful baby bonnet" — owner: don't change it), fluffy
+  white beard. Drawn in `drawCreature`'s local frame, so they follow every pose.
+- Drop on a creature to wear (swaps the spot); press a worn item to take it off; fallen items sink and can be picked up
+  again; after 5 s on the sand they blink for 3 s and return to the chest; at most 3 of each out. **Only the Grumpy
+  minds:** it shakes items off one at a time (💢). Press order: chest circles → worn items → toys → creatures.
+- **Owner feedback rounds:** pick up fallen items; shorter stay + longer blink; buccaneer hat; hats/wigs sit lower;
+  beanie and plain mustache removed; see-through snorkel; white beard; bigger wig; thicker nose-glasses mustache;
+  added heart glasses, tiara, clown nose, rave gear, mouse ears (replaced a glowing bucket hat that didn't read), and a
+  clown wig (redrawn from separate puffs into one curly rainbow afro); wig icons fit their circles; the snorkel's tube
+  is drawn over hats. Held items (kandi cuffs, glow stick, cutlass, bubble pipe, soda, wand, balloon, rose, trident)
+  split into **#33**, which absorbs #31.
+- **Bugs found:** the clown nose drew twice (a two-spot rule keyed to one item's name → now "the same item fills both
+  spots"); a test looped "until a short page" and hung once every page was full (→ bounded loop; test runs now have a
+  timeout); my first browser script swapped items off and they auto-returned before the screenshot (→ a gallery drawn
+  by the real modules instead).
+- **Verified:** 299 tests (+16 net): pages and ↻, wearing/swapping/two-spot items, take off and move, cap, auto-return,
+  pick up fallen items, Grumpy shakes everything off, others keep theirs. Galleries of every item and combos in real
+  Chrome; chest pages screenshotted. Owner: "amazing. verified". All five checks pass; docs updated.
+- **Learned:** write rules in terms of the data, not item names; never loop "until" something that might not happen
+  (and put a timeout on test runs); draw order is the painter's algorithm — drive it with data.
+
 ## 2026-11-22 — Task #29: Toys — rubber duck + soccer ball ✅
 - **Toys in the chest:** the duck and the ball join the shrimp in the chest's arc; each exists once (its slot greys
   out while it's in the pool); toys can be picked up in the water and moved or dropped back on the chest (press order:

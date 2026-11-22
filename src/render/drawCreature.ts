@@ -1,6 +1,8 @@
 import { BODY, type Creature } from '../simulation/creature'
 import { INTERACTION } from '../simulation/interaction'
 import { MOVEMENT } from '../simulation/movement'
+import { shakeAmount } from '../simulation/wearables'
+import { drawWorn } from './wearables'
 import { FULL_MOTION, type MotionSettings } from './motion'
 import { hash2 } from './noise'
 
@@ -104,9 +106,19 @@ export function drawCreature(
   )
   // Turn and fire: tentacles toward the hand = head pointing away from it.
   const aim = pose.aim
+  // A Grumpy shaking off what it's wearing: a fast angry wobble (a slower, smaller tilt under reduced motion).
+  const shaking = shakeAmount(creature, time)
+  const shake =
+    shaking > 0
+      ? Math.sin(time * (motion.tremble > 0 ? 32 : 8)) *
+        0.32 *
+        shaking *
+        Math.max(0.3, motion.tremble)
+      : 0
   const lean =
     (aim && aim.amount > 0 ? swimAngle(swimming, -aim.hand.x, -aim.hand.y, aim.amount) : swimming) +
-    wobble
+    wobble +
+    shake
   ctx.rotate(lean)
   const x = 0
   const y = 0
@@ -150,6 +162,14 @@ export function drawCreature(
     dizzy,
     spin: time * DIZZY.spiralSpin,
   })
+  // Dress-up (task #30): drawn in this local frame, so worn items follow lean, squash, dizziness, jet swimming…
+  const d = creature.dress
+  if (d.head || d.eyes || d.face) {
+    drawWorn(ctx, d, size, y - ry * 0.88, eyeY, {
+      time,
+      speed: Math.hypot(velocity.x, velocity.y),
+    })
+  }
   if (dizzy > 0.01) drawDizzyStars(ctx, x, y - ry * 1.15, size, dizzy, time * motion.dizzyWobble)
   ctx.restore()
 }

@@ -29,8 +29,9 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 27 | Ink reactions: Grumpy chase, Friendly dizzy | done |
 | 28 | Treasure chest + shrimp (feeding) | done |
 | 29 | Toys: rubber duck + soccer ball | done |
-| 30 | Dress-up: hats, sunglasses, fake beards | todo |
-| 31 | Glow sticks | todo |
+| 30 | Dress-up + inventory pages | done |
+| 31 | Glow sticks | dropped |
+| 33 | Held items: kandi cuffs + things to hold | todo |
 | 32 | Party: disco ball + club lights + music | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
@@ -367,17 +368,39 @@ creatures nudge them around (the duck drifts and spins). Both can be dragged bac
   (*new* intent `play`, "kick from behind" steering), after food; each toy exists once; toys can be dragged from the
   water (press order: slots → toys → creatures).
 
-### 30. Dress-up: hats, sunglasses, fake beards
+### 30. Dress-up + inventory pages
 Drop an accessory on a creature and it wears it (drawn on the creature, moving with it); it reacts by personality —
 the Friendly shows off, the Scaredy is nervous then proud, the Grumpy tries to shake it off (and secretly keeps the
 sunglasses). Drag it off to take it back.
 - **Accept:** hit-testing a drop onto a creature; accessories follow body motion (incl. lean/jet/dizzy); reactions
   by archetype; removable; all checks pass.
+- **Approved spec (owner, 2026-11-22) — supersedes the reactions above:** the chest gets **pages** (3 items + a ↻ circle
+  that rotates to the next page, wrapping; page dots). **13 wearables**, one per spot — head: wizard hat, beanie,
+  propeller beanie, cowboy hat, party hat, pirate hat, bouffant wig; eyes: star glasses, monocle, snorkel mask; face:
+  fake beard, fake mustache; eyes+face: nose glasses. Drop on a creature to wear (swaps the spot's item off); drop in
+  the water to sink. **Only the Grumpy reacts:** it shakes until items fall off (💢). Press a worn item to take it off.
+  At most **3 of each** out at once. Fallen/dropped wearables **blink after 10 s on the sand and return to the chest at
+  12 s** (toys stay out). *New* `simulation/wearables.ts`, `render/wearables.ts`; press order: chest circles → worn
+  items → toys → creatures.
+- **Owner feedback (rounds 2–3):** fallen items can be picked up; 5 s still + 3 s blink (8 s total); buccaneer hat;
+  pirate hat and wig sit lower; beanie and plain mustache removed; see-through snorkel mask; fluffy white beard; wig
+  20% bigger; thicker nose-glasses mustache; **added** heart glasses, princess tiara, clown nose + blue eyeshadow, and
+  rave gear that glows: LED cat ears, neon shutter shades; mouse ears (replaced the glowing bucket hat); a colorful clown wig; 18 wearables, 7 chest pages.
 
-### 31. Glow sticks
+### 31. Glow sticks — dropped (owner, 2026-11-22): folded into #33 (held items)
+
 A creature grabs a glow stick and holds it in a tentacle; it glows softly in the water (and is waved at the party).
 - **Accept:** a stick is held by one creature at a time and follows its tentacle; glow rendering; returnable to the
   chest; all checks pass.
+
+### 33. Held items: kandi cuffs + things to hold — owner request 2026-11-22
+A new wear spot on the **tentacles** (needs anchoring to a tentacle tip, which only exists in the renderer — it sways,
+trails and streams). Items: **kandi cuffs** (colorful beaded bracelets that jiggle), **glow stick** (glows — replaces
+#31), **pirate cutlass**, **corn cob bubble pipe** (blows little bubbles via the bubble system), **soda can**, **magic
+wand** (sparkles), **balloon** (floats up on a string), **rose**, **tiny trident**. Same rules as #30: one per spot,
+drop on / press to take off, 3 of each, fallen items return to the chest; on the chest pages.
+- **Accept:** held items follow the tentacle in every pose; the bubble pipe blows bubbles; glow items glow; all checks
+  pass.
 
 ### 32. Party: disco ball + club lights + music
 The disco ball and club lights come out together: the pool dims, the disco ball throws moving spots of light, colored

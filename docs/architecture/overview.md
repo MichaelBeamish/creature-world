@@ -85,6 +85,14 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   drift and rests on the sand (at most 3 shrimp). Feeding (`feeding.ts`) is a layer in the mind, only when calm:
   by trait dials the Friendly races, the Peeker sneaks in while the hand is away, the Scaredy waits for the hand to
   leave, the Grumpy guards (others keep off) then eats — new intents `eat`, `guard`. Eating: ♥, squish, "nom".
+- **Dress-up & chest pages** (task #30) — the chest shows 3 items per page plus a ↻ circle (`CHEST_PAGES`, wrapping;
+  page dots), so the inventory can grow without the arc growing. 18 wearables (incl. glowing rave gear), one per spot
+  (head / eyes / face; the nose glasses and the clown nose take eyes + face): dropped on a creature they're worn (`creature.dress`, plain data), swapping out
+  whatever filled the spot; pressed on a creature they come off (press order: circles → worn items → toys →
+  creatures). The renderer draws them inside `drawCreature`'s local frame, so they follow every pose for free. Only
+  the Grumpy minds (bold + incurious): it shakes one item off every few seconds (`stepWearables`). Fallen items sink and
+  can be picked up again (`itemAt`); after 5 s on the sand they blink for 3 s, then return to the chest. At most 3 of
+  each are out.
 - **Toys** (task #29) — the duck and the ball are props with real (simple) physics: the duck has neutral buoyancy
   (stays at its depth); the ball sinks, bounces with restitution, rolls with friction and pops up when hit; both
   spin, stay in the pool, and a gentle current near the walls eases them out of corners,
