@@ -10,8 +10,7 @@ import type { VoiceKind } from './voice'
 
 export interface SoundEvent {
   creature: Creature
-  /** A chirp, or the ink puff. */
-  kind: VoiceKind | 'ink'
+  kind: VoiceKind
 }
 
 /** Returns a function that reports each emote and interaction sound exactly once (each is a new object). */
@@ -29,6 +28,9 @@ export function createEmoteWatcher(): (world: World) => SoundEvent[] {
     for (const sound of world.interaction.sounds) {
       if (seen.has(sound)) continue
       seen.add(sound)
+      // Ink is silent on purpose (owner, task #27): the creatures' own voices carry the moment — the Grumpy's
+      // angry chirp with each 💢, the Friendly's hiccup.
+      if (sound.kind === 'ink') continue
       const creature = world.creatures.find((c) => c.id === sound.creatureId)
       if (creature) events.push({ creature, kind: sound.kind satisfies InteractionSoundKind })
     }

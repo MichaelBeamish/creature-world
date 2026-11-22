@@ -37,7 +37,7 @@ describe('ink', () => {
   it('a higher aim (a Grumpy second squirt) concentrates the cloud toward the hand', () => {
     const meanToward = (aim: number) => {
       const w = world()
-      spawnInk(w.ink, w.creatures[0]!, 0, 1, 0, aim)
+      spawnInk(w.ink, w.creatures[0]!, 0, 1, 0, { aim })
       const puffs = w.ink.pool.filter((p) => p.active)
       return puffs.reduce((sum, p) => sum + p.dirX, 0) / puffs.length
     }

@@ -11,7 +11,7 @@ Ideas, not commitments. Each becomes a planned milestone only after discussion.
 7. **Ecosystem** — food, day/night, creatures that sleep, new creatures appearing.
 8. **Mobile-first interactions** — touch gestures as first-class input.
 9. **Direct interaction: pick up / drag, boop, shake** — the visitor can physically play with creatures.
-   → **Now scheduled** as backlog tasks #20–#21 (plus #22–#25: feeding, petting, popping bubbles, names).
+   → **Now scheduled** as backlog tasks #20–#21 (plus #22, #23, #25–#27: feeding, petting, names, moving shells, ink reactions; #24 popping bubbles was dropped).
    - Fits the architecture: input layer → events/state in simulation → renderer; animation stays a layer on top.
    - Drag: a "held" state follows the pointer; hit-testing uses the shared `BODY` proportions.
    - Boop: an event → velocity impulse, squash impulse, forced blink/emote; temporarily faster breathing/sway

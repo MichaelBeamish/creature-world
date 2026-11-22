@@ -6,7 +6,8 @@ A tiny living tide pool in the browser. Above a moonlit sea floor of sand, mossy
 swaying seaweed, soft, furry, octopus-like creatures breathe, blink, wander and rest —
 and when you move your cursor near them, each one reacts in its own way. You can boop them, or pick them up
 and drag them around (they wriggle and squeak — gently). Shake one too hard and it squirts ink and keeps its
-distance for a while (a Grumpy squirts twice and glares at you instead).
+distance for a while — except the Grumpy, which gets mad and chases you, squirting whenever you get close, and the
+Friendly, which just hiccups, gets dizzy and forgives you.
 
 It should feel like **discovering something alive**, not using a website.
 
@@ -65,7 +66,7 @@ fixed 60 Hz step: interaction (boop / hold) → perception → mind (emotion →
   so an LLM-guided mind could later sit *above* the fast rule-based reflexes. Being held is such a layer: it
   overrides what a creature *does* (a damped spring to your hand, plus a personality-scaled struggle) while its
   feelings keep running underneath.
-- **Sound** — Web Audio synthesis (no audio files): pentatonic per-creature voices, plus filtered-noise puffs (ink).
+- **Sound** — Web Audio synthesis (no audio files): pentatonic per-creature voices.
 
 Details: [architecture overview](docs/architecture/overview.md) (the *why*) ·
 [code map](docs/architecture/code-map.md) (the *where*, and "to change X, edit Y") · decisions:
@@ -92,5 +93,5 @@ decisions; [Claude Code](https://claude.com/claude-code) planned, implemented, t
 
 The MVP — "The Tide Pool" ([scope & success criteria](docs/product/mvp.md)) — is complete (success criteria 1–5 verified; the informal
 first-viewer test is pending), and a sea floor and bubbles have since been added. Now in progress: the **interaction milestone** — boop, drag and
-shake → ink are in; feeding, petting, popping bubbles, names and moving shells are next — then a public
+shake → ink (with a reaction per personality) are in; feeding, petting, names and moving shells are next — then a public
 deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md) (social life, an LLM-guided mind, …).

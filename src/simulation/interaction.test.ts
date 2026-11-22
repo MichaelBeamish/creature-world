@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { BODY, footprint } from './creature'
 import { CONSTRAINTS } from './constraints'
-import { creatureAt, INTERACTION, stressFraction } from './interaction'
+import { aimAtHand, creatureAt, INTERACTION, stressFraction } from './interaction'
 import { speedLimit } from './movement'
-import { setPresenceInput } from './presence'
+import { setPresenceInput, updatePresence } from './presence'
 import { swimBounds } from './scenery'
 import { ARCHETYPES, type Archetype } from './traits'
 import { createWorld, stepWorld, type World } from './world'
@@ -381,7 +381,9 @@ describe('shake → ink', () => {
         const c = world.creatures[0]!
         if (warnedAt < 0 && stressFraction(world, c) > INTERACTION.stressWarning)
           warnedAt = world.time
-        if (inkAt < 0 && sounds(world, 'ink').length > 0) inkAt = world.time
+        // The shake limit was reached: a squirt (or, for a Friendly, a hiccup).
+        if (inkAt < 0 && sounds(world, 'ink').length + sounds(world, 'hiccup').length > 0)
+          inkAt = world.time
       },
     )
     return { world, inkAt, warnedAt }
@@ -442,35 +444,6 @@ describe('shake → ink', () => {
     expect(c.expression.emote?.kind).toBe('exclaim')
   })
 
-  it('a Grumpy squirts twice — the second straight at the hand — then stands its ground and glares', () => {
-    const world = staged([{ archetype: 'grumpy', x: 640, y: 360 }])
-    const c = world.creatures[0]!
-    let firstInk = -1
-    let secondInk = -1
-    let fled = false
-    let glaredUntil = -1
-    play(
-      world,
-      (t) => ({
-        x: 640 + (t < 0.5 ? 0 : 50 * Math.sin((t - 0.5) * 2 * Math.PI * 4)),
-        y: 360,
-        pressed: firstInk < 0,
-      }),
-      16,
-      () => {
-        const inks = sounds(world, 'ink').length
-        if (firstInk < 0 && inks >= 1) firstInk = world.time
-        if (secondInk < 0 && inks >= 2) secondInk = world.time
-        if (firstInk > 0 && ['flee', 'hide'].includes(c.mind.intent)) fled = true
-        if (firstInk > 0 && c.mind.intent === 'standoff') glaredUntil = world.time
-      },
-    )
-    expect(secondInk - firstInk).toBeCloseTo(INTERACTION.followUpDelay, 1)
-    expect(fled).toBe(false)
-    expect(glaredUntil - firstInk).toBeGreaterThan(8) // a grudge, not a flinch
-    expect(world.interaction.jet).toBeNull() // no jet escape for the Grumpy
-  })
-
   it('jets away after inking: briefly faster than its normal flee speed, well clear within a second', () => {
     const world = staged([{ archetype: 'scaredy', x: 640, y: 360 }])
     const c = world.creatures[0]!
@@ -499,34 +472,311 @@ describe('shake → ink', () => {
     expect(clearedAfter1s).toBeGreaterThan(120)
   })
 
-  it('stays rattled for a while: trust is capped, and a Friendly is slower to come back', () => {
-    /** After optionally inking, the hand rests calmly nearby; seconds until the Friendly approaches. */
+  it('stays rattled for a while: trust is capped, and a Peeker is slower to come back', () => {
+    /** After optionally inking, the hand rests calmly nearby; seconds until the Peeker comes to look again. */
     function comeBack(inked: boolean) {
-      const world = staged([{ archetype: 'friendly', x: 640, y: 360 }])
+      const world = staged([{ archetype: 'peeker', x: 640, y: 360 }])
       if (inked) {
         play(world, (t) => ({ x: 640 + (t < 0.5 ? 0 : hardShake(t)), y: 360, pressed: true }), 4)
         expect(sounds(world, 'ink')).toHaveLength(1)
       }
       const start = world.time
-      let approachedAt = -1
+      let curiousAt = -1
       let maxTrustOverCap = -Infinity
       play(
         world,
         () => ({ x: 640, y: 300, pressed: false }),
         40,
         () => {
-          const p = world.creatures[0]!.perception
-          maxTrustOverCap = Math.max(maxTrustOverCap, p.trust - (1 - p.rattled))
-          if (approachedAt < 0 && world.creatures[0]!.mind.intent === 'approach')
-            approachedAt = world.time - start
+          const c = world.creatures[0]!
+          maxTrustOverCap = Math.max(
+            maxTrustOverCap,
+            c.perception.trust - (1 - c.perception.rattled),
+          )
+          if (curiousAt < 0 && c.mind.intent === 'peek') curiousAt = world.time - start
         },
       )
-      return { approachedAt, maxTrustOverCap }
+      return { curiousAt, maxTrustOverCap }
     }
     const calm = comeBack(false)
     const inked = comeBack(true)
     expect(inked.maxTrustOverCap).toBeLessThanOrEqual(1e-9) // trust never above 1 − rattled
-    expect(calm.approachedAt).toBeGreaterThanOrEqual(0)
-    expect(inked.approachedAt).toBeGreaterThan(calm.approachedAt + 3)
+    expect(calm.curiousAt).toBeGreaterThanOrEqual(0)
+    // Inked, it hides out of range and stays away a long time (often the whole 40 s) — far later either way.
+    const inkedAt = inked.curiousAt < 0 ? Infinity : inked.curiousAt
+    expect(inkedAt).toBeGreaterThan(calm.curiousAt + 3)
   })
 })
+
+describe('ink reactions by personality (task #27)', () => {
+  const padShake = (t: number) => 50 * Math.sin(t * 2 * Math.PI * 4)
+
+  /** Shake until the limit, release, then move the hand along `after` (from the moment of the squirt). */
+  function react(
+    archetype: Archetype,
+    after: (t: number) => { x: number; y: number; active?: boolean; pressed?: boolean },
+    seconds = 10,
+    each?: (world: World, sinceLimit: number) => void,
+  ) {
+    const world = staged([{ archetype, x: 640, y: 360 }])
+    let limitAt = -1
+    for (let i = 0; i < Math.round(seconds / DT); i++) {
+      const t = world.time
+      if (limitAt < 0) {
+        setPresenceInput(world.presence, 640 + (t < 0.5 ? 0 : padShake(t - 0.5)), 360, true, true)
+      } else {
+        const h = after(t - limitAt)
+        setPresenceInput(world.presence, h.x, h.y, h.active ?? true, h.pressed ?? false)
+      }
+      stepWorld(world, DT)
+      if (limitAt < 0 && sounds(world, 'ink').length + sounds(world, 'hiccup').length > 0) {
+        limitAt = world.time
+      }
+      if (limitAt > 0) each?.(world, world.time - limitAt)
+    }
+    return world
+  }
+
+  /** World times at which an ink squirt sounded. */
+  function inkTimes(world: World, record: number[]) {
+    const n = sounds(world, 'ink').length
+    while (record.length < n) record.push(world.time)
+  }
+
+  it('a mad Grumpy chases the hand, squirting whenever it is close — never more often than every 0.5 s', () => {
+    const times: number[] = []
+    const intents = new Set<string>()
+    const world = react(
+      'grumpy',
+      () => ({ x: 640, y: 360 }),
+      9,
+      (w, since) => {
+        inkTimes(w, times)
+        if (since < INTERACTION.chaseSeconds - 0.1) intents.add(w.creatures[0]!.mind.intent)
+      },
+    )
+    expect([...intents]).toEqual(['chase'])
+    expect(times.length).toBeGreaterThanOrEqual(5) // the first cloud + several chase squirts
+    for (let i = 1; i < times.length; i++) {
+      expect(times[i]! - times[i - 1]!).toBeGreaterThanOrEqual(INTERACTION.chaseInkEvery - 1e-9)
+    }
+    expect(world.interaction.chase).toBeNull() // gave up…
+    expect(world.creatures[0]!.mind.intent).toBe('standoff') // …and glares
+  })
+
+  it('it stops just short of a still hand (its tentacles end just before the cursor) — not on top of it', () => {
+    const gaps: number[] = []
+    react(
+      'grumpy',
+      () => ({ x: 900, y: 360 }),
+      4.5,
+      (w, since) => {
+        const c = w.creatures[0]!
+        if (since > 2 && c.mind.intent === 'chase')
+          gaps.push(Math.hypot(900 - c.position.x, 360 - c.position.y))
+      },
+    )
+    const stop = 30 * INTERACTION.chaseStop
+    expect(gaps.length).toBeGreaterThan(0)
+    for (const g of gaps) {
+      expect(g).toBeGreaterThan(stop - 10) // not on the cursor
+      expect(g).toBeLessThan(INTERACTION.chaseInkRange) // but close enough to ink
+    }
+  })
+
+  it('walking away is not enough: a hand leaving at 300 px/s gets caught and inked', () => {
+    const times: number[] = []
+    react(
+      'grumpy',
+      (t) => ({ x: 640 + 300 * t, y: 360 }),
+      6,
+      (w) => inkTimes(w, times),
+    )
+    expect(times.length).toBeGreaterThanOrEqual(2) // the first cloud + at least one chase squirt
+  })
+
+  it('it chases far faster than it swims — as fast as a quick hand', () => {
+    let fastest = 0
+    react(
+      'grumpy',
+      (t) => ({ x: 640 + (t < 0.3 ? 0 : 500), y: 360 }),
+      3,
+      (w) => {
+        const c = w.creatures[0]!
+        if (c.mind.intent === 'chase')
+          fastest = Math.max(fastest, Math.hypot(c.velocity.x, c.velocity.y))
+      },
+    )
+    expect(fastest).toBeGreaterThan(500)
+    expect(fastest).toBeLessThanOrEqual(INTERACTION.chaseSpeed + 1e-6)
+  })
+
+  it('but a visitor can dodge it: circling fast around it keeps the hand out of inking range', () => {
+    // Fast circles (~1000 px/s) around the middle of the pool: it keeps cutting the corner behind the hand.
+    const times: number[] = []
+    const circle = (t: number) => {
+      const a = 4 * t // 250 px × 4 rad/s = 1000 px/s
+      return { x: 640 + 250 * Math.cos(a), y: 330 + 250 * Math.sin(a) }
+    }
+    let closest = Infinity
+    react('grumpy', circle, 6, (w, since) => {
+      inkTimes(w, times)
+      const c = w.creatures[0]!
+      if (since > 0.3 && c.mind.intent === 'chase') {
+        const p = w.presence.position
+        closest = Math.min(closest, Math.hypot(p.x - c.position.x, p.y - c.position.y))
+      }
+    })
+    expect(times).toHaveLength(1) // only the first cloud — it never caught up
+    expect(closest).toBeGreaterThan(INTERACTION.chaseInkRange) // and not just luck with the cooldown
+  })
+
+  it('the chase ends early when the visitor leaves the pool or grabs the Grumpy again', () => {
+    const left = react('grumpy', (t) => ({ x: 640, y: 360, active: t < 1 }), 4)
+    expect(left.interaction.chase).toBeNull()
+    expect(left.creatures[0]!.mind.intent).not.toBe('chase')
+
+    // Press right on the chasing Grumpy (the hand follows it) and hold.
+    let grabbedDuringChase = false
+    const grumpyAt = { x: 640, y: 360 }
+    react(
+      'grumpy',
+      (t) => ({ ...grumpyAt, pressed: t > 1 }),
+      4,
+      (w) => {
+        const c = w.creatures[0]!
+        if (!w.interaction.hold) Object.assign(grumpyAt, { x: c.position.x, y: c.position.y })
+        if (w.interaction.hold) grabbedDuringChase = w.interaction.chase === null
+      },
+    )
+    expect(grabbedDuringChase).toBe(true)
+  })
+
+  it('a Friendly only hiccups a tiny puff, gets dizzy (looping, still in the water), then forgives with a ♥', () => {
+    const bounds = { ok: true }
+    let dizzySeconds = 0
+    let heartAt = -1
+    let approachAt = -1
+    let maxRattled = 0
+    const world = react(
+      'friendly',
+      () => ({ x: 640, y: 300 }),
+      12,
+      (w, since) => {
+        const c = w.creatures[0]!
+        if (c.mind.intent === 'dizzy') dizzySeconds += DT
+        if (heartAt < 0 && c.expression.emote?.kind === 'heart') heartAt = since
+        if (approachAt < 0 && c.mind.intent === 'approach') approachAt = since
+        maxRattled = Math.max(maxRattled, c.perception.rattled)
+        const f = footprint(c.position, c.size)
+        if (f.y + f.radius > swimBounds(w).height + 1e-6) bounds.ok = false
+      },
+    )
+    expect(sounds(world, 'ink')).toHaveLength(0) // no cloud…
+    expect(sounds(world, 'hiccup')).toHaveLength(1) // …just a hic!
+    expect(dizzySeconds).toBeCloseTo(INTERACTION.dizzySeconds, 0)
+    expect(bounds.ok).toBe(true)
+    expect(heartAt).toBeGreaterThan(INTERACTION.dizzySeconds - 0.1)
+    expect(heartAt).toBeLessThan(INTERACTION.dizzySeconds + 0.2)
+    expect(approachAt).toBeGreaterThan(0)
+    expect(approachAt).toBeLessThan(INTERACTION.dizzySeconds + 3) // comes right back
+    expect(maxRattled).toBeLessThanOrEqual(INTERACTION.forgiveRattled + 1e-9) // no grudge
+    expect(world.creatures[0]!.perception.trust).toBeGreaterThan(0.5)
+  })
+
+  it('a dizzy Friendly really loops (its heading turns all the way round)', () => {
+    let turned = 0
+    let last: number | null = null
+    react(
+      'friendly',
+      () => ({ x: 640, y: 300 }),
+      6,
+      (w) => {
+        const c = w.creatures[0]!
+        if (c.mind.intent !== 'dizzy') return
+        const heading = Math.atan2(c.velocity.y, c.velocity.x)
+        if (last !== null) {
+          let d = heading - last
+          while (d > Math.PI) d -= 2 * Math.PI
+          while (d < -Math.PI) d += 2 * Math.PI
+          turned += d
+        }
+        last = heading
+      },
+    )
+    expect(Math.abs(turned)).toBeGreaterThan(2 * Math.PI) // at least one full loop
+  })
+})
+
+describe('turn and fire (a chasing Grumpy aims its tentacles at the hand)', () => {
+  function chasing() {
+    const world = staged([{ archetype: 'grumpy', x: 640, y: 360 }])
+    world.interaction.chase = { creatureId: 1, until: 10, nextInkAt: 0 }
+    return world
+  }
+  const at = (world: World, x: number) => setPresenceInput(world.presence, x, 360, true, false)
+
+  it('aims fully within inking range, not at all when far, and blends in between', () => {
+    const world = chasing()
+    const c = world.creatures[0]!
+    const aimWithHandAt = (dx: number) => {
+      at(world, 640 + dx)
+      stepPresenceOnly(world)
+      return aimAtHand(world, c)
+    }
+    expect(aimWithHandAt(INTERACTION.chaseInkRange - 5)).toBe(1)
+    expect(aimWithHandAt(INTERACTION.chaseInkRange * INTERACTION.aimFade + 5)).toBe(0)
+    const mid = aimWithHandAt(INTERACTION.chaseInkRange * (1 + (INTERACTION.aimFade - 1) / 2))
+    expect(mid).toBeGreaterThan(0)
+    expect(mid).toBeLessThan(1)
+  })
+
+  it('never aims when not chasing', () => {
+    const world = staged([{ archetype: 'grumpy', x: 640, y: 360 }])
+    at(world, 650)
+    stepPresenceOnly(world)
+    expect(aimAtHand(world, world.creatures[0]!)).toBe(0)
+  })
+
+  it('chase squirts come out of the tentacle end, toward the hand', () => {
+    const times: number[] = []
+    let checked = false
+    const world = staged([{ archetype: 'grumpy', x: 640, y: 360 }])
+    let limitAt = -1
+    play(
+      world,
+      (t) => ({
+        x: 640 + (t < 0.5 ? 0 : limitAt < 0 ? 50 * Math.sin((t - 0.5) * 8 * Math.PI) : 0),
+        y: 360,
+        pressed: limitAt < 0,
+      }),
+      5,
+      () => {
+        if (limitAt < 0 && sounds(world, 'ink').length > 0) limitAt = world.time
+        const before = times.length
+        inkTimesOf(world, times)
+        if (before === 1 && times.length === 2 && !checked) {
+          // The newest puffs (the first chase squirt) start nearer the hand than the creature's center does.
+          const c = world.creatures[0]!
+          const hand = world.presence.position
+          const puffs = world.ink.pool.filter((p) => p.active && p.bornAt >= world.time - 0.2)
+          const centerGap = Math.hypot(hand.x - c.position.x, hand.y - c.position.y)
+          for (const p of puffs)
+            expect(Math.hypot(hand.x - p.x0, hand.y - p.y0)).toBeLessThan(centerGap)
+          checked = puffs.length > 0
+        }
+      },
+    )
+    expect(checked).toBe(true)
+  })
+})
+
+/** Update just the presence (so `aimAtHand` sees the new hand position) without stepping creatures. */
+function stepPresenceOnly(world: World) {
+  updatePresence(world.presence, DT)
+}
+
+function inkTimesOf(world: World, record: number[]) {
+  const n = sounds(world, 'ink').length
+  while (record.length < n) record.push(world.time)
+}

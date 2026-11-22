@@ -19,29 +19,53 @@ export interface HeldPose {
   stress: number
 }
 
+/** What the visitor's interaction is doing to a creature right now (all optional; the scene fills it in). */
+export interface CreaturePose {
+  /** Being held: where the hand is, what it holds, how stressed. */
+  held?: HeldPose | null
+  /** 0..1 — dizzy after being shaken (task #27): spiral eyes, orbiting stars, a wobbly tilt. */
+  dizzy?: number
+  /** World time (s), for the dizzy animation. */
+  time?: number
+  /** A chasing Grumpy turning to fire (task #27): how much (0..1) it points its tentacles at the hand, and the
+   *  hand relative to the mantle center. */
+  aim?: { amount: number; hand: { x: number; y: number } }
+}
+
 export function drawCreature(
   ctx: CanvasRenderingContext2D,
   creature: Creature,
   screenX: number,
   screenY: number,
   motion: MotionSettings = FULL_MOTION,
-  held: HeldPose | null = null,
+  pose: CreaturePose = {},
 ): void {
   const { id, size, anim, velocity } = creature
+  const held = pose.held ?? null
+  const dizzy = pose.dizzy ?? 0
+  const time = pose.time ?? 0
   const mood = creature.mind.emotion.levels
   const scared = mood.scared
   const grumpy = mood.grumpy
 
   const fast = MOVEMENT.baseSpeed * 2
+  // Jet swimming (fast: a chase or an escape): the head leads, tentacles stream behind, rhythmic strokes.
+  const propel = held ? 0 : propulsion(Math.hypot(velocity.x, velocity.y))
+  // Firing at the hand (a chasing Grumpy up close) keeps the same jet strokes, aimed at the hand.
+  const aimAmount = held ? 0 : (pose.aim?.amount ?? 0)
+  const thrust = Math.max(propel, aimAmount)
+  const stroke = (0.5 - 0.5 * Math.cos(time * JET.strokeHz * Math.PI * 2)) * motion.sway // 0..1 pulse
   // Boop squash: wider and flatter while squished, a little taller on the rebound (volume roughly kept).
   const squash = anim.squash * motion.squash
   const { rx, ry } = mantleRadii(size, scared, grumpy, anim.breathPhase, motion.breath, {
     x:
-      (1 + MOOD.stretch * Math.min(1, Math.abs(velocity.x) / fast)) *
-      (1 + MOOD.squashWide * squash),
+      (1 + MOOD.stretch * Math.min(1, Math.abs(velocity.x) / fast) * (1 - propel)) *
+      (1 + MOOD.squashWide * squash) *
+      (1 - JET.squeeze * thrust * (1 - stroke)),
     y:
-      (1 + MOOD.stretch * Math.min(1, Math.abs(velocity.y) / fast)) *
-      (1 - MOOD.squashFlat * squash),
+      (1 + MOOD.stretch * Math.min(1, Math.abs(velocity.y) / fast) * (1 - propel)) *
+      (1 - MOOD.squashFlat * squash) *
+      (1 + JET.elongate * thrust),
   })
 
   // Grumpy flushes toward red; scared goes pale.
@@ -69,7 +93,20 @@ export function drawCreature(
     screenX + tremble * Math.sin(anim.breathPhase * 41),
     screenY + tremble * 0.6 * Math.sin(anim.breathPhase * 53),
   )
-  const lean = leanAmount * MOTION.maxLean * motion.lean
+  // Dizzy: a wobbly side-to-side tilt on top of the lean.
+  const wobble =
+    Math.sin(time * DIZZY.wobbleHz * Math.PI * 2) * DIZZY.wobble * dizzy * motion.dizzyWobble
+  const swimming = swimAngle(
+    leanAmount * MOTION.maxLean * motion.lean,
+    velocity.x,
+    velocity.y,
+    propel * motion.lean,
+  )
+  // Turn and fire: tentacles toward the hand = head pointing away from it.
+  const aim = pose.aim
+  const lean =
+    (aim && aim.amount > 0 ? swimAngle(swimming, -aim.hand.x, -aim.hand.y, aim.amount) : swimming) +
+    wobble
   ctx.rotate(lean)
   const x = 0
   const y = 0
@@ -82,7 +119,13 @@ export function drawCreature(
           y: -held.hand.x * Math.sin(lean) + held.hand.y * Math.cos(lean),
         }
       : null
-  drawTentacles(ctx, creature, x, y, colors.tentacle, motion, held !== null, hand)
+  drawTentacles(ctx, creature, x, y, colors.tentacle, motion, held !== null, hand, {
+    rotation: lean,
+    propel: thrust,
+    stroke,
+    aim: aimAmount,
+    aimDistance: aim ? Math.hypot(aim.hand.x, aim.hand.y) : 0,
+  })
   // Fur bristles (stands on end) when scared or grumpy.
   const bristle = 1 + MOOD.bristle * Math.max(scared, grumpy)
   drawFuzz(ctx, id, x, y, rx, ry, size, colors.fuzz, bristle)
@@ -104,7 +147,59 @@ export function drawCreature(
     grumpy,
     curious: mood.curious,
     lidColor: colors.body,
+    dizzy,
+    spin: time * DIZZY.spiralSpin,
   })
+  if (dizzy > 0.01) drawDizzyStars(ctx, x, y - ry * 1.15, size, dizzy, time * motion.dizzyWobble)
+  ctx.restore()
+}
+
+/** Dizzy after being shaken (task #27): tuning for the wobble, the spiral eyes and the orbiting stars. */
+const DIZZY = {
+  /** Wobbly tilt: amplitude (rad) and speed (Hz). */
+  wobble: 0.22,
+  wobbleHz: 1.1,
+  /** Spiral-eye rotation speed (rad/s). */
+  spiralSpin: 7,
+  /** Stars: how many, orbit speed (rad/s), orbit size (× creature size). */
+  stars: 3,
+  orbitSpeed: 3.2,
+  orbitX: 0.95,
+  orbitY: 0.28,
+  /** Star radius (× creature size). */
+  starSize: 0.22,
+}
+
+/** Little stars circling above the head (a cartoon "seeing stars"). Fades in/out with `dizzy`. */
+function drawDizzyStars(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  dizzy: number,
+  time: number,
+): void {
+  ctx.save()
+  ctx.globalAlpha = dizzy
+  ctx.fillStyle = '#ffe9a8'
+  for (let i = 0; i < DIZZY.stars; i++) {
+    const a = time * DIZZY.orbitSpeed + (i / DIZZY.stars) * Math.PI * 2
+    const sx = cx + Math.cos(a) * size * DIZZY.orbitX
+    const sy = cy + Math.sin(a) * size * DIZZY.orbitY
+    const r = size * DIZZY.starSize * (0.85 + 0.15 * Math.sin(a)) // nearer (front) stars look a touch bigger
+    // A four-pointed sparkle.
+    ctx.beginPath()
+    for (let k = 0; k < 8; k++) {
+      const rr = k % 2 === 0 ? r : r * 0.38
+      const ang = (k / 8) * Math.PI * 2 - Math.PI / 2
+      const px = sx + Math.cos(ang) * rr
+      const py = sy + Math.sin(ang) * rr
+      if (k === 0) ctx.moveTo(px, py)
+      else ctx.lineTo(px, py)
+    }
+    ctx.closePath()
+    ctx.fill()
+  }
   ctx.restore()
 }
 
@@ -188,6 +283,47 @@ const MOTION = {
   maxTrail: 1.2,
 } as const
 
+/**
+ * Jet swimming (task #27 feedback): above normal swimming speed the creature swims like a real octopus — the head
+ * leads (the body turns to face its travel), the tentacles bundle and stream behind, and it pulses in jet strokes
+ * (tentacle tips flare and snap back while the body squeezes). Fades in from `propelFrom` over `propelRange` (px/s).
+ */
+const JET = {
+  propelFrom: 90,
+  propelRange: 260,
+  /** Strokes per second. */
+  strokeHz: 3,
+  /** At full propulsion: fan × (1 − bundle), flare ± (× fan), length × (1 + stretch), trail cap × (1 + stream),
+   *  wave/sway × (1 − stiffen), body longer × (1 + elongate), narrower by up to squeeze between strokes. */
+  bundle: 0.55,
+  flare: 0.45,
+  stretch: 0.3,
+  stream: 1,
+  stiffen: 0.65,
+  elongate: 0.12,
+  squeeze: 0.1,
+  /** Firing: the tentacle tips end this far (× size) short of the cursor. */
+  aimMargin: 0.3,
+} as const
+
+/** 0..1 — how much a creature moving at `speed` (px/s) is jet swimming (0 at normal swimming speeds). Pure. */
+export function propulsion(speed: number): number {
+  return Math.max(0, Math.min(1, (speed - JET.propelFrom) / JET.propelRange))
+}
+
+/**
+ * The body's rotation (rad): its usual `lean`, turned toward facing the direction of travel (head first) by
+ * `propel` (0..1). Takes the short way round, so the body never spins the long way. Pure.
+ */
+export function swimAngle(lean: number, vx: number, vy: number, propel: number): number {
+  if (propel <= 0 || (vx === 0 && vy === 0)) return lean
+  const heading = Math.atan2(vy, vx) + Math.PI / 2 // canvas: rotating by this points the head (−y) along v
+  let delta = heading - lean
+  while (delta > Math.PI) delta -= Math.PI * 2
+  while (delta < -Math.PI) delta += Math.PI * 2
+  return lean + delta * propel
+}
+
 /** Blend hue `from` toward `to` by t (0..1), the short way around the color wheel. */
 function mixHue(from: number, to: number, t: number): number {
   const delta = ((to - from + 540) % 360) - 180
@@ -210,18 +346,38 @@ function drawTentacles(
   motion: MotionSettings,
   dangling = false,
   hand: { x: number; y: number } | null = null,
+  jet: { rotation: number; propel: number; stroke: number; aim: number; aimDistance: number } = {
+    rotation: 0,
+    propel: 0,
+    stroke: 0,
+    aim: 0,
+    aimDistance: 0,
+  },
 ): void {
   const { id, size, tentacleCount: n, anim, velocity } = creature
+  const { propel, stroke } = jet
   // Trailing: tentacles lag behind the motion (follow-through), more toward the tips.
   // Held creatures dangle: more trailing, tentacles hang longer and closer together.
   const trail = MOTION.trailSeconds * motion.trail * (dangling ? MOTION.dangleTrail : 1)
-  // Capped, so a fast drag bends the tentacles back instead of smearing them into long streaks.
+  // Capped, so a fast drag bends the tentacles back instead of smearing them into long streaks
+  // (jet swimming streams them further).
   const trailLength = Math.hypot(velocity.x, velocity.y) * trail
-  const trailCap = size * MOTION.maxTrail
+  const trailCap = size * MOTION.maxTrail * (1 + JET.stream * propel)
   const trailScale = trailLength > trailCap ? (trail * trailCap) / trailLength : trail
-  const trailX = -velocity.x * trailScale
-  const trailY = -velocity.y * trailScale
-  const fan = dangling ? MOTION.dangleFan : 1
+  // The trail in the body's (rotated) frame: behind the creature, wherever it's facing.
+  const cos = Math.cos(jet.rotation)
+  const sin = Math.sin(jet.rotation)
+  const worldTrailX = -velocity.x * trailScale
+  const worldTrailY = -velocity.y * trailScale
+  // Firing: instead of trailing behind the motion, the tentacles point at the hand (local "down", since the body
+  // has turned its head away from it), fitted below so their tips end just short of the cursor.
+  const trailX = (worldTrailX * cos + worldTrailY * sin) * (1 - jet.aim)
+  const trailY = (-worldTrailX * sin + worldTrailY * cos) * (1 - jet.aim)
+  // Jet swimming: tentacles bundle together, then flare and snap back with each stroke.
+  const fan =
+    (dangling ? MOTION.dangleFan : 1) *
+    (1 - JET.bundle * propel) *
+    (1 + JET.flare * propel * (2 * stroke - 1))
   const grabbed = hand ? grabbedTentacle(size, n, hand.x) : -1
   ctx.fillStyle = color
   for (let i = 0; i < n; i++) {
@@ -230,15 +386,24 @@ function drawTentacles(
       size *
       BODY.tentacleLength *
       (0.85 + hash2(id, i) * 0.3) *
-      (dangling ? MOTION.dangleLength : 1)
-    const wave = (i % 2 === 0 ? -1 : 1) * size * (0.4 + hash2(id, i + 50) * 0.3)
+      (dangling ? MOTION.dangleLength : 1) *
+      (1 + JET.stretch * propel)
+    // Firing: fit the length so the tip ends just short of the hand (never stubbier than half the body).
+    const fitted = Math.max(
+      size * 0.5,
+      jet.aimDistance - size * JET.aimMargin - tentacleRoot(size, i, n).y,
+    )
+    const reach = jet.aim > 0 ? length + (fitted - length) * jet.aim : length
+    // Streaming tentacles are stiffer: less S-wave and sway.
+    const stiff = 1 - JET.stiffen * propel
+    const wave = (i % 2 === 0 ? -1 : 1) * size * (0.4 + hash2(id, i + 50) * 0.3) * stiff
     const root = tentacleRoot(size, i, n)
     const rootX = x + root.x
     const rootY = y + root.y
 
     // Traveling wave: each point further along lags in phase, so the swing runs root → tip.
     const phase = anim.swayPhase + i * SWAY.spread
-    const swing = size * SWAY.amplitude * motion.sway
+    const swing = size * SWAY.amplitude * motion.sway * stiff
     const sway1 = swing * 0.35 * Math.sin(phase)
     const sway2 = swing * 0.7 * Math.sin(phase - SWAY.lag)
     const sway3 = swing * Math.sin(phase - SWAY.lag * 2)
@@ -263,12 +428,9 @@ function drawTentacles(
     taperedCurve(
       ctx,
       [rootX, rootY],
-      [rootX + s * size * 0.6 + wave + sway1 + trailX * 0.3, rootY + length * 0.33 + trailY * 0.3],
-      [
-        rootX + s * size * 0.9 - wave + sway2 + trailX * 0.65,
-        rootY + length * 0.66 + trailY * 0.65,
-      ],
-      [rootX + s * size * 1.3 + wave * 0.5 + sway3 + trailX, rootY + length + trailY],
+      [rootX + s * size * 0.6 + wave + sway1 + trailX * 0.3, rootY + reach * 0.33 + trailY * 0.3],
+      [rootX + s * size * 0.9 - wave + sway2 + trailX * 0.65, rootY + reach * 0.66 + trailY * 0.65],
+      [rootX + s * size * 1.3 + wave * 0.5 + sway3 + trailX, rootY + reach + trailY],
       size * TENTACLE_ROOT.width,
       size * TENTACLE_ROOT.tipWidth,
     )
@@ -410,6 +572,10 @@ interface EyeMood {
   curious: number
   /** Body color, used for the grumpy half-lid. */
   lidColor: string
+  /** 0..1 — dizzy: past ~0.3 the pupils become spinning spirals. */
+  dizzy: number
+  /** Spiral rotation (rad). */
+  spin: number
 }
 
 function drawEyes(
@@ -446,6 +612,27 @@ function drawEyes(
     ctx.fillStyle = '#fffdf8'
     ctx.fill()
     ctx.clip()
+
+    if (mood.dizzy > 0.3) {
+      // Dizzy: a spinning spiral instead of a pupil (each eye spins the opposite way).
+      ctx.strokeStyle = '#1b1530'
+      ctx.lineWidth = Math.max(1.2, size * 0.045)
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      const turns = 2.2
+      for (let k = 0; k <= 40; k++) {
+        const f = k / 40
+        const ang = f * turns * Math.PI * 2 + mood.spin * side
+        const rad = f * r * 0.78
+        const px = ex + Math.cos(ang) * rad
+        const py = cy + Math.sin(ang) * rad
+        if (k === 0) ctx.moveTo(px, py)
+        else ctx.lineTo(px, py)
+      }
+      ctx.stroke()
+      ctx.restore()
+      continue
+    }
 
     // Pupils look along the gaze, staying inside the eye.
     const reach = (r - pupil) * 0.85

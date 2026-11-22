@@ -13,8 +13,13 @@ export type IntentKind =
   | 'flee'
   | 'hide'
   | 'standoff'
-  /** Being held by the visitor (overrides the mind's choice; emotions keep updating). */
+  /** Overrides from the visitor's interaction (the mind's choice is set aside; emotions keep updating): */
+  /** being held by the visitor */
   | 'held'
+  /** a mad Grumpy chasing the hand after inking (task #27) */
+  | 'chase'
+  /** a Friendly dizzy after being shaken (task #27) */
+  | 'dizzy'
 
 export interface MindState {
   emotion: EmotionState

@@ -2,10 +2,19 @@ import { describe, expect, it } from 'vitest'
 
 import { ARCHETYPES, type Archetype } from '../simulation/traits'
 import { createWorld } from '../simulation/world'
-import { baseStep, chirpFor, panFor, pentatonicHz, puffFor, type VoiceKind } from './voice'
+import { baseStep, chirpFor, panFor, pentatonicHz, type VoiceKind } from './voice'
 
 /** Every sound a creature can make: emotes and interaction sounds (task #20). */
-const EMOTES: VoiceKind[] = ['question', 'exclaim', 'anger', 'heart', 'grab', 'squeak', 'boop']
+const EMOTES: VoiceKind[] = [
+  'question',
+  'exclaim',
+  'anger',
+  'heart',
+  'grab',
+  'squeak',
+  'boop',
+  'hiccup',
+]
 
 function creature(archetype: Archetype, size: number, id = 1) {
   const c = createWorld({ seed: 3, width: 1280, height: 720, creatureCount: 1 }).creatures[0]!
@@ -101,29 +110,5 @@ describe('panFor', () => {
     expect(panFor(-300, 1000)).toBeCloseTo(-0.7, 9)
     expect(panFor(5000, 1000)).toBeCloseTo(0.7, 9)
     expect(panFor(10, 0)).toBe(0)
-  })
-})
-
-describe('puffFor (the ink pfft)', () => {
-  it('is deterministic, short, a falling sweep, and gentle', () => {
-    for (const a of Object.keys(ARCHETYPES) as Archetype[]) {
-      const c = creature(a, 30)
-      const p = puffFor(c)
-      expect(puffFor(c)).toEqual(p)
-      expect(p.duration).toBeGreaterThan(0.2)
-      expect(p.duration).toBeLessThan(0.6)
-      expect(p.endHz).toBeLessThan(p.startHz)
-      expect(p.endHz).toBeGreaterThan(100)
-      expect(p.volume).toBeLessThanOrEqual(0.7)
-    }
-  })
-
-  it('smaller creatures puff higher; a Grumpy puffs lower', () => {
-    expect(puffFor(creature('friendly', 26)).startHz).toBeGreaterThan(
-      puffFor(creature('friendly', 38)).startHz,
-    )
-    expect(puffFor(creature('grumpy', 30)).startHz).toBeLessThan(
-      puffFor(creature('friendly', 30)).startHz,
-    )
   })
 })

@@ -38,7 +38,7 @@ export interface InkSystem {
 }
 
 export const INK = {
-  capacity: 72,
+  capacity: 128,
   /** Puffs in one squirt. */
   burst: [14, 18],
   /** How far puffs burst out (× creature size), and how quickly they slow down (s, time constant). */
@@ -58,6 +58,15 @@ export const INK = {
   opacity: 0.9,
   streamSalt: 0x1c0ffee5,
 } as const
+
+/** Optional shape of a squirt: how many puffs, how big (× the normal cloud), how tightly aimed (0..1). */
+export interface SquirtOptions {
+  count?: number
+  scale?: number
+  aim?: number
+  /** Where the puffs start (default: the creature's center) — e.g. its tentacle end when it turns to fire. */
+  from?: { x: number; y: number }
+}
 
 export function createInk(seed: number): InkSystem {
   const pool: InkPuff[] = Array.from({ length: INK.capacity }, () => ({
@@ -87,10 +96,12 @@ export function spawnInk(
   time: number,
   towardX: number,
   towardY: number,
-  aim: number = INK.aim,
+  options: SquirtOptions = {},
 ): void {
   const { rng } = system
-  const count = int(rng, INK.burst[0], INK.burst[1])
+  const aim = options.aim ?? INK.aim
+  const scale = options.scale ?? 1
+  const count = options.count ?? int(rng, INK.burst[0], INK.burst[1])
   const towardAngle = Math.atan2(towardY, towardX)
   for (let i = 0; i < count; i++) {
     const p = system.pool[system.next]!
@@ -99,13 +110,13 @@ export function spawnInk(
     const angle = towardAngle + range(rng, -Math.PI, Math.PI) * (1 - aim)
     p.active = true
     p.bornAt = time + i * 0.015 // a fast stagger: one quick squirt
-    p.x0 = creature.position.x
-    p.y0 = creature.position.y
+    p.x0 = options.from?.x ?? creature.position.x
+    p.y0 = options.from?.y ?? creature.position.y
     p.dirX = Math.cos(angle)
     p.dirY = Math.sin(angle)
-    p.spread = range(rng, INK.spread[0], INK.spread[1]) * creature.size
-    p.radius0 = range(rng, INK.radius0[0], INK.radius0[1]) * creature.size
-    p.radius1 = range(rng, INK.radius1[0], INK.radius1[1]) * creature.size
+    p.spread = range(rng, INK.spread[0], INK.spread[1]) * creature.size * scale
+    p.radius0 = range(rng, INK.radius0[0], INK.radius0[1]) * creature.size * scale
+    p.radius1 = range(rng, INK.radius1[0], INK.radius1[1]) * creature.size * scale
     p.rise = range(rng, INK.rise[0], INK.rise[1])
     p.phase = range(rng, 0, Math.PI * 2)
     p.life = range(rng, INK.life[0], INK.life[1])

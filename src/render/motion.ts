@@ -25,6 +25,8 @@ export interface MotionSettings {
   tremble: number
   /** Ink cloud drift and swirl multiplier. */
   inkDrift: number
+  /** Dizzy wobble tilt and star-orbit speed multiplier (the loop swimming itself is behavior and stays). */
+  dizzyWobble: number
 }
 
 export const FULL_MOTION: MotionSettings = {
@@ -39,6 +41,7 @@ export const FULL_MOTION: MotionSettings = {
   squash: 1,
   tremble: 1,
   inkDrift: 1,
+  dizzyWobble: 1,
 }
 
 export const REDUCED_MOTION: MotionSettings = {
@@ -53,6 +56,7 @@ export const REDUCED_MOTION: MotionSettings = {
   squash: 0.4,
   tremble: 0,
   inkDrift: 0.3,
+  dizzyWobble: 0.3,
 }
 
 export function motionSettings(reduced: boolean): MotionSettings {
