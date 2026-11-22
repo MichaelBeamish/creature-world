@@ -25,6 +25,8 @@ export type IntentKind =
   | 'guard'
   /** Playing with a toy (task #29): fetch / nudge / keeping away from it */
   | 'play'
+  /** Going to pick up a dropped wearable to put it on (task #33) */
+  | 'collect'
 
 export interface MindState {
   emotion: EmotionState
@@ -37,6 +39,8 @@ export interface MindState {
   meal: { propId: number; timer: number } | null
   /** The toy it's playing with (task #29): which, since when, and whether it's going for it or backing off. */
   play: { propId: number; since: number; phase: 'go' | 'back'; phaseSince: number } | null
+  /** A dropped wearable it's going to pick up and put on (task #33). */
+  collect: { propId: number } | null
   /** Bored of toys until this world time; when a Grumpy last swatted a toy. */
   playBoredUntil: number
   swattedAt: number
@@ -50,6 +54,7 @@ export function createMindState(): MindState {
     hideTarget: vec2(),
     meal: null,
     play: null,
+    collect: null,
     playBoredUntil: -Infinity,
     swattedAt: -Infinity,
   }

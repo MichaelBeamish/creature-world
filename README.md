@@ -10,8 +10,9 @@ distance for a while — except the Grumpy, which gets mad and chases you, squir
 Friendly, which just hiccups, gets dizzy and forgives you. A treasure chest on the sand holds treats and toys:
 drop a shrimp in and each personality goes for it in its own way, or toss in the rubber duck or the soccer ball and
 watch the Friendly play fetch, the Peeker nudge it, the Grumpy swat it away and the Scaredy sneak a
-nudge when nobody's looking. There's dress-up too — hats, a tiara, glasses, a beard, a clown nose and wig, mouse ears and glowing rave gear (the Grumpy
-shakes them off).
+nudge when nobody's looking. There's dress-up too — hats, a tiara, glasses, a beard, a clown nose and wig, mouse ears, glowing rave gear and kandi, plus things
+to hold — a glow stick, a wand, a balloon that floats away if let go… (the Grumpy shakes them off; the others pick up
+whatever is lying around and put it on).
 
 It should feel like **discovering something alive**, not using a website.
 

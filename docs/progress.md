@@ -2,6 +2,24 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #33: Held items ✅
+- **Two new spots:** `hand`, a **raised arm** (the rightmost tentacle lifts up and out) holding one of 8 items:
+  glow stick (neon glow), pirate cutlass, soda can (straw + fizz), magic wand (sparkling star), balloon, rose, tiny
+  trident; and `cuffs`, kandi bead bands on a few tentacles, so cuffs + a held item combine. 3 new chest pages (10).
+- `drawTentacles` now **returns its Bézier curves**: the held item sits at the raised tip, rotated to the curve's
+  tangent; beads are placed along curves. The simulation estimates the tip (`HAND`) for pressing/taking it back.
+- **Owner feedback rounds:** the corn cob (bubble) pipe was built, then dropped; a let-go balloon is drawn full size
+  and **floats up off the screen** (back in the chest); **creatures pick up dropped items by personality** — a new mind
+  layer after food and play (`chooseCollect`): Friendly goes straight for it (♥), Peeker waits for the hand to move
+  away, Scaredy only when nobody's near, Grumpy never; only into a free spot (no hat-stealing loops). The holding arm
+  trails with the motion (it was stiff), and a held balloon lags behind on its string and always floats world-up.
+- **Verified:** 307 tests (+8 net): hand + cuffs combine, take a held item back, Grumpy shakes held items off, balloon
+  floats away, pick-up by personality and the free-spot rule. Galleries (static and mid-swim) and chest pages in real
+  Chrome. Owner: "perfect. thank you. verified." All five checks pass; code map, overview, README updated.
+- **Learned:** return geometry from a draw pass instead of recomputing it elsewhere; pick the right coordinate space
+  per attachment (a hat turns with the body, a balloon obeys world gravity); new behaviours as mind layers keep the
+  existing ones untouched.
+
 ## 2026-11-22 — Task #30: Dress-up + inventory pages ✅
 - **Chest pages:** 3 items per page plus a ↻ circle (wrapping) and page dots — the inventory can grow without the arc
   growing (`CHEST_PAGES`; 7 pages: food & toys, then dress-up).

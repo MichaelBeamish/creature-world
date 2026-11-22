@@ -2,7 +2,7 @@ import { BODY, type Creature } from '../simulation/creature'
 import { INTERACTION } from '../simulation/interaction'
 import { MOVEMENT } from '../simulation/movement'
 import { shakeAmount } from '../simulation/wearables'
-import { drawWorn } from './wearables'
+import { drawCuffs, drawHeld, drawWorn, type Curve } from './wearables'
 import { FULL_MOTION, type MotionSettings } from './motion'
 import { hash2 } from './noise'
 
@@ -131,13 +131,24 @@ export function drawCreature(
           y: -held.hand.x * Math.sin(lean) + held.hand.y * Math.cos(lean),
         }
       : null
-  drawTentacles(ctx, creature, x, y, colors.tentacle, motion, held !== null, hand, {
-    rotation: lean,
-    propel: thrust,
-    stroke,
-    aim: aimAmount,
-    aimDistance: aim ? Math.hypot(aim.hand.x, aim.hand.y) : 0,
-  })
+  const tentacles = drawTentacles(
+    ctx,
+    creature,
+    x,
+    y,
+    colors.tentacle,
+    motion,
+    held !== null,
+    hand,
+    {
+      rotation: lean,
+      propel: thrust,
+      stroke,
+      aim: aimAmount,
+      aimDistance: aim ? Math.hypot(aim.hand.x, aim.hand.y) : 0,
+    },
+    creature.dress.hand !== null,
+  )
   // Fur bristles (stands on end) when scared or grumpy.
   const bristle = 1 + MOOD.bristle * Math.max(scared, grumpy)
   drawFuzz(ctx, id, x, y, rx, ry, size, colors.fuzz, bristle)
@@ -170,6 +181,10 @@ export function drawCreature(
       speed: Math.hypot(velocity.x, velocity.y),
     })
   }
+  // Held items (task #33): kandi cuffs on a few tentacles, and whatever the raised tentacle holds.
+  const extras = { time, speed: Math.hypot(velocity.x, velocity.y), sparkle: motion.sway }
+  if (d.cuffs) drawCuffs(ctx, tentacles.curves, size, extras)
+  if (d.hand && tentacles.hold) drawHeld(ctx, d.hand, tentacles.hold, size, extras)
   if (dizzy > 0.01) drawDizzyStars(ctx, x, y - ry * 1.15, size, dizzy, time * motion.dizzyWobble)
   ctx.restore()
 }
@@ -357,6 +372,9 @@ function affection(creature: Creature): number {
   return creature.mind.emotion.levels.curious * creature.perception.trust * closeness
 }
 
+/** How much more the raised (holding) arm swings with the motion than its trail alone (it's longer, and loaded). */
+const MOTION_ARM = 1.3
+
 function drawTentacles(
   ctx: CanvasRenderingContext2D,
   creature: Creature,
@@ -373,8 +391,21 @@ function drawTentacles(
     aim: 0,
     aimDistance: 0,
   },
-): void {
+  holding = false,
+): {
+  curves: Curve[]
+  hold: { x: number; y: number; angle: number; lean: number; dragX: number; dragY: number } | null
+} {
   const { id, size, tentacleCount: n, anim, velocity } = creature
+  const curves: Curve[] = []
+  let hold: {
+    x: number
+    y: number
+    angle: number
+    lean: number
+    dragX: number
+    dragY: number
+  } | null = null
   const { propel, stroke } = jet
   // Trailing: tentacles lag behind the motion (follow-through), more toward the tips.
   // Held creatures dangle: more trailing, tentacles hang longer and closer together.
@@ -399,6 +430,8 @@ function drawTentacles(
     (1 - JET.bundle * propel) *
     (1 + JET.flare * propel * (2 * stroke - 1))
   const grabbed = hand ? grabbedTentacle(size, n, hand.x) : -1
+  // Holding something (task #33): the rightmost tentacle (or the next one, if the visitor has that one) is raised.
+  const raised = holding ? (grabbed === n - 1 ? n - 2 : n - 1) : -1
   ctx.fillStyle = color
   for (let i = 0; i < n; i++) {
     const s = (n === 1 ? 0 : (i / (n - 1)) * 2 - 1) * fan // -1 (left) .. 1 (right)
@@ -432,29 +465,54 @@ function drawTentacles(
       // The tentacle the visitor holds: stretched from its root to the hand, with a gentle S-bend.
       const dx = hand.x - rootX
       const dy = hand.y - rootY
-      taperedCurve(
-        ctx,
+      const curve: Curve = [
         [rootX, rootY],
         [rootX + dx * 0.33 + wave * 0.4 + sway1, rootY + dy * 0.33],
         [rootX + dx * 0.66 - wave * 0.3 + sway2, rootY + dy * 0.66],
         [hand.x, hand.y],
-        size * TENTACLE_ROOT.width,
-        size * TENTACLE_ROOT.tipWidth,
-      )
+      ]
+      taperedCurve(ctx, ...curve, size * TENTACLE_ROOT.width, size * TENTACLE_ROOT.tipWidth)
+      curves.push(curve)
+      continue
+    }
+
+    if (i === raised) {
+      const armX = trailX * MOTION_ARM
+      const armY = trailY * MOTION_ARM
+      // A raised arm: up and out to the side, showing off what it holds (it still sways a little).
+      const curve: Curve = [
+        [rootX, rootY],
+        // It follows the motion like the others (trailing behind, more toward the tip), so it isn't stiff.
+        [rootX + size * 0.55 + sway1 * 0.6 + armX * 0.35, rootY + size * 0.55 + armY * 0.35],
+        [rootX + size * 1.25 + sway2 * 0.6 + armX * 0.7, rootY + size * 0.2 + armY * 0.7],
+        [rootX + size * 1.45 + sway3 * 0.6 + armX, rootY - size * 0.55 + armY],
+      ]
+      taperedCurve(ctx, ...curve, size * TENTACLE_ROOT.width, size * TENTACLE_ROOT.tipWidth * 1.6)
+      curves.push(curve)
+      const [, , p2, p3] = curve
+      hold = {
+        x: p3[0],
+        y: p3[1],
+        angle: Math.atan2(p3[1] - p2[1], p3[0] - p2[0]),
+        // For the balloon, which floats up in the world, not in the (turned) body frame.
+        lean: jet.rotation,
+        dragX: worldTrailX,
+        dragY: worldTrailY,
+      }
       continue
     }
 
     // Cubic Bézier: fan outward, with an S-shaped wave plus the sway.
-    taperedCurve(
-      ctx,
+    const curve: Curve = [
       [rootX, rootY],
       [rootX + s * size * 0.6 + wave + sway1 + trailX * 0.3, rootY + reach * 0.33 + trailY * 0.3],
       [rootX + s * size * 0.9 - wave + sway2 + trailX * 0.65, rootY + reach * 0.66 + trailY * 0.65],
       [rootX + s * size * 1.3 + wave * 0.5 + sway3 + trailX, rootY + reach + trailY],
-      size * TENTACLE_ROOT.width,
-      size * TENTACLE_ROOT.tipWidth,
-    )
+    ]
+    taperedCurve(ctx, ...curve, size * TENTACLE_ROOT.width, size * TENTACLE_ROOT.tipWidth)
+    curves.push(curve)
   }
+  return { curves, hold }
 }
 
 /** Which tentacle a hand at local x is holding: the one whose (resting) tip is closest. Pure. */

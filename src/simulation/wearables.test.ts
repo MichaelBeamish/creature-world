@@ -74,7 +74,7 @@ describe('chest pages', () => {
     const all = CHEST_PAGES.flat()
     for (const page of CHEST_PAGES) expect(page.length).toBeLessThanOrEqual(3)
     expect(new Set(all).size).toBe(all.length)
-    expect(all).toHaveLength(21) // shrimp, duck, ball + 18 wearables
+    expect(all).toHaveLength(29) // shrimp, duck, ball + 26 wearables (incl. 8 held items, task #33)
   })
 
   it('a circle with no item on its page gives nothing', () => {
@@ -213,6 +213,106 @@ describe('fallen items can be picked up', () => {
     dragTo(w, { x: glasses.position.x, y: glasses.position.y }, { x: 800, y: 250 })
     expect(countOf(w, 'starGlasses')).toBe(1)
     expect(w.props.items.find((p) => p.kind === 'starGlasses')!.position.x).toBeCloseTo(800, -1)
+  })
+})
+
+describe('held items (task #33)', () => {
+  it('a creature can hold one item and wear kandi cuffs at the same time', () => {
+    const w = make([['friendly', 640, 300]])
+    const c = w.creatures[0]!
+    wearOn(w, c, 'glowStick')
+    wearOn(w, c, 'kandiCuffs')
+    wearOn(w, c, 'partyHat')
+    expect([c.dress.hand, c.dress.cuffs, c.dress.head]).toEqual([
+      'glowStick',
+      'kandiCuffs',
+      'partyHat',
+    ])
+    wearOn(w, c, 'magicWand') // a second held item swaps the first off
+    expect(c.dress.hand).toBe('magicWand')
+    expect(countOf(w, 'glowStick')).toBe(1)
+  })
+
+  it('a held item can be taken from the raised tentacle', () => {
+    const w = make([['friendly', 500, 300]])
+    const c = w.creatures[0]!
+    wearOn(w, c, 'rose')
+    const at = spotPosition(c, 'hand')
+    expect(at.x).toBeGreaterThan(c.position.x) // up and out to the side
+    hand(w, [
+      [at.x, at.y, false],
+      [at.x, at.y, true],
+    ])
+    expect(w.interaction.carry).toEqual({ kind: 'rose' })
+    expect(c.dress.hand).toBeNull()
+  })
+
+  it('a let-go balloon floats up off the top of the screen and goes back in the chest', () => {
+    const w = make([['grumpy', 200, 600]])
+    dropProp(w, 'balloon', 900, 500)
+    const b = w.props.items.find((p) => p.kind === 'balloon')!
+    const startY = b.position.y
+    for (let t = 0; t < 0.5; t += DT) stepWorld(w, DT)
+    expect(b.position.y).toBeLessThan(startY) // rising, not sinking
+    for (let t = 0; t < 6; t += DT) stepWorld(w, DT)
+    expect(countOf(w, 'balloon')).toBe(0)
+    expect(canTake(w, 'balloon')).toBe(true)
+  })
+  it('the Grumpy shakes held items and cuffs off too', () => {
+    const w = make([['grumpy', 640, 300]])
+    const c = w.creatures[0]!
+    wearOn(w, c, 'trident')
+    wearOn(w, c, 'kandiCuffs')
+    for (let t = 0; t < WEAR.firstShake + 2 * (WEAR.shakeEvery + WEAR.shakeSeconds) + 1; t += DT)
+      stepWorld(w, DT)
+    expect(isDressed(c.dress)).toBe(false)
+  })
+})
+
+describe('picking up dropped items (task #33)', () => {
+  /** Run until the creature wears the kind (or time runs out); returns seconds taken (Infinity if never). */
+  function untilWorn(w: World, kind: string, seconds: number, hand?: [number, number]): number {
+    const c = w.creatures[0]!
+    for (let t = 0; t < seconds; t += DT) {
+      if (hand) setPresenceInput(w.presence, hand[0], hand[1], true, false)
+      stepWorld(w, DT)
+      if (Object.values(c.dress).includes(kind)) return t
+    }
+    return Infinity
+  }
+
+  it('the Friendly swims over to a dropped hat and puts it on', () => {
+    const w = make([['friendly', 300, 300]])
+    dropProp(w, 'wizardHat', 650, 350)
+    expect(untilWorn(w, 'wizardHat', 8)).toBeLessThan(8)
+    expect(w.creatures[0]!.dress.head).toBe('wizardHat')
+    expect(w.props.items.some((p) => p.kind === 'wizardHat')).toBe(false)
+  })
+
+  it('the Grumpy never picks things up', () => {
+    const w = make([['grumpy', 300, 300]])
+    dropProp(w, 'wizardHat', 330, 330)
+    expect(untilWorn(w, 'wizardHat', 6)).toBe(Infinity)
+  })
+
+  it('the Peeker waits while the hand hovers over the item', () => {
+    const w = make([['peeker', 300, 300]])
+    dropProp(w, 'tiara', 600, 350)
+    const item = w.props.items.find((p) => p.kind === 'tiara')!
+    // Hand right on the item for a while: no pickup.
+    for (let t = 0; t < 4; t += DT) {
+      setPresenceInput(w.presence, item.position.x, item.position.y, true, false)
+      stepWorld(w, DT)
+    }
+    expect(w.creatures[0]!.dress.head).toBeNull()
+  })
+
+  it('a creature only picks up an item if that spot is free', () => {
+    const w = make([['friendly', 300, 300]])
+    wearOn(w, w.creatures[0]!, 'cowboyHat')
+    dropProp(w, 'wizardHat', 360, 350)
+    expect(untilWorn(w, 'wizardHat', 5)).toBe(Infinity)
+    expect(w.creatures[0]!.dress.head).toBe('cowboyHat')
   })
 })
 

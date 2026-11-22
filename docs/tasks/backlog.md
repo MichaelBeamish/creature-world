@@ -31,7 +31,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 29 | Toys: rubber duck + soccer ball | done |
 | 30 | Dress-up + inventory pages | done |
 | 31 | Glow sticks | dropped |
-| 33 | Held items: kandi cuffs + things to hold | todo |
+| 33 | Held items: kandi cuffs + things to hold | done |
 | 32 | Party: disco ball + club lights + music | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
@@ -393,7 +393,7 @@ A creature grabs a glow stick and holds it in a tentacle; it glows softly in the
 - **Accept:** a stick is held by one creature at a time and follows its tentacle; glow rendering; returnable to the
   chest; all checks pass.
 
-### 33. Held items: kandi cuffs + things to hold — owner request 2026-11-22
+### 33. Held items: kandi cuffs + things to hold — owner request 2026-11-22 — done
 A new wear spot on the **tentacles** (needs anchoring to a tentacle tip, which only exists in the renderer — it sways,
 trails and streams). Items: **kandi cuffs** (colorful beaded bracelets that jiggle), **glow stick** (glows — replaces
 #31), **pirate cutlass**, **corn cob bubble pipe** (blows little bubbles via the bubble system), **soda can**, **magic
@@ -401,6 +401,10 @@ wand** (sparkles), **balloon** (floats up on a string), **rose**, **tiny trident
 drop on / press to take off, 3 of each, fallen items return to the chest; on the chest pages.
 - **Accept:** held items follow the tentacle in every pose; the bubble pipe blows bubbles; glow items glow; all checks
   pass.
+- **Approved spec (owner, 2026-11-22):** two new spots — `hand` (a **raised arm**: the holding tentacle lifts up and out
+  to the side; 8 items) and `cuffs` (kandi on a few tentacles; **its own spot**, so cuffs + a glow stick combine).
+  `drawTentacles` returns its curves; held items sit at the raised tip, rotated to its tangent. Bubble pipe: a
+  *new* `releaseBubble` in `bubbles.ts`, every ~1.2–2 s while held. Balloon floats above on a lagging string.
 
 ### 32. Party: disco ball + club lights + music
 The disco ball and club lights come out together: the pool dims, the disco ball throws moving spots of light, colored

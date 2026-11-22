@@ -6,6 +6,7 @@ import type { Creature } from './creature'
 import type { IntentKind } from './mindState'
 import { mealSpeed, mealTarget } from './feeding'
 import { PLAY, playTarget } from './play'
+import { COLLECT, collectTarget } from './wearables'
 import { chaseForce, dizzyForce, heldForce, INTERACTION, jetLimit } from './interaction'
 import { MIND } from './mind'
 import { PERCEPTION } from './perception'
@@ -53,6 +54,8 @@ export const INTENT_SPEED: Record<Exclude<IntentKind, 'held' | 'chase' | 'dizzy'
   guard: 1,
   /** Playing with a toy: × `PLAY.speed`. */
   play: 1,
+  /** Going to pick up a dropped item: × `COLLECT.speed`. */
+  collect: 1,
 }
 
 /** This creature's top speed right now: base × energy (0.88–1.24) × intent. */
@@ -69,7 +72,9 @@ export function speedLimit(creature: Creature): number {
       ? mealSpeed(creature)
       : intent === 'play'
         ? PLAY.speed
-        : 1
+        : intent === 'collect'
+          ? COLLECT.speed
+          : 1
   return MOVEMENT.baseSpeed * energyFactor * INTENT_SPEED[intent] * food
 }
 
@@ -155,6 +160,22 @@ export function stepMovement(creature: Creature, world: World, dt: number): void
     case 'guard': {
       // Hover above the shrimp (eat: low enough for the tentacles to grab it; guard: a little higher, glaring).
       const target = mealTarget(world, creature, mealPoint)
+      if (target) {
+        arrive(
+          intentForce,
+          creature,
+          target,
+          0,
+          MOVEMENT.slowRadius,
+          limit,
+          MOVEMENT.maxIntentForce,
+        )
+        addScaled(creature.velocity, intentForce, weights.intent * dt)
+      }
+      break
+    }
+    case 'collect': {
+      const target = collectTarget(world, creature, mealPoint)
       if (target) {
         arrive(
           intentForce,

@@ -10,6 +10,7 @@ import { stepEmotion } from './emotion'
 import { chooseMeal } from './feeding'
 import { interactionIntent } from './interaction'
 import { choosePlay } from './play'
+import { chooseCollect } from './wearables'
 import { range, type Rng } from './rng'
 import { swimBounds } from './scenery'
 import type { World } from './world'
@@ -68,11 +69,15 @@ export const ruleMind: Mind = {
       const meal = chooseMeal(creature, world, dt)
       // Toys (task #29): only when not going for food (food beats play).
       const play = meal ? null : choosePlay(creature, world)
+      // Dropped dress-up items (task #33): only when not eating or playing.
+      const collect = meal || play ? null : chooseCollect(creature, world)
       if (meal) mind.intent = meal
       else if (play) mind.intent = play
+      else if (collect) mind.intent = collect
     } else {
       mind.meal = null
       mind.play = null
+      mind.collect = null
     }
 
     if (mind.intent === 'peek') {

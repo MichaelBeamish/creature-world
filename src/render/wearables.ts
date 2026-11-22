@@ -15,6 +15,111 @@ export interface WearExtras {
   time: number
   /** Swimming speed (px/s): the propeller spins faster. */
   speed: number
+  /** 0..1 — how much decorative sparkle/sway (the wand, the balloon); lower under reduced motion. */
+  sparkle?: number
+  /** Which way (and how far, px) the motion drags things behind — the held balloon lags on its string. */
+  drag?: { x: number; y: number }
+}
+
+/** A tentacle's cubic Bézier: root, two control points, tip (in the creature's local frame). */
+export type Curve = [Point, Point, Point, Point]
+type Point = readonly [number, number]
+
+/** Point and direction (unit tangent) along a cubic Bézier at t (0..1). */
+function along(c: Curve, t: number): { x: number; y: number; tx: number; ty: number } {
+  const [p0, p1, p2, p3] = c
+  const u = 1 - t
+  const x = u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0]
+  const y = u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]
+  const dx = 3 * u * u * (p1[0] - p0[0]) + 6 * u * t * (p2[0] - p1[0]) + 3 * t * t * (p3[0] - p2[0])
+  const dy = 3 * u * u * (p1[1] - p0[1]) + 6 * u * t * (p2[1] - p1[1]) + 3 * t * t * (p3[1] - p2[1])
+  const l = Math.hypot(dx, dy) || 1
+  return { x, y, tx: dx / l, ty: dy / l }
+}
+
+/** How much bigger than their drawing held items are shown (not the balloon). */
+const HELD_SCALE = 1.35
+
+/** Draw a held item at the raised tentacle's tip, pointing along the arm (the balloon's string floats straight up). */
+export function drawHeld(
+  ctx: CanvasRenderingContext2D,
+  kind: WearableKind,
+  tip: { x: number; y: number; angle: number; lean: number; dragX: number; dragY: number },
+  s: number,
+  extras: WearExtras,
+): void {
+  ctx.save()
+  ctx.translate(tip.x, tip.y)
+  // Items are drawn from their grip (origin) upward (−y): turn "up" to point along the arm.
+  if (kind === 'balloon')
+    ctx.rotate(-tip.lean) // always floats up, however the body is turned
+  else {
+    ctx.rotate(tip.angle + Math.PI / 2)
+    ctx.scale(HELD_SCALE, HELD_SCALE) // held items read better a bit bigger than a tentacle tip
+  }
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  DRAW[kind](ctx, s, { ...extras, drag: { x: tip.dragX, y: tip.dragY } })
+  ctx.restore()
+}
+
+/** A let-go balloon at (x, y) — the balloon's body — with its string trailing below. */
+export function drawFloatingBalloon(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  s: number,
+  time: number,
+): void {
+  ctx.save()
+  // The drawing puts the balloon 2.4·s above its string's end: start the string below the body.
+  ctx.translate(x, y + s * 2.4)
+  DRAW.balloon(ctx, s, { time, speed: 0, sparkle: 0 })
+  ctx.restore()
+}
+
+/** Kandi cuffs: bands of colorful beads across a few tentacles, around the middle, jiggling as it swims. */
+export function drawCuffs(
+  ctx: CanvasRenderingContext2D,
+  curves: Curve[],
+  s: number,
+  extras: WearExtras,
+): void {
+  const n = curves.length
+  const picks = [0, Math.floor(n / 2), n - 2].filter((i, k, a) => i >= 0 && a.indexOf(i) === k)
+  for (const i of picks) {
+    const c = curves[i]
+    if (!c) continue
+    for (const t of [0.45, 0.55]) {
+      const p = along(c, t + Math.sin(extras.time * 7 + i + t * 10) * 0.012)
+      const width = s * (0.36 - 0.28 * t) // about the tentacle's width there
+      drawBeadBand(ctx, p.x, p.y, -p.ty, p.tx, width, s, i * 3 + t * 10)
+    }
+  }
+}
+
+const BEADS = ['#ff4fb4', '#ffd21f', '#3cc84a', '#2f8cff', '#9b4dff', '#ff8a1f']
+
+/** A row of beads across (nx, ny) — the direction across the tentacle — centered at (x, y). */
+function drawBeadBand(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  nx: number,
+  ny: number,
+  width: number,
+  s: number,
+  seed: number,
+) {
+  const count = 5
+  const r = Math.max(1.4, s * 0.08)
+  for (let k = 0; k < count; k++) {
+    const f = (k / (count - 1) - 0.5) * (width + r)
+    ctx.beginPath()
+    ctx.arc(x + nx * f, y + ny * f, r, 0, Math.PI * 2)
+    ctx.fillStyle = BEADS[(k + Math.floor(seed)) % BEADS.length]!
+    ctx.fill()
+  }
 }
 
 const EYE_GAP = 0.36
@@ -44,6 +149,15 @@ const OVER_HEAD: ReadonlySet<WearableKind> = new Set<WearableKind>(['snorkelMask
 const ICON_FIT: Partial<Record<WearableKind, { scale: number; dy: number }>> = {
   bouffantWig: { scale: 0.62, dy: 0.33 },
   clownWig: { scale: 0.52, dy: -0.6 },
+  // Held items are drawn from their grip upward: shift down by about half their length.
+  glowStick: { scale: 1.15, dy: 0.55 },
+  cutlass: { scale: 0.9, dy: 0.85 },
+  sodaCan: { scale: 1.5, dy: 0.42 },
+  magicWand: { scale: 1.0, dy: 0.75 },
+  balloon: { scale: 0.62, dy: 1.5 },
+  rose: { scale: 1.1, dy: 0.65 },
+  trident: { scale: 0.9, dy: 0.85 },
+  kandiCuffs: { scale: 1.6, dy: 0 },
 }
 
 /** One item centered at (x, y) — for the chest's circles and for items in the water. */
@@ -184,6 +298,185 @@ const SIT_LOWER: Partial<Record<WearableKind, number>> = {
 }
 
 const DRAW: Record<WearableKind, Draw> = {
+  glowStick(ctx, s, { time }) {
+    // A neon glow stick (its color slowly cycles), with a little cap.
+    const color = neon(time, 200)
+    glowing(ctx, color, s * 0.6, () => {
+      ctx.beginPath()
+      ctx.roundRect(-s * 0.09, -s * 1.15, s * 0.18, s * 1.25, s * 0.09)
+      fill(ctx, color)
+    })
+    ctx.beginPath()
+    ctx.roundRect(-s * 0.11, -s * 0.05, s * 0.22, s * 0.18, s * 0.05)
+    fill(ctx, '#3a3a44')
+  },
+  cutlass(ctx, s) {
+    // A pirate cutlass: a curved silver blade, a gold guard, a brown grip.
+    ctx.beginPath()
+    ctx.roundRect(-s * 0.07, -s * 0.38, s * 0.14, s * 0.42, s * 0.05)
+    fill(ctx, '#6b4423')
+    ctx.strokeStyle = '#d9b44a'
+    ctx.lineWidth = Math.max(1.5, s * 0.08)
+    ctx.beginPath()
+    ctx.moveTo(-s * 0.22, -s * 0.4)
+    ctx.quadraticCurveTo(0, -s * 0.48, s * 0.22, -s * 0.4)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(-s * 0.08, -s * 0.44)
+    ctx.quadraticCurveTo(s * 0.0, -s * 1.1, s * 0.32, -s * 1.7)
+    ctx.quadraticCurveTo(s * 0.36, -s * 1.05, s * 0.1, -s * 0.44)
+    ctx.closePath()
+    fill(ctx, '#d6dde4')
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.lineWidth = Math.max(1, s * 0.03)
+    ctx.beginPath()
+    ctx.moveTo(s * 0.04, -s * 0.6)
+    ctx.quadraticCurveTo(s * 0.1, -s * 1.1, s * 0.28, -s * 1.55)
+    ctx.stroke()
+  },
+  sodaCan(ctx, s, { time }) {
+    // A bright soda can with a straw, and a little fizz.
+    ctx.beginPath()
+    ctx.roundRect(-s * 0.2, -s * 0.65, s * 0.4, s * 0.68, s * 0.06)
+    fill(ctx, '#e8242f')
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = Math.max(1, s * 0.06)
+    ctx.beginPath()
+    ctx.moveTo(-s * 0.2, -s * 0.28)
+    ctx.quadraticCurveTo(0, -s * 0.42, s * 0.2, -s * 0.26)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.ellipse(0, -s * 0.65, s * 0.2, s * 0.05, 0, 0, Math.PI * 2)
+    fill(ctx, '#c9cdd2')
+    ctx.strokeStyle = '#ff6fb1'
+    ctx.lineWidth = Math.max(1.5, s * 0.06)
+    ctx.beginPath()
+    ctx.moveTo(s * 0.05, -s * 0.6)
+    ctx.lineTo(s * 0.14, -s * 1.0)
+    ctx.stroke()
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)' // fizz
+    for (let k = 0; k < 3; k++) {
+      const t = (time * 0.8 + k / 3) % 1
+      ctx.beginPath()
+      ctx.arc(-s * 0.08 + k * s * 0.06, -s * (0.72 + t * 0.35), s * 0.025, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  },
+  magicWand(ctx, s, { time, sparkle = 1 }) {
+    // A black wand with a white tip and a gold star that sparkles.
+    ctx.strokeStyle = '#1d1d24'
+    ctx.lineWidth = Math.max(2, s * 0.1)
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(0, -s * 1.1)
+    ctx.stroke()
+    ctx.fillStyle = '#ffe58a'
+    glowing(ctx, '#ffe58a', s * 0.5, () => {
+      star(ctx, 0, -s * 1.3, s * 0.28)
+      ctx.fill()
+    })
+    // Sparkles twinkling around the star (fewer under reduced motion).
+    const count = Math.round(4 * sparkle)
+    for (let k = 0; k < count; k++) {
+      const phase = (time * 1.5 + k / Math.max(1, count)) % 1
+      const a = k * 2.4 + Math.floor(time * 1.5 + k / count) * 1.7
+      const r = s * (0.35 + 0.25 * phase)
+      ctx.globalAlpha = 1 - phase
+      ctx.fillStyle = '#fff6c8'
+      star(ctx, Math.cos(a) * r, -s * 1.3 + Math.sin(a) * r, s * 0.08)
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
+  },
+  balloon(ctx, s, { time, sparkle = 1, drag = { x: 0, y: 0 } }) {
+    // A red balloon floating up on a string, bobbing and drifting a little.
+    // Dragged along, it lags well behind on its string (the string stays about the same length, so it dips as it
+    // swings out sideways).
+    const lagX = Math.max(-s * 2, Math.min(s * 2, drag.x * 2.2))
+    const bx = Math.sin(time * 1.3) * s * 0.25 * sparkle + lagX
+    const dip = s * 2.4 - Math.sqrt(Math.max(0, (s * 2.4) ** 2 - lagX * lagX * 0.6))
+    const by =
+      -s * 2.4 +
+      dip +
+      Math.min(s * 0.8, Math.max(-s * 0.4, drag.y * 0.6)) +
+      Math.sin(time * 1.9) * s * 0.08 * sparkle
+    ctx.strokeStyle = 'rgba(240, 240, 240, 0.8)'
+    ctx.lineWidth = Math.max(1, s * 0.03)
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.bezierCurveTo(s * 0.15, -s * 0.8, bx - s * 0.15, by + s * 1.0, bx, by + s * 0.62)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.ellipse(bx, by, s * 0.5, s * 0.6, 0, 0, Math.PI * 2)
+    fill(ctx, '#e8242f')
+    ctx.beginPath()
+    ctx.moveTo(bx - s * 0.08, by + s * 0.66)
+    ctx.lineTo(bx + s * 0.08, by + s * 0.66)
+    ctx.lineTo(bx, by + s * 0.58)
+    ctx.closePath()
+    fill(ctx, '#c01d27')
+    ctx.beginPath()
+    ctx.ellipse(bx - s * 0.18, by - s * 0.22, s * 0.1, s * 0.17, -0.5, 0, Math.PI * 2)
+    fill(ctx, 'rgba(255, 255, 255, 0.45)')
+  },
+  rose(ctx, s) {
+    // A red rose on a green stem with a leaf.
+    ctx.strokeStyle = '#2f8a3e'
+    ctx.lineWidth = Math.max(1.5, s * 0.07)
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.quadraticCurveTo(s * 0.08, -s * 0.5, 0, -s * 0.95)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.ellipse(s * 0.14, -s * 0.45, s * 0.16, s * 0.07, -0.6, 0, Math.PI * 2)
+    fill(ctx, '#3ca34e')
+    for (const [px, py, r, c] of [
+      [0, -1.12, 0.26, '#b3142c'],
+      [-0.12, -1.08, 0.18, '#d61f3a'],
+      [0.12, -1.08, 0.18, '#d61f3a'],
+      [0, -1.2, 0.14, '#e8424f'],
+    ] as const) {
+      ctx.beginPath()
+      ctx.arc(s * px, s * py, s * r, 0, Math.PI * 2)
+      fill(ctx, c)
+    }
+    ctx.strokeStyle = 'rgba(110, 10, 25, 0.6)'
+    ctx.lineWidth = Math.max(1, s * 0.03)
+    ctx.beginPath()
+    ctx.arc(0, -s * 1.14, s * 0.1, 0.5, 4.5)
+    ctx.stroke()
+  },
+  trident(ctx, s) {
+    // A tiny golden trident: a shaft and three barbed prongs.
+    ctx.strokeStyle = '#d9b44a'
+    ctx.lineWidth = Math.max(2, s * 0.09)
+    ctx.beginPath()
+    ctx.moveTo(0, s * 0.1)
+    ctx.lineTo(0, -s * 1.55)
+    ctx.moveTo(-s * 0.3, -s * 1.2)
+    ctx.quadraticCurveTo(-s * 0.3, -s * 1.0, 0, -s * 1.0)
+    ctx.quadraticCurveTo(s * 0.3, -s * 1.0, s * 0.3, -s * 1.2)
+    ctx.moveTo(-s * 0.3, -s * 1.2)
+    ctx.lineTo(-s * 0.3, -s * 1.55)
+    ctx.moveTo(s * 0.3, -s * 1.2)
+    ctx.lineTo(s * 0.3, -s * 1.55)
+    ctx.stroke()
+    ctx.fillStyle = '#d9b44a'
+    for (const px of [-0.3, 0, 0.3]) {
+      ctx.beginPath()
+      ctx.moveTo(s * (px - 0.09), -s * 1.5)
+      ctx.lineTo(s * px, -s * 1.75)
+      ctx.lineTo(s * (px + 0.09), -s * 1.5)
+      ctx.closePath()
+      ctx.fill()
+    }
+  },
+  kandiCuffs(ctx, s) {
+    // (The chest icon: a stack of three beaded bracelets. On a creature they're drawn across its tentacles.)
+    for (let row = 0; row < 3; row++) {
+      drawBeadBand(ctx, 0, (row - 1) * s * 0.18, 1, 0, s * 0.55, s, row * 2)
+    }
+  },
   wizardHat(ctx, s) {
     // Tall, slightly bent purple cone with stars, on a wide brim.
     ctx.beginPath()
