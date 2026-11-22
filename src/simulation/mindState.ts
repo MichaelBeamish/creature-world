@@ -20,6 +20,9 @@ export type IntentKind =
   | 'chase'
   /** a Friendly dizzy after being shaken (task #27) */
   | 'dizzy'
+  /** Feeding (task #28): going for a shrimp / a Grumpy guarding one */
+  | 'eat'
+  | 'guard'
 
 export interface MindState {
   emotion: EmotionState
@@ -28,8 +31,16 @@ export interface MindState {
   peekPhase: 'in' | 'out'
   /** Where a hiding creature is heading (chosen when it starts hiding). */
   hideTarget: Vec2
+  /** The food it's going for (task #28): which prop, and a timer (a Scaredy's wait / a Grumpy's guard). */
+  meal: { propId: number; timer: number } | null
 }
 
 export function createMindState(): MindState {
-  return { emotion: createEmotionState(), intent: 'wander', peekPhase: 'in', hideTarget: vec2() }
+  return {
+    emotion: createEmotionState(),
+    intent: 'wander',
+    peekPhase: 'in',
+    hideTarget: vec2(),
+    meal: null,
+  }
 }

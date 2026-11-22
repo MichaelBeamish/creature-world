@@ -48,6 +48,8 @@ export const SCENERY = {
   seaweedHeight: [50, 100],
   /** Items of the same kind keep at least this far apart (fraction of the width). */
   minGap: 0.06,
+  /** Nothing is placed left of this (fraction of the width): the treasure chest's corner (task #28). */
+  chestClear: 0.16,
   /** Shells keep at least this far from any rock, so none ends up half-hidden behind one. */
   shellRockGap: 0.09,
   /** XOR'd into the world seed to get the independent scenery stream. */
@@ -123,9 +125,9 @@ function spacedPosition(
       ...avoid.at.map((t) => Math.abs(t - u) - avoid.gap),
       Infinity,
     )
-  let best = range(rng, 0.04, 0.96)
+  let best = range(rng, SCENERY.chestClear, 0.96)
   for (let attempt = 0; attempt < 40 && clearance(best) < 0; attempt++) {
-    const candidate = range(rng, 0.04, 0.96)
+    const candidate = range(rng, SCENERY.chestClear, 0.96)
     if (clearance(candidate) > clearance(best)) best = candidate
   }
   return best

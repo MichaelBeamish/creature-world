@@ -21,12 +21,13 @@ import { BODY, type Creature } from './creature'
 import { showEmote, type EmoteKind } from './expression'
 import type { IntentKind } from './mindState'
 import { spawnInk } from './ink'
+import { canTake, dropProp, overChest, slotAt, type PropKind } from './props'
 import { createRng, int, range, type Rng } from './rng'
 import { vec2, type Vec2 } from './vec2'
 import type { World } from './world'
 
 export type GrabPart = 'head' | 'tentacle'
-export type InteractionSoundKind = 'grab' | 'squeak' | 'boop' | 'ink' | 'hiccup'
+export type InteractionSoundKind = 'grab' | 'squeak' | 'boop' | 'ink' | 'hiccup' | 'nom'
 
 export interface InteractionSound {
   kind: InteractionSoundKind
@@ -71,6 +72,8 @@ export interface Interaction {
   chase: { creatureId: number; until: number; nextInkAt: number } | null
   /** A Friendly dizzy after being shaken: who, since and until when (world time). */
   dizzy: { creatureId: number; since: number; until: number } | null
+  /** An item being carried out of the chest (task #28): it follows the hand until released. */
+  carry: { kind: PropKind } | null
   rng: Rng
 }
 
@@ -171,6 +174,7 @@ export function createInteraction(seed: number): Interaction {
     jet: null,
     chase: null,
     dizzy: null,
+    carry: null,
     rng: createRng(seed ^ INTERACTION.streamSalt),
   }
 }
@@ -186,6 +190,11 @@ export function creatureAt(
   for (const c of topFirst) if (hitsHead(c, x, y)) return { creature: c, part: 'head' }
   for (const c of topFirst) if (hitsTentacles(c, x, y)) return { creature: c, part: 'tentacle' }
   return null
+}
+
+/** Is (x, y) on this creature — its head or within its tentacles' reach? (Also: "in reach" for eating.) */
+export function touches(c: Creature, x: number, y: number): boolean {
+  return hitsHead(c, x, y) || hitsTentacles(c, x, y)
 }
 
 function hitsHead(c: Creature, x: number, y: number): boolean {
@@ -281,6 +290,14 @@ export function stepInteraction(world: World, dt: number): void {
     }
   }
 
+  // Carrying an item from the chest: released over the water → it goes in; over the chest → it goes back.
+  if (it.carry && !p.pressed) {
+    if (!overChest(world, p.position.x, p.position.y)) {
+      dropProp(world, it.carry.kind, p.position.x, p.position.y)
+    }
+    it.carry = null
+  }
+
   if (it.hold && !p.pressed) {
     release(world, it.hold)
     it.hold = null
@@ -316,7 +333,12 @@ export function stepInteraction(world: World, dt: number): void {
     }
   }
 
-  if (p.justPressed && !it.hold && !it.press) {
+  // A press on an open chest's item takes it (if available) — checked before the creatures.
+  const slot =
+    p.justPressed && !it.hold && !it.press ? slotAt(world, p.position.x, p.position.y) : null
+  if (slot) {
+    if (canTake(world, slot)) it.carry = { kind: slot }
+  } else if (p.justPressed && !it.hold && !it.press && !it.carry) {
     const hit = creatureAt(world, p.position.x, p.position.y)
     if (hit) {
       it.press = {
@@ -632,6 +654,11 @@ function release(world: World, hold: Hold): void {
   if (!c) return
   // A Friendly is glad to be held: a ♥ on release. Everyone else just reacts through their mood.
   if (c.traits.boldness >= 0.5 && c.traits.curiosity >= 0.5) showEmote(c, 'heart')
+}
+
+/** Record a sound event for a creature (the audio layer voices it). Used by other behaviours too (e.g. feeding). */
+export function recordSound(world: World, kind: InteractionSoundKind, creatureId: number): void {
+  sound(world.interaction, kind, creatureId)
 }
 
 function sound(it: Interaction, kind: InteractionSoundKind, creatureId: number): void {

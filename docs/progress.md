@@ -2,6 +2,35 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #28: Treasure chest + shrimp (feeding) ✅
+- **The chest:** a sunken wooden chest (brass, moss, barnacles) on the sand, bottom-left; the mute button moved to the
+  bottom-right. Open (click / tap / Tab + Enter): the lid stands up with a golden glow and the items float into slots
+  above it. An invisible but real `<button>` (`ChestToggle.vue`) lies exactly over the canvas drawing (accessible).
+- **Props** (`props.ts`): drag an item from its slot (checked before creatures) into the water; dropped on the chest it
+  goes back. A shrimp sinks with a drift and rests on the sand; at most 3 in the water (the slot greys out).
+- **Feeding** (`feeding.ts`, a layer in the mind, only when calm; new intents `eat`, `guard`), by trait dials: the
+  Friendly races, the Peeker sneaks in while the hand is away, the Scaredy waits for the hand to leave and creeps in,
+  the Grumpy guards (💢, others keep off) then eats. Eating: "nom-nom", ♥, squish.
+- Scenery keeps the chest corner clear (`SCENERY.chestClear`; floor layouts shift slightly for existing seeds).
+- **Found by tracing before testing:** nobody could reach a shrimp on the sand (→ eat with stretched tentacles,
+  `inReach`); approaches too slow (→ higher feeding speeds); a Scaredy lost interest beyond 600 px (→ food noticed
+  pool-wide). Browser: the open lid didn't read as open (→ the lid's inside stands up behind the chest).
+- **Verified:** 264 tests (+16): chest, slots, carrying, cap, sinking/resting, 300-seed clear corner; feeding styles
+  and scenarios per archetype; eating effects; scared creatures ignore food. Real-Chrome run of the full flow.
+  Owner: "absolutely perfect". All five checks pass; code map, overview, README updated.
+- **Learned:** canvas UI can stay accessible with a real button overlay; tracing scenarios before writing tests
+  surfaces behaviour bugs that unit tests written from the spec would have encoded.
+
+## 2026-11-22 — Decision: treasure chest milestone (#28–#32) replaces feeding (#22)
+- Owner didn't want food to appear wherever you click empty water. Instead: a **treasure chest** on the sand in the
+  bottom-left (the mute button moves to the bottom-right); click to open, items float out, **drag** them into the
+  pool or onto a creature.
+- Items: **shrimp** (the only food), a **rubber duck** and a **soccer ball**, **dress-up** (hats, sunglasses, fake
+  beards), **glow sticks** (creatures hold them), and a **disco ball + club lights** party with an original
+  synthesized dance groove (Austin dance-festival vibe; no copying, no festival branding) and dancing by personality.
+- Guardrails: light-safe party (no strobes, ≤ 3 flashes/s, calm under reduced motion); music only when unmuted; each
+  item exists once (no clutter). Order: #28 chest + shrimp → #29 toys → #30 dress-up → #31 glow sticks → #32 party.
+
 ## 2026-11-22 — Task #27: Ink reactions — Grumpy chase, Friendly dizzy ✅
 - **One override above the mind:** `interactionIntent` (held > chase > dizzy) replaces the held-only special case;
   new intents `chase`, `dizzy`; trait-defined `forgives` (bold + curious) next to `standsItsGround`.

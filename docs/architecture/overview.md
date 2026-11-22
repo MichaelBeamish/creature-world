@@ -78,6 +78,13 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   tell (tremble, darker flush, faster squeaks). Past it: ink (`ink.ts`, a second pooled particle system with analytic
   motion, aimed toward the hand like a smoke screen), the hold ends, a short jet escape (briefly above the normal speed limit), and `perception.rattled = 1`, which
   fades over ~30 s, caps trust at 1 − rattled and dampens curiosity — so even a Friendly keeps its distance for a while.
+- **Treasure chest, props & feeding** (task #28) — the chest sits on the sand in the bottom-left corner (`props.ts`:
+  fixed px, so an invisible accessible `<button>` — `ChestToggle.vue` — lines up exactly over the canvas drawing and
+  calls `toggleChest` at the input boundary). Open, its items float in slots above it; a press on a slot (checked
+  before creatures) *carries* the item; released over the water it becomes a **prop** — plain data that sinks with a
+  drift and rests on the sand (at most 3 shrimp). Feeding (`feeding.ts`) is a layer in the mind, only when calm:
+  by trait dials the Friendly races, the Peeker sneaks in while the hand is away, the Scaredy waits for the hand to
+  leave, the Grumpy guards (others keep off) then eats — new intents `eat`, `guard`. Eating: ♥, squish, "nom".
 - **Ink reactions by personality** (task #27) — trait-defined, like everything else. Scaredy/Peeker: ink and flee (above).
   A bold, incurious creature (`standsItsGround`: the Grumpy) gets mad: it recoils, then *chases* the hand for ~4 s
   (intent `chase`, *pursuit with velocity matching* — `chaseForce`: the hand's velocity + a closing speed
@@ -123,8 +130,9 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
 - **Bubbles** (`bubbles.ts`, `render/bubbles.ts`) — a particle system: a fixed 64-slot ring-buffer pool of spawn
   records (no per-frame allocation), analytic closed-form motion (`bubbleAt`), spawned when a creature's intent becomes
   flee/hide (burst), while it keeps darting (trickle), or on entering standoff (Grumpy huff); own random stream.
-- **UI shell** — Vue overlays: `DebugPanel`, `MuteToggle`, `FirstVisitHint` (fades out on first interaction).
-- **Step order** — presence (incl. press/release edges) → interaction (boop / hold) → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → tether → constraints → bubbles → ink → animation.
+- **UI shell** — Vue overlays: `DebugPanel`, `MuteToggle` (bottom-right), `ChestToggle` (over the drawn chest),
+  `FirstVisitHint` (fades out on first interaction).
+- **Step order** — presence (incl. press/release edges) → interaction (boop / hold / carry) → props → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → tether → constraints → bubbles → ink → animation.
 
 ## Game loop
 Fixed timestep (e.g. 60 Hz) with an accumulator, so behavior is deterministic and testable regardless of

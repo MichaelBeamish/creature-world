@@ -33,14 +33,16 @@
 | `src/simulation/interaction.ts` | Boop and grab-and-drag: hit-testing (head + tentacle zone), boop-vs-hold, the held spring + rhythmic pull + wriggle, tether with a top speed, shake stress → ink; reactions by personality (flee / Grumpy chase / Friendly dizzy) as the one override above the mind; interaction sound events (own random stream) | `INTERACTION`, `Interaction`, `creatureAt`, `stepInteraction`, `heldForce`, `pullOffset`, `applyTether`, `struggleLevel`, `stressLimit`, `stressFraction`, `standsItsGround`, `forgives`, `interactionIntent`, `aimAtHand`, `chaseForce`, `dizziness`, `dizzyForce`, `jetLimit`, `isHeld` |
 | `src/simulation/perception.ts` | What a creature notices: attention, trust, pressure, startle → stimulus; `rattled` (after inking) caps trust | `Perception`, `Stimulus`, `PERCEPTION`, `stepPerception` |
 | `src/simulation/emotion.ts` | Utility-scored emotions, smoothing, hysteresis, fear reflex; being rattled dampens curiosity (and keeps a Grumpy grumpy) | `EmotionKind`, `EMOTION`, `scoreEmotions`, `stepEmotion` |
-| `src/simulation/mindState.ts` | The mind's state as data (split out to avoid an import cycle) | `IntentKind`, `MindState`, `createMindState` |
-| `src/simulation/mind.ts` | `Mind` interface + `ruleMind`: emotion → intent; calm wander/rest rhythm | `Mind`, `MIND`, `ruleMind`, `stepActivity` |
+| `src/simulation/mindState.ts` | The mind's state as data (split out to avoid an import cycle), incl. the food it's going for | `IntentKind`, `MindState`, `createMindState` |
+| `src/simulation/mind.ts` | `Mind` interface + `ruleMind`: emotion → intent; calm wander/rest rhythm; food (when calm) | `Mind`, `MIND`, `ruleMind`, `stepActivity` |
 | `src/simulation/expression.ts` | Gaze, emote events, mood-scaled animation speed | `Expression`, `EmoteKind`, `EXPRESSION`, `stepExpression`, `showEmote` |
 | `src/simulation/movement.ts` | Intent → steering forces, drag, personal speed limit | `MOVEMENT`, `INTENT_SPEED`, `speedLimit`, `stepMovement` |
 | `src/simulation/steering.ts` | Reynolds steering behaviors as pure force functions | `STEERING`, `wander`, `stayInBounds`, `separate`, `arrive`, `seek`, `flee`, `brake` |
 | `src/simulation/constraints.ts` | Position-based pass: no overlaps, stay in bounds; a held creature shoves others at a limited speed (else it is blocked) | `CONSTRAINTS`, `resolveConstraints` |
 | `src/simulation/scenery.ts` | Sea floor: sand height, the swimmable area, seeded rocks/shells/seaweed (own random stream) | `SceneryItem`, `FLOOR`, `SCENERY`, `floorHeight`, `swimBounds`, `createScenery` |
 | `src/simulation/ink.ts` | Ink clouds: fixed 128-slot pool of puffs with analytic motion, squirted when a shaken creature inks (own random stream) | `INK`, `InkSystem`, `createInk`, `spawnInk`, `stepInk`, `inkPuffAt` |
+| `src/simulation/props.ts` | The treasure chest (open/closed, its box, item slots, hit-tests) and props — items in the water: shrimp sink with a drift and rest on the sand; at most 3 shrimp | `CHEST`, `CHEST_ITEMS`, `PROPS`, `Props`, `Prop`, `PropKind`, `createProps`, `chestBox`, `slotPosition`, `slotAt`, `overChest`, `toggleChest`, `canTake`, `dropProp`, `removeProp`, `stepProps`, `nearestShrimp`, `sandTop`, `restY` |
+| `src/simulation/feeding.ts` | Who goes for a shrimp and how, by trait dials (race / sneak / creep / guard); eating (♥, squish, "nom") | `FEEDING`, `feedingStyle`, `chooseMeal`, `mealTarget`, `mealSpeed`, `inReach` |
 | `src/simulation/bubbles.ts` | Bubble particles: fixed 64-slot pool, analytic motion, spawned on flee/hide/standoff (own random stream) | `BUBBLES`, `BubbleSystem`, `createBubbles`, `stepBubbles`, `bubbleAt` |
 | `src/simulation/animation.ts` | Breathing/sway oscillators, the blink state machine, the boop squash spring | `CreatureAnimation`, `ANIMATION`, `stepAnimation` |
 | `src/simulation/rng.ts` | Seeded PRNG (mulberry32) — the only randomness in the simulation | `Rng`, `createRng`, `next`, `range`, `int`, `pick` |
@@ -51,11 +53,13 @@
 
 | File | Purpose | Key exports |
 |---|---|---|
-| `src/render/scene.ts` | Draws one frame: background → floor → creatures (back to front) → ink → bubbles → emotes → vignette → debug | `drawScene`, `SceneOptions` |
+| `src/render/scene.ts` | Draws one frame: background → floor → chest → props → creatures (back to front) → ink → bubbles → chest items & carried item → emotes → vignette → debug | `drawScene`, `SceneOptions` |
 | `src/render/floor.ts` | "Moonlit reef" sea floor: sand, mossy rocks, glowing shells, swaying seaweed | `drawFloor` |
 | `src/render/drawCreature.ts` | The "little octopus": body, fur, tentacles, eyes, mood body language; squash, dangling and the grabbed tentacle; the dizzy look; jet swimming when fast | `drawCreature`, `CreaturePose`, `HeldPose`, `propulsion`, `swimAngle`, `mantleRadii`, `tentacleRoot`, `tentacleOutline`, `grabbedTentacle`, `TENTACLE_ROOT` |
 | `src/render/bubbles.ts` | Draws live bubbles (rim + highlight) and their pop rings | `drawBubbles` |
 | `src/render/ink.ts` | Draws ink clouds: soft deep-indigo radial-gradient puffs | `drawInk` |
+| `src/render/chest.ts` | Draws the treasure chest (wood, brass, moss; lid swings open with a golden glow), its floating item slots, and the carried item | `drawChest`, `drawChestItems` |
+| `src/render/props.ts` | Draws items in the water: the shrimp (curled segments, fan tail, eye, antennae) | `drawProps`, `drawShrimp` |
 | `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade | `drawEmotes` |
 | `src/render/background.ts` | Water, caustics, floating motes (pure function of time), vignette | `drawBackground`, `drawVignette`, `motePosition` |
 | `src/render/motion.ts` | Decorative-motion settings (full vs reduced motion) | `MotionSettings`, `FULL_MOTION`, `REDUCED_MOTION`, `motionSettings` |
@@ -82,7 +86,7 @@
 | File | Purpose | Key exports |
 |---|---|---|
 | `src/app/App.vue` | Root component, global page styles | — |
-| `src/app/WorldCanvas.vue` | Wires everything: world, loop, input, render, audio, debug, hint, reduced motion | — |
+| `src/app/WorldCanvas.vue` | Wires everything: world, loop, input, render, audio, debug, hint, reduced motion, the chest button | — |
 | `src/app/gameLoop.ts` | `requestAnimationFrame` driver with a fixed timestep + frame timing hook | `createGameLoop` |
 | `src/app/fixedStep.ts` | Pure fixed-timestep accumulator (steps + interpolation alpha) | `advanceFixedStep`, `DEFAULT_FIXED_STEP` |
 | `src/app/seed.ts` | `?seed=` from the URL, or a random seed per visit | `resolveSeed` |
@@ -90,7 +94,8 @@
 | `src/app/debugSnapshot.ts` | World → plain snapshot for the debug panel (incl. `rattled`); 5 Hz publisher | `createDebugSnapshot`, `createPublisher` |
 | `src/app/reducedMotion.ts` | Live watcher for the OS "reduce motion" setting | `watchReducedMotion` |
 | `src/app/DebugPanel.vue` | Display-only debug panel (press D / `?debug`) | — |
-| `src/app/MuteToggle.vue` | Accessible sound on/off button (starts muted) | — |
+| `src/app/MuteToggle.vue` | Accessible sound on/off button (starts muted), bottom-right | — |
+| `src/app/ChestToggle.vue` | Invisible but real button laid over the drawn chest: Tab, Enter/Space, click/tap; `aria-expanded` | — |
 | `src/app/FirstVisitHint.vue` | "move your cursor near them…" hint, gone after the first interaction | — |
 
 ## To change X, edit Y
@@ -148,6 +153,16 @@
 | Trickle rate while darting | `BUBBLES.trickleEvery` | `src/simulation/bubbles.ts` |
 | How fast bubbles rise | `BUBBLES.riseSpeed` | `src/simulation/bubbles.ts` |
 | Max bubbles alive at once (pool size) | `BUBBLES.capacity` | `src/simulation/bubbles.ts` |
+| **Treasure chest & feeding** | | |
+| Where the chest sits / its size | `CHEST.left` | `src/simulation/props.ts` |
+| How far above the chest its items float | `CHEST.slotDistance` | `src/simulation/props.ts` |
+| How many shrimp can be in the water at once | `PROPS.maxShrimp` | `src/simulation/props.ts` |
+| How fast a shrimp sinks / drifts | `PROPS.sinkSpeed` | `src/simulation/props.ts` |
+| How far the chest's corner is kept clear of scenery | `SCENERY.chestClear` | `src/simulation/scenery.ts` |
+| How fast each personality goes for food | `FEEDING.speed` | `src/simulation/feeding.ts` |
+| How far the hand must be before a Peeker / Scaredy goes for food | `FEEDING.peekerClear` | `src/simulation/feeding.ts` |
+| How long a Grumpy guards food before eating it | `FEEDING.guardSeconds` | `src/simulation/feeding.ts` |
+| How far a creature can reach to eat | `FEEDING.reachDown` | `src/simulation/feeding.ts` |
 | **Shake → ink** | | |
 | What counts as shaking (hand speed jolts, px/s²) | `INTERACTION.shakeAccel` | `src/simulation/interaction.ts` |
 | How fast stress drains when you stop | `INTERACTION.stressLeak` | `src/simulation/interaction.ts` |
@@ -241,6 +256,14 @@
 1. `src/simulation/interaction.ts`: extend `InteractionSoundKind` and record it with `sound()` where it happens.
 2. `src/audio/voice.ts`: give it a contour in `chirpFor` (`soundEvents.ts` already reports it).
 3. Tests: `src/simulation/interaction.test.ts`, and add it to the list in `src/audio/voice.test.ts`.
+
+**Add a new chest item (e.g. a toy)**
+
+1. `src/simulation/props.ts`: extend `PropKind`, add it to `CHEST_ITEMS` (its slot), its physics in `stepProps`,
+   and any limit in `canTake`.
+2. `src/render/props.ts`: draw it (in the water); `src/render/chest.ts` `drawItem`: its slot icon.
+3. Behaviour: how creatures react to it (like `src/simulation/feeding.ts` for food).
+4. Tests: `src/simulation/props.test.ts` (+ a behaviour test).
 
 **Add or rename a tuning knob**
 
