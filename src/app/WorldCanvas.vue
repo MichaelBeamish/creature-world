@@ -8,8 +8,11 @@ import { FULL_MOTION, motionSettings } from '../render/motion'
 import { drawScene } from '../render/scene'
 import { createStage, type Stage } from '../render/stage'
 import { creatureAt } from '../simulation/interaction'
+import { canTake, chestBox, slotAt, toggleChest } from '../simulation/props'
+import type { World } from '../simulation/world'
 import { setPresenceInput } from '../simulation/presence'
 import { createWorld, resizeWorld, stepWorld } from '../simulation/world'
+import ChestToggle from './ChestToggle.vue'
 import DebugPanel from './DebugPanel.vue'
 import FirstVisitHint from './FirstVisitHint.vue'
 import MuteToggle from './MuteToggle.vue'
@@ -45,6 +48,17 @@ function toggleSound() {
   soundOn = !soundOn
   muted.value = !soundOn
   synth.setMuted(!soundOn)
+}
+
+// Treasure chest (task #28): an accessible button laid over the chest drawn on the canvas. Its box only changes on
+// resize (low-frequency), so it can be reactive; the open state mirrors the simulation's.
+let world: World | null = null
+const chestRect = shallowRef<{ x: number; y: number; width: number; height: number } | null>(null)
+const chestOpen = ref(false)
+function toggleChestUI() {
+  if (!world) return
+  toggleChest(world) // input at the boundary, like the pointer
+  chestOpen.value = world.props.chest.open
 }
 
 // First-visit hint: shown until the visitor first interacts with the pool.
@@ -92,34 +106,38 @@ onMounted(() => {
   console.info(
     `[Creature World] seed ${seed} — add ?seed=${seed} to the URL to see this world again`,
   )
-  const world = createWorld({
+  const w = createWorld({
     seed,
     width: s.width,
     height: s.height,
     creatureCount: CREATURE_COUNT,
   })
+  world = w
+  chestRect.value = chestBox(w)
 
   loop = createGameLoop({
     step(dt) {
-      if (world.width !== s.width || world.height !== s.height)
-        resizeWorld(world, s.width, s.height)
+      if (w.width !== s.width || w.height !== s.height) {
+        resizeWorld(w, s.width, s.height)
+        chestRect.value = chestBox(w) // the chest moves with the sand
+      }
       // Sample input at the boundary: the simulation only ever sees plain data, once per fixed step.
       const sample = input.sample(performance.now())
-      setPresenceInput(world.presence, sample.x, sample.y, sample.active, sample.pressed)
+      setPresenceInput(w.presence, sample.x, sample.y, sample.active, sample.pressed)
       if (hintPending && sample.active) {
         hintPending = false
         hintVisible.value = false // a single reactive write, once
       }
-      stepWorld(world, dt)
+      stepWorld(w, dt)
     },
     render(alpha) {
-      updateCursor(world)
-      drawScene(s.ctx, world, alpha, s.width, s.height, { debug: showDebug, motion })
+      updateCursor(w)
+      drawScene(s.ctx, w, alpha, s.width, s.height, { debug: showDebug, motion })
     },
     frame(now, workMs) {
       // Sound is an output layer: it observes new emotes and interaction sounds (always, so nothing
       // stale plays on unmute).
-      const events = watchEmotes(world)
+      const events = watchEmotes(w)
       if (synth && soundOn) {
         for (const e of events) {
           const pan = panFor(e.creature.position.x, s.width)
@@ -129,18 +147,25 @@ onMounted(() => {
 
       if (!showDebug) return // zero cost while the overlay is off
       meter.record(now, workMs)
-      if (publish(now)) snapshot.value = createDebugSnapshot(world, seed, meter.stats())
+      if (publish(now)) snapshot.value = createDebugSnapshot(w, seed, meter.stats())
     },
   })
-  /** Hand cursor: "grab" over a creature, "grabbing" while holding one. Written only when it changes. */
+  /** Hand cursor: "grab" over a creature or an available chest item, "grabbing" while holding or carrying one.
+   *  Written only when it changes. */
   let cursor = ''
-  function updateCursor(w: typeof world) {
+  function updateCursor(w: World) {
     const p = w.presence
-    const next = w.interaction.hold
-      ? 'grabbing'
-      : p.active && creatureAt(w, p.position.x, p.position.y)
-        ? 'grab'
-        : ''
+    const slot = p.active ? slotAt(w, p.position.x, p.position.y) : null
+    const next =
+      w.interaction.hold || w.interaction.carry
+        ? 'grabbing'
+        : slot
+          ? canTake(w, slot)
+            ? 'grab'
+            : 'not-allowed'
+          : p.active && creatureAt(w, p.position.x, p.position.y)
+            ? 'grab'
+            : ''
     if (next !== cursor && canvasEl.value) {
       cursor = next
       canvasEl.value.style.cursor = next
@@ -170,6 +195,7 @@ onBeforeUnmount(() => {
   <canvas ref="canvas" class="world-canvas" />
   <DebugPanel v-if="debugVisible && snapshot" :snapshot="snapshot" />
   <FirstVisitHint :visible="hintVisible" />
+  <ChestToggle v-if="chestRect" :rect="chestRect" :open="chestOpen" @toggle="toggleChestUI" />
   <MuteToggle :muted="muted" @toggle="toggleSound" />
 </template>
 

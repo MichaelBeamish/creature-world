@@ -14,6 +14,7 @@ const EMOTES: VoiceKind[] = [
   'squeak',
   'boop',
   'hiccup',
+  'nom',
 ]
 
 function creature(archetype: Archetype, size: number, id = 1) {

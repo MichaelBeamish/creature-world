@@ -4,6 +4,7 @@
  */
 import type { Creature } from './creature'
 import type { IntentKind } from './mindState'
+import { mealSpeed, mealTarget } from './feeding'
 import { chaseForce, dizzyForce, heldForce, INTERACTION, jetLimit } from './interaction'
 import { MIND } from './mind'
 import { PERCEPTION } from './perception'
@@ -46,6 +47,9 @@ export const INTENT_SPEED: Record<Exclude<IntentKind, 'held' | 'chase' | 'dizzy'
   flee: 2.5,
   hide: 2.5,
   standoff: 1,
+  /** Going for food: × the personality's feeding speed (`mealSpeed`). */
+  eat: 1,
+  guard: 1,
 }
 
 /** This creature's top speed right now: base × energy (0.88–1.24) × intent. */
@@ -57,13 +61,15 @@ export function speedLimit(creature: Creature): number {
   if (intent === 'chase') return INTERACTION.chaseSpeed
   if (intent === 'dizzy') return INTERACTION.dizzySpeed
   const energyFactor = 0.7 + 0.6 * creature.traits.energy
-  return MOVEMENT.baseSpeed * energyFactor * INTENT_SPEED[intent]
+  const food = intent === 'eat' || intent === 'guard' ? mealSpeed(creature) : 1
+  return MOVEMENT.baseSpeed * energyFactor * INTENT_SPEED[intent] * food
 }
 
 // Scratch vectors reused every step (no per-frame allocations).
 const intentForce = vec2()
 const boundsForce = vec2()
 const separationForce = vec2()
+const mealPoint = vec2()
 
 /** Update the creature's velocity from its intent, avoidance forces, drag, and its speed limit. */
 export function stepMovement(creature: Creature, world: World, dt: number): void {
@@ -137,6 +143,24 @@ export function stepMovement(creature: Creature, world: World, dt: number): void
       heldForce(intentForce, world, creature)
       addScaled(creature.velocity, intentForce, dt)
       break
+    case 'eat':
+    case 'guard': {
+      // Hover above the shrimp (eat: low enough for the tentacles to grab it; guard: a little higher, glaring).
+      const target = mealTarget(world, creature, mealPoint)
+      if (target) {
+        arrive(
+          intentForce,
+          creature,
+          target,
+          0,
+          MOVEMENT.slowRadius,
+          limit,
+          MOVEMENT.maxIntentForce,
+        )
+        addScaled(creature.velocity, intentForce, weights.intent * dt)
+      }
+      break
+    }
     case 'standoff':
       brake(intentForce, creature, MOVEMENT.maxIntentForce)
       addScaled(creature.velocity, intentForce, weights.intent * dt)

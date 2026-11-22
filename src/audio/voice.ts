@@ -148,6 +148,12 @@ export function chirpFor(creature: Creature, emote: VoiceKind): ChirpSpec {
     case 'hiccup': // a quick upward "hic!" (the Friendly, shaken too much)
       notes = [{ offset: 0, duration: 0.09 * tempo, startHz: hz(base + 2), endHz: hz(base + 5) }]
       break
+    case 'nom': // "nom-nom": two quick happy blips (eating a shrimp)
+      notes = [
+        { offset: 0, duration: 0.08 * tempo, startHz: hz(base + 1), endHz: hz(base + 2) },
+        { offset: 0.12 * tempo, duration: 0.1 * tempo, startHz: hz(base + 2), endHz: hz(base + 3) },
+      ]
+      break
     case 'boop': // a tiny "bip"
       notes = [{ offset: 0, duration: 0.08, startHz: hz(base + 5), endHz: hz(base + 5) }]
       break

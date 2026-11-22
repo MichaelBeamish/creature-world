@@ -39,7 +39,7 @@ defineEmits<{ toggle: [] }>()
 <style scoped>
 .mute-toggle {
   position: fixed;
-  left: 14px;
+  right: 14px;
   bottom: 14px;
   width: 40px;
   height: 40px;

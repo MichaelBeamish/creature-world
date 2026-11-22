@@ -27,7 +27,12 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 20 | Boop + drag with struggle | done |
 | 21 | Shake → ink | done |
 | 27 | Ink reactions: Grumpy chase, Friendly dizzy | done |
-| 22 | Feeding | todo |
+| 28 | Treasure chest + shrimp (feeding) | done |
+| 29 | Toys: rubber duck + soccer ball | todo |
+| 30 | Dress-up: hats, sunglasses, fake beards | todo |
+| 31 | Glow sticks | todo |
+| 32 | Party: disco ball + club lights + music | todo |
+| 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | dropped |
 | 25 | Names + personality card | todo |
@@ -274,7 +279,9 @@ capability), the creature slips free, flees/hides, and its **trust drops** for a
   hold ends (fresh press needed), startle + dash, `!` emote. *New* `Perception.rattled` (**~30 s**, owner) caps trust
   at 1 − rattled. *pfft* = new synth noise burst (`puff()`, `puffFor`), only when unmuted. `rattled` in debug panel.
 
-### 22. Feeding
+### 22. Feeding — dropped (owner, 2026-11-22): replaced by #28
+> Food comes from the treasure chest (#28) instead of appearing where you click empty water; shrimp only.
+
 Click empty water to drop a food pellet that slowly sinks. Curious creatures race for it, timid ones wait until the
 visitor backs off, the Grumpy guards it; eating shows a happy reaction. Shows every personality at once.
 - **Accept:** pellets sink and rest on the sand; creatures' approach order/behavior differs by archetype (scenario
@@ -323,6 +330,57 @@ Make the two bold personalities' ink reactions as distinct as the Scaredy's esca
   0.5 s, ends on leaving/grab → standoff + grudge; replaces `followUp`. Friendly: tiny hiccup puff + 'hic' chirp, dizzy
   ~3 s (spiral eyes, orbiting stars, wobble tilt, loop swimming from a rotating target velocity), then squish + ♥;
   low, short rattled, trust kept. `spawnInk` gains count/scale; `INK.capacity` 128. Reduced motion: `dizzyWobble`.
+
+### Treasure chest milestone (#28–#32) — owner decision 2026-11-22
+Items come from a **treasure chest on the sand in the bottom-left corner** (where the mute button is now; the mute
+button moves to the bottom-right). Click it: it creaks open and the items float up in an arc above it; **drag** an
+item into the pool (or onto a creature, for dress-up); click again to close. Each item exists once: shrimp gets
+eaten; toys, glow sticks and dress-up items can be dragged back into the chest — no clutter. Items are **props**:
+plain simulation data (position, floats/sinks, kind) that creatures perceive like the visitor, so personality decides
+who investigates. The chest UI belongs to the world (rendered on the sand), dragging reuses the grab system.
+
+### 28. Treasure chest + shrimp (feeding)
+The chest (bottom-left, mute → bottom-right), opening/closing, items floating out, drag-to-place; the props
+foundation; **shrimp** (the only food): sinks slowly, rests on the sand, is eaten once. Each personality shows: the
+Friendly races for it, the Peeker sneaks in, the Grumpy guards it, the Scaredy waits until the visitor backs off;
+eating shows a happy reaction.
+- **Accept:** chest opens/closes and items can be dragged out (mouse + touch); mute button moved; shrimp sinks,
+  rests and is eaten once; approach behaviour differs by archetype (scenario tests); bounded props; all checks pass.
+- **Approved spec decisions (2026-11-22):** **sunken wooden chest** (wood, brass bands, moss, barnacles; golden glow)
+  and **at most 3 shrimp** in the water (owner). *New* `simulation/props.ts` (chest: open/slots/hit-test; props:
+  sink/drift/rest, bounded), *new* `simulation/feeding.ts` (*new* intents `eat`, `guard`; Friendly races, Peeker sneaks
+  while the hand is > ~150 px away, Scaredy waits for > ~300 px or no hand, Grumpy guards then eats), carrying in
+  `interaction.ts` (slots checked before creatures), *new* `ChestToggle.vue` accessible button over the drawn chest
+  (`toggleChest`), scenery keeps the chest corner clear, mute → bottom-right, 'nom' chirp; *new* `render/chest.ts`,
+  `render/props.ts`.
+
+### 29. Toys: rubber duck + soccer ball
+A rubber duck floats and bobs at the surface; a soccer ball sinks slowly and bounces softly on the sand. Curious
+creatures nudge them around (the duck drifts and spins). Both can be dragged back into the chest.
+- **Accept:** float/sink/bounce physics stay in the pool; creatures nudge them by personality; deterministic;
+  all checks pass.
+
+### 30. Dress-up: hats, sunglasses, fake beards
+Drop an accessory on a creature and it wears it (drawn on the creature, moving with it); it reacts by personality —
+the Friendly shows off, the Scaredy is nervous then proud, the Grumpy tries to shake it off (and secretly keeps the
+sunglasses). Drag it off to take it back.
+- **Accept:** hit-testing a drop onto a creature; accessories follow body motion (incl. lean/jet/dizzy); reactions
+  by archetype; removable; all checks pass.
+
+### 31. Glow sticks
+A creature grabs a glow stick and holds it in a tentacle; it glows softly in the water (and is waved at the party).
+- **Accept:** a stick is held by one creature at a time and follows its tentacle; glow rendering; returnable to the
+  chest; all checks pass.
+
+### 32. Party: disco ball + club lights + music
+The disco ball and club lights come out together: the pool dims, the disco ball throws moving spots of light, colored
+beams sweep, an **original synthesized tech-house / bass-house groove** plays (four-on-the-floor kick, offbeat hats,
+rolling bassline, chord stabs — the vibe of an Austin dance festival, not a copy of any real track or artist; no
+festival branding in the app), and the creatures **dance to the beat** in their own style (glow sticks waving).
+- **Light safety:** no strobes — at most 3 flashes per second (WCAG 2.3.1); slow sweeps and color fades; under reduced
+  motion a calm static colored glow.
+- **Accept:** party toggles on/off from the chest; music only when unmuted and in sync with the dance beat (one beat
+  clock); light-safe (tested flash rate); dancing differs by archetype; performance holds 60 fps; all checks pass.
 
 ### 13. CI with GitHub Actions
 `.github/workflows/ci.yml` runs on every push to `main` and every pull request: install with the locked

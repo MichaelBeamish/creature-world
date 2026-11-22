@@ -9,6 +9,7 @@ import { stepPerception } from './perception'
 import { createPresence, updatePresence, type Presence } from './presence'
 import { createRng, range, type Rng } from './rng'
 import { createInk, stepInk, type InkSystem } from './ink'
+import { createProps, stepProps, type Props } from './props'
 import {
   applyTether,
   createInteraction,
@@ -44,6 +45,8 @@ export interface World {
   interaction: Interaction
   /** Ink puffs from shaken creatures (fixed pool, own random stream). */
   ink: InkSystem
+  /** The treasure chest and the items the visitor brought into the pool (task #28). */
+  props: Props
 }
 
 export interface WorldConfig {
@@ -76,17 +79,19 @@ export function createWorld(config: WorldConfig): World {
     bubbles: createBubbles(config.seed),
     interaction: createInteraction(config.seed),
     ink: createInk(config.seed),
+    props: createProps(),
   }
 }
 
 /**
  * Advance the world by exactly one fixed step of `dt` seconds. Mutates in place.
  * Order matters (and is fixed, for determinism):
- * presence → interaction → perception → mind (emotion, intent) → expression → steering → velocity → position → constraints → animation.
+ * presence → interaction → props → perception → mind (emotion, intent) → expression → steering → velocity → position → constraints → animation.
  */
 export function stepWorld(world: World, dt: number): void {
   updatePresence(world.presence, dt)
   stepInteraction(world, dt)
+  stepProps(world, dt)
   for (const creature of world.creatures) {
     copyVec2(creature.prevPosition, creature.position)
     stepPerception(

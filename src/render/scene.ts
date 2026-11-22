@@ -3,11 +3,13 @@ import { aimAtHand, dizziness, stressFraction } from '../simulation/interaction'
 import type { World } from '../simulation/world'
 import { drawBackground, drawVignette } from './background'
 import { drawBubbles } from './bubbles'
+import { drawChest, drawChestItems } from './chest'
 import { drawCreature } from './drawCreature'
 import { drawPerceptionDebug } from './debugDraw'
 import { drawEmotes } from './emotes'
 import { drawFloor } from './floor'
 import { drawInk } from './ink'
+import { drawProps } from './props'
 import { FULL_MOTION, type MotionSettings } from './motion'
 
 export interface SceneOptions {
@@ -33,6 +35,8 @@ export function drawScene(
 
   drawBackground(ctx, width, height, world.time, motion)
   drawFloor(ctx, world, width, height, motion)
+  drawChest(ctx, world) // on the sand, behind the creatures
+  drawProps(ctx, world, motion) // shrimp sinking / lying on the sand
 
   // Painter's algorithm: draw back-to-front, so creatures lower on screen appear in front.
   const ordered = [...world.creatures].sort((a, b) => a.position.y - b.position.y)
@@ -63,6 +67,7 @@ export function drawScene(
   drawInk(ctx, world, motion) // in front of the creatures: a smoke screen
   for (const creature of ordered) if (creature.id === charging) draw(creature)
   drawBubbles(ctx, world, motion)
+  drawChestItems(ctx, world, motion) // the open chest's items + the one being carried, above everything else
   drawEmotes(ctx, world, alpha, motion)
   drawVignette(ctx, width, height)
   if (options.debug) drawPerceptionDebug(ctx, world, alpha)
