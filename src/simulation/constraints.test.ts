@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveConstraints } from './constraints'
+import { CONSTRAINTS, resolveConstraints } from './constraints'
 import { footprint, footprintsOverlap } from './creature'
 import { swimBounds } from './scenery'
 import { createWorld, type World } from './world'
@@ -59,5 +59,66 @@ describe('resolveConstraints', () => {
     resolveConstraints(world)
     const f = fp(world, 0)
     expect([f.x, f.y]).toEqual([20, 15])
+  })
+})
+
+describe('held creatures shove at a limited speed', () => {
+  const DT = 1 / 60
+  const hold = (world: World, creatureId: number) => {
+    world.interaction.hold = {
+      creatureId,
+      part: 'head',
+      offset: { x: 0, y: 0 },
+      since: 0,
+      pullAngle: 0,
+      squeakTimer: 1,
+    }
+  }
+
+  it('a small bump: the neighbour takes the whole push and the held creature stays with the hand', () => {
+    const world = worldWith([
+      [480, 300],
+      [480, 300],
+    ])
+    const gap = fp(world, 0).radius * 2
+    world.creatures[1]!.position.x = 480 + gap - 1 // 1 px of overlap, well within one step's shove budget
+    hold(world, 1)
+    resolveConstraints(world, DT)
+    expect(world.creatures[0]!.position.x).toBe(480)
+    expect(footprintsOverlap(fp(world, 0), fp(world, 1))).toBe(false)
+  })
+
+  it('a hard shove: the neighbour moves at most shoveSpeed × dt, the held creature is blocked by the rest', () => {
+    const world = worldWith([
+      [480, 300],
+      [520, 300],
+    ]) // deep overlap, as if the hand dragged straight in
+    hold(world, 1)
+    world.creatures[0]!.velocity.x = 900 // rushing into the neighbour
+    resolveConstraints(world, DT)
+    const neighbourMoved = world.creatures[1]!.position.x - 520
+    expect(neighbourMoved).toBeGreaterThan(0)
+    expect(neighbourMoved).toBeLessThanOrEqual(CONSTRAINTS.shoveSpeed * DT + 1e-9)
+    expect(world.creatures[0]!.position.x).toBeLessThan(480) // pushed back by what the neighbour couldn't take
+    expect(world.creatures[0]!.velocity.x).toBeLessThanOrEqual(0) // no velocity left heading into it
+    expect(footprintsOverlap(fp(world, 0), fp(world, 1))).toBe(false)
+  })
+
+  it('a neighbour pinned against a wall does not move into it; the held creature stops instead', () => {
+    const world = worldWith(
+      [
+        [0, 300],
+        [0, 300],
+      ],
+      1000,
+      800,
+    )
+    const r = fp(world, 0).radius
+    world.creatures[1]!.position.x = 1000 - r // touching the right wall
+    world.creatures[0]!.position.x = 1000 - r - 2 * r + 20 // 20 px into it
+    hold(world, 1)
+    resolveConstraints(world, DT)
+    expect(fp(world, 1).x + r).toBeLessThanOrEqual(1000 + 1e-6)
+    expect(footprintsOverlap(fp(world, 0), fp(world, 1))).toBe(false)
   })
 })

@@ -36,6 +36,31 @@ describe('presence', () => {
     expect(p.speed).toBeLessThan(600 * 0.3)
   })
 
+  it('reports press and release edges for exactly one step', () => {
+    const p = createPresence()
+    setPresenceInput(p, 100, 100, true, false)
+    updatePresence(p, DT)
+    setPresenceInput(p, 100, 100, true, true)
+    updatePresence(p, DT)
+    expect([p.pressed, p.justPressed, p.justReleased]).toEqual([true, true, false])
+    updatePresence(p, DT)
+    expect([p.pressed, p.justPressed, p.justReleased]).toEqual([true, false, false])
+    setPresenceInput(p, 100, 100, true, false)
+    updatePresence(p, DT)
+    expect([p.pressed, p.justPressed, p.justReleased]).toEqual([false, false, true])
+    updatePresence(p, DT)
+    expect(p.justReleased).toBe(false)
+  })
+
+  it('leaving the window while pressed counts as a release', () => {
+    const p = createPresence()
+    setPresenceInput(p, 100, 100, true, true)
+    updatePresence(p, DT)
+    setPresenceInput(p, 100, 100, false, true)
+    updatePresence(p, DT)
+    expect([p.pressed, p.justReleased]).toEqual([false, true])
+  })
+
   it('goes inactive and stops when the input is inactive', () => {
     const p = createPresence()
     setPresenceInput(p, 100, 100, true)

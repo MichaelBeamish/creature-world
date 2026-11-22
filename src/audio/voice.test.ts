@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import type { EmoteKind } from '../simulation/expression'
+
 import { ARCHETYPES, type Archetype } from '../simulation/traits'
 import { createWorld } from '../simulation/world'
-import { baseStep, chirpFor, panFor, pentatonicHz } from './voice'
+import { baseStep, chirpFor, panFor, pentatonicHz, type VoiceKind } from './voice'
 
-const EMOTES: EmoteKind[] = ['question', 'exclaim', 'anger', 'heart']
+/** Every sound a creature can make: emotes and interaction sounds (task #20). */
+const EMOTES: VoiceKind[] = ['question', 'exclaim', 'anger', 'heart', 'grab', 'squeak', 'boop']
 
 function creature(archetype: Archetype, size: number, id = 1) {
   const c = createWorld({ seed: 3, width: 1280, height: 720, creatureCount: 1 }).creatures[0]!

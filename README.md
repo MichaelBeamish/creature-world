@@ -4,7 +4,8 @@
 
 A tiny living tide pool in the browser. Above a moonlit sea floor of sand, mossy rocks, glowing shells and
 swaying seaweed, soft, furry, octopus-like creatures breathe, blink, wander and rest —
-and when you move your cursor near them, each one reacts in its own way.
+and when you move your cursor near them, each one reacts in its own way. You can boop them, or pick them up
+and drag them around (they wriggle and squeak — gently).
 
 It should feel like **discovering something alive**, not using a website.
 
@@ -30,6 +31,7 @@ pnpm install
 pnpm dev        # http://localhost:5173
 ```
 
+- **Click** a creature to boop it; **press and hold** (head or tentacle) to pick it up and drag it. Works with touch too.
 - Click the 🔈 button (bottom-left) for sound — it always starts muted.
 - Press **D** (dev) or add `?debug` to the URL to see what each creature perceives and feels, plus FPS.
 - Add `?seed=42` to revisit a specific world (each visit otherwise gets a random one).
@@ -47,9 +49,9 @@ pnpm dev        # http://localhost:5173
 ```
 pointer ─► input ─► presence ─┐
                               ▼
-fixed 60 Hz step: perception → mind (emotion → intent) → expression → steering → constraints → animation
+fixed 60 Hz step: interaction (boop / hold) → perception → mind (emotion → intent) → expression → steering → constraints → animation
                               ▼
-     canvas renderer (pure function of state)  ·  audio (observes new emotes)  ·  Vue (UI only, 5 Hz snapshots)
+     canvas renderer (pure function of state)  ·  audio (observes new emotes & sound events)  ·  Vue (UI only, 5 Hz snapshots)
 ```
 
 - **Framework-free, deterministic simulation** — plain TypeScript data + functions, seeded RNG, fixed timestep.
@@ -58,7 +60,9 @@ fixed 60 Hz step: perception → mind (emotion → intent) → expression → st
   plain snapshots via `shallowRef`.
 - **Canvas 2D, procedural art** — creatures are drawn in code (Bézier tentacles, stateless noise for fur).
 - **Behavior** — Reynolds steering behaviors, utility-scored emotions with hysteresis, a `Mind` interface designed
-  so an LLM-guided mind could later sit *above* the fast rule-based reflexes.
+  so an LLM-guided mind could later sit *above* the fast rule-based reflexes. Being held is such a layer: it
+  overrides what a creature *does* (a damped spring to your hand, plus a personality-scaled struggle) while its
+  feelings keep running underneath.
 - **Sound** — Web Audio synthesis (no audio files): pentatonic per-creature voices.
 
 Details: [architecture overview](docs/architecture/overview.md) (the *why*) ·
@@ -85,5 +89,6 @@ decisions; [Claude Code](https://claude.com/claude-code) planned, implemented, t
 ## Status & roadmap
 
 The MVP — "The Tide Pool" ([scope & success criteria](docs/product/mvp.md)) — is complete (success criteria 1–5 verified; the informal
-first-viewer test is pending), and a sea floor and bubbles have since been added. Next up: a public deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md)
-(direct interaction, social life, an LLM-guided mind, …).
+first-viewer test is pending), and a sea floor and bubbles have since been added. Now in progress: the **interaction milestone** — boop and
+drag are in; shaking (→ ink), feeding, petting, popping bubbles, names and moving shells are next — then a public
+deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md) (social life, an LLM-guided mind, …).

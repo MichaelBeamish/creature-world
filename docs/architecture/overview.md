@@ -57,7 +57,21 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
 - **Mind** (the seam, `mind.ts`) — `interface Mind { think(creature, world, dt) }` writes emotion + intent.
   `ruleMind` runs every step. A future LLM mind sits *above* it (layered): slow high-level goals, while ruleMind
   keeps the reflexes.
-- **Intent** — `wander`, `rest`, `approach`, `peek`, `flee`, `hide`, `standoff`; `movement.ts` maps each to
+- **Interaction** (`interaction.ts`, task #20) — boop and grab-and-drag. Hit-testing uses body proportions the
+  simulation owns (`BODY`): a head ellipse, then a tentacle zone below it (the renderer's exact shapes are off-limits
+  to the simulation). A press becomes a **boop** (released quickly, barely moved) or a **hold**. Holding is a layer
+  *above* the mind (ADR 0004's layering, first real use): intent becomes `held` while emotions keep updating;
+  perception treats being held as full attention + pressure, so the existing archetype grid decides the feelings
+  (Friendly curious, Peeker/Scaredy scared, Grumpy grumpy). Movement for `held` = a damped spring pulling the *grab
+  point* toward the hand **plus a pull offset**: rhythmic yanks in a slowly drifting direction (stateless — a function
+  of time), scaled by fear/grumpiness beyond a calm dead zone × energy, eased by curiosity (so a Friendly just
+  wiggles); plus a sideways wriggle. A tether caps the lag, and a top speed (`maxHeldSpeed`) turns catch-ups into a
+  fast zoom instead of a teleport.
+  Constraints still win: a creature in the way can only be shoved at `CONSTRAINTS.shoveSpeed`; the rest of the
+  overlap blocks the held creature (so it moves at cursor speed when the way is clear, and no faster than the
+  obstacle can get out of the way when it isn't). Sound
+  *events* (grab, squeak, boop) are recorded as data and voiced by the audio layer.
+- **Intent** — `wander`, `rest`, `approach`, `peek`, `flee`, `hide`, `standoff`, `held`; `movement.ts` maps each to
   steering (wander, arrive, flee, brake) with a personal speed limit (energy × intent).
 - **Steering** (`steering.ts`) — Reynolds steering behaviors as pure functions returning desired forces:
   `wander`, `stayInBounds`, `separate` (later: seek, flee, arrive). `movement.ts` blends them with weights, applies
@@ -72,8 +86,8 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   Vue layer: `DebugPanel.vue` (display-only) fed by `createDebugSnapshot` — a plain copy published at ≤ 5 Hz into a
   `shallowRef`, so Vue never tracks simulation objects. `fpsMeter.ts` reports FPS and per-frame work time (the
   `frame` hook in `gameLoop.ts`). Zero cost while hidden.
-- **Audio** (`src/audio/`) — an output layer that observes the world: `createEmoteWatcher` turns new emotes into sound
-  events; `chirpFor` (pure) designs each creature's voice (pentatonic pitch from size, timbre from archetype, contour
+- **Audio** (`src/audio/`) — an output layer that observes the world: `createEmoteWatcher` turns new emotes and
+  interaction sound events into sounds; `chirpFor` (pure) designs each creature's voice (pentatonic pitch from size, timbre from archetype, contour
   from emote); `synth.ts` plays it (oscillator → low-pass → envelope → stereo pan → quiet master, ≤ 4 voices). Muted by
   default; the AudioContext is created only on the unmute click (browser autoplay policy).
 - **Scene & motion** — `render/background.ts` draws water, drifting caustics and floating motes (a pure function of
@@ -88,7 +102,7 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   records (no per-frame allocation), analytic closed-form motion (`bubbleAt`), spawned when a creature's intent becomes
   flee/hide (burst), while it keeps darting (trickle), or on entering standoff (Grumpy huff); own random stream.
 - **UI shell** — Vue overlays: `DebugPanel`, `MuteToggle`, `FirstVisitHint` (fades out on first interaction).
-- **Step order** — presence → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → constraints → animation.
+- **Step order** — presence (incl. press/release edges) → interaction (boop / hold) → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → tether → constraints → animation.
 
 ## Game loop
 Fixed timestep (e.g. 60 Hz) with an accumulator, so behavior is deterministic and testable regardless of

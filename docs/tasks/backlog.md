@@ -24,6 +24,13 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 15 | Sea floor (sand, rocks, shells) | done |
 | 16 | Bubbles (particle system) | done |
 | 18 | Tentacle root corner peeks out (small fix) | done |
+| 20 | Boop + drag with struggle | done |
+| 21 | Shake → ink | todo |
+| 22 | Feeding | todo |
+| 23 | Petting (slow strokes) | todo |
+| 24 | Pop bubbles | todo |
+| 25 | Names + personality card | todo |
+| 26 | Move shells (creatures investigate) | todo |
 | 19 | "Hear them?" sound nudge | todo |
 
 ---
@@ -229,6 +236,61 @@ it discoverable. When the first-visit hint fades (the visitor's first interactio
 few seconds; it disappears when sound is turned on or after the timeout, and appears only once per visit.
 - **Accept:** shown once, after the first interaction; gone on unmute or after ~5 s; never while sound is on;
   accessible (doesn't steal focus; the button's label is unchanged); respects reduced motion; all checks pass.
+
+### Interaction milestone (#20–#26) — owner decision 2026-11-22
+The visitor can now *play* with the creatures, not only be noticed by them (vision principle 2 updated). Priority:
+before #19 and the deploy. Keep it soft: no damage, creatures always recover, consequences are gentle (e.g. lower
+trust). Each task gets its own `/plan-task` spec and PR; personality must show in every interaction.
+
+### 20. Boop + drag with struggle
+Click a creature = **boop** (squish, blink, per-personality reaction). Press-and-hold = **grab**: the creature hangs
+from the cursor on a spring (lags, tugs, wriggles), tentacles dangle and trail (follow-through), and it makes a
+struggle sound in its own voice. A "held" state sits above the mind (layered, ADR 0004); release → it reacts by
+personality (Friendly may ♥, Scaredy flees, Grumpy glares). Hit-testing reuses `mantleRadii`/body geometry.
+- **Accept:** reliable hit-testing (mouse + touch); spring drag stays in the swim area; struggle strength and reaction
+  by archetype; sounds only when unmuted; deterministic with scripted pointer input; all checks pass.
+- **Approved spec decisions (2026-11-22):** grab **head and tentacles** (owner): head ellipse from `BODY` + tolerance, and
+  a fan-shaped tentacle zone below it (simulation can't import render geometry; slightly generous); head beats tentacle,
+  top-most creature wins; the spring pulls the *grab point* to the cursor and the renderer stretches the grabbed
+  tentacle's tip to it. Struggle = **tug + wriggle** (owner), strength from fear/grumpy levels × energy; tether ~50 px.
+  Pointer sample gains `pressed`; press/release edges in simulation; boop = release < ~0.25 s and < ~8 px movement.
+  *New* `simulation/interaction.ts`; *new* intent `'held'` overrides the mind's action while emotions keep updating
+  (holding = max pressure in perception, so the archetype grid yields the held emotions); boop squash = damped spring
+  in `anim`; sound events (grab squeak, struggle squeaks 0.4–0.8 s, boop blip) played via new chirp contours;
+  cursor `grab`/`grabbing`; vision principle 2 updated.
+
+### 21. Shake → ink
+While held, rapid direction changes build a **stress** meter (personality sets the threshold: Scaredy low, Friendly
+high). Past it: an **ink cloud** bursts (pooled particles, like bubbles), a *pfft* sound (filtered noise — new synth
+capability), the creature slips free, flees/hides, and its **trust drops** for a while.
+- **Accept:** gentle shaking doesn't ink; hard shaking does, by archetype; ink cloud spreads and fades (bounded pool);
+  trust consequence measurable; reduced motion respected; all checks pass.
+
+### 22. Feeding
+Click empty water to drop a food pellet that slowly sinks. Curious creatures race for it, timid ones wait until the
+visitor backs off, the Grumpy guards it; eating shows a happy reaction. Shows every personality at once.
+- **Accept:** pellets sink and rest on the sand; creatures' approach order/behavior differs by archetype (scenario
+  test); a pellet is eaten once; bounded count; all checks pass.
+
+### 23. Petting (slow strokes)
+Slowly stroking over a creature's head (a gentle drag-free hover motion, or slow press-drag) = petting: trust builds
+faster; Friendly purrs (sound) and blushes; Scaredy relaxes slowly; Grumpy tolerates it only once it trusts you.
+- **Accept:** stroke detection distinguishes petting from chasing/grabbing; per-archetype response; all checks pass.
+
+### 24. Pop bubbles
+Click a rising bubble to pop it early with a tiny *plip* (only when unmuted).
+- **Accept:** hit-testing on bubbles; pop animation reused; does not grab a creature behind it; all checks pass.
+
+### 25. Names + personality card
+Each creature gets a generated, seeded name; clicking/tapping it (when not grabbing) shows a small card: name,
+personality, current mood. Helps visitors connect with individuals (addresses "personalities are hard to tell apart").
+- **Accept:** deterministic names per seed; accessible card (keyboard-dismissable, readable); doesn't clash with
+  boop/drag; all checks pass.
+
+### 26. Move shells (creatures investigate)
+Drag a shell along the sand; curious creatures come to inspect it where it lands. First step of roadmap #10.
+- **Accept:** shells are draggable (scenery data updates), stay on the sand, never end up under a rock; curious
+  archetypes investigate; all checks pass.
 
 ### 13. CI with GitHub Actions
 `.github/workflows/ci.yml` runs on every push to `main` and every pull request: install with the locked

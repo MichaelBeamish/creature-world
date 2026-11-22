@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CREATURE_LIMITS } from '../simulation/creature'
 import {
+  grabbedTentacle,
   mantleRadii,
   TENTACLE_ROOT,
   tentacleOutline,
@@ -69,5 +70,14 @@ describe('tentacleOutline', () => {
     const tipCap = outline.filter((p) => dist(p, p3) <= endWidth / 2 + 1e-9)
     expect(tipCap.length).toBeGreaterThanOrEqual(9)
     for (const p of tipCap) expect(dist(p, p3)).toBeCloseTo(endWidth / 2, 6)
+  })
+})
+
+describe('grabbedTentacle', () => {
+  it('picks the tentacle whose resting tip is nearest the hand', () => {
+    expect(grabbedTentacle(30, 6, -60)).toBe(0) // far left → leftmost
+    expect(grabbedTentacle(30, 6, 60)).toBe(5) // far right → rightmost
+    const middle = grabbedTentacle(30, 7, 0)
+    expect(middle).toBe(3) // straight below → the middle one
   })
 })

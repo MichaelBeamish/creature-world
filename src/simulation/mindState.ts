@@ -5,7 +5,16 @@ import { createEmotionState, type EmotionState } from './emotion'
 import { vec2, type Vec2 } from './vec2'
 
 /** What the creature is trying to do. Movement turns this into steering forces. */
-export type IntentKind = 'wander' | 'rest' | 'approach' | 'peek' | 'flee' | 'hide' | 'standoff'
+export type IntentKind =
+  | 'wander'
+  | 'rest'
+  | 'approach'
+  | 'peek'
+  | 'flee'
+  | 'hide'
+  | 'standoff'
+  /** Being held by the visitor (overrides the mind's choice; emotions keep updating). */
+  | 'held'
 
 export interface MindState {
   emotion: EmotionState

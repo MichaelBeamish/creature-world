@@ -86,6 +86,12 @@ export function createExpression(): Expression {
   }
 }
 
+/** Show an emote right now (e.g. reacting to a boop), resetting the cooldown. */
+export function showEmote(creature: Creature, kind: EmoteKind): void {
+  creature.expression.emote = { kind, age: 0 }
+  creature.expression.emoteCooldown = EXPRESSION.emoteCooldown
+}
+
 /** Advance one fixed step (after the mind has decided its emotion). Mutates the creature in place. */
 export function stepExpression(creature: Creature, world: World, dt: number): void {
   stepEmotes(creature, dt)

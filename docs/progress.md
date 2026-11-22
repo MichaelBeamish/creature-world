@@ -2,6 +2,39 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #20: Boop + drag with struggle ✅
+- **Boop** (quick click/tap): squash spring + blink + emote by personality (♥ ? ! 💢), timid ones scoot away.
+  **Grab** (press and hold, head *or* tentacle — owner's choice): the creature hangs from the grab point on a damped
+  spring; a grabbed tentacle stretches to the hand, the others dangle and trail (trail length capped).
+- New `simulation/interaction.ts`: hit-testing from `BODY` proportions (simulation can't import render geometry),
+  boop-vs-hold by time/movement, press/release edges in presence, latched quick clicks, pointer capture.
+- **Layered "held" state** (first real use of ADR 0004's layering): intent `held` overrides the action while emotions
+  keep updating; holding = full attention + pressure, so the existing grid yields the feelings (no new rules).
+- **Struggle** (owner: tug + wriggle): a pull *offset* on the spring target — rhythmic yanks in a drifting direction,
+  scaled by fear/grumpiness beyond a calm dead zone × energy, eased by curiosity. Measured peaks: Friendly ≈0,
+  Peeker 12–16 px, Grumpy 21–31 px, Scaredy 23–28 px; always inside the 50 px tether. Squeaks while struggling.
+- **Owner feel feedback → changes:** (1) bumped creatures moved unnaturally → `CONSTRAINTS.shoveSpeed` (180 px/s):
+  the rest of the overlap blocks the held creature (replaced a "heavy held creature" workaround); (2) "light speed"
+  after being unblocked → `INTERACTION.maxHeldSpeed` (1200 px/s) caps velocity *and* the tether catch-up;
+  (3) creatures wiggled but didn't pull → the old struggle force only displaced ~5 px against the spring; replaced by
+  the pull offset above.
+- Sounds (grab "eep", struggle squeak, boop "bip") recorded as simulation events, voiced in each creature's voice.
+  Cursor `grab`/`grabbing`. Reduced motion: new `squash` setting. Vision principle 2 updated to gentle play.
+- **Verified:** 217 tests (+26), incl. hit-testing, boop/grab, tether/shove/blocking/top speed, per-archetype pull and
+  emotions, release reactions, determinism with scripted presses; scripted boop + drag in headless Chrome (found
+  the tentacle-streak bug). All five checks pass; code map, overview, README updated.
+- **Learned:** a test can pass while the feature is invisible ("Scaredy tugs more than Friendly" held at ~5 px) —
+  assert *visible* magnitudes for feel features; real-browser and owner feel checks caught three issues tests missed.
+
+## 2026-11-22 — Decision: interaction milestone (#20–#26), prioritized
+- Owner wants visitors to interact more: drag creatures (they struggle and make noise), shake → ink squirt, plus
+  feeding, petting, popping bubbles, names + personality card, and moving shells — "all of them", before #19 and the
+  deploy.
+- Shifts vision principle 2 ("noticed, not controlled") toward gentle play; to be updated in vision.md as part of
+  task #20. Guardrails: soft, no damage, creatures always recover, gentle consequences (lower trust).
+- Sequencing: #20 boop + drag → #21 shake → ink → #22 feeding → #23 petting → #24 pop bubbles → #25 names/card →
+  #26 move shells → #19 sound nudge → deploy.
+
 ## 2026-11-22 — Task #18: Tentacle root corner ✅
 - **Owner observation:** a corner of an outer tentacle's root was sometimes visible outside the body.
 - **Measured cause:** roots ended in a flat edge (only tips were rounded), and at the body's smallest (scared shrink +

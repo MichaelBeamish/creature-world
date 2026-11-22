@@ -4,6 +4,7 @@
  */
 import type { Creature } from './creature'
 import type { IntentKind } from './mindState'
+import { heldForce, INTERACTION } from './interaction'
 import { MIND } from './mind'
 import { PERCEPTION } from './perception'
 import { swimBounds } from './scenery'
@@ -33,8 +34,11 @@ export const MOVEMENT = {
   safeDistance: PERCEPTION.radius + 40,
 } as const
 
-/** Speed multiplier per intent: a scared octopus darts, a curious one is eager. */
-export const INTENT_SPEED: Record<IntentKind, number> = {
+/**
+ * Speed multiplier per intent: a scared octopus darts, a curious one is eager.
+ * (A held creature is moved by the hand instead: `INTERACTION.maxHeldSpeed`.)
+ */
+export const INTENT_SPEED: Record<Exclude<IntentKind, 'held'>, number> = {
   wander: 1,
   rest: 1,
   approach: 1.3,
@@ -46,8 +50,11 @@ export const INTENT_SPEED: Record<IntentKind, number> = {
 
 /** This creature's top speed right now: base × energy (0.88–1.24) × intent. */
 export function speedLimit(creature: Creature): number {
+  const intent = creature.mind.intent
+  // Held: the hand moves it, not its own swimming — one fixed top speed (fast, never instant).
+  if (intent === 'held') return INTERACTION.maxHeldSpeed
   const energyFactor = 0.7 + 0.6 * creature.traits.energy
-  return MOVEMENT.baseSpeed * energyFactor * INTENT_SPEED[creature.mind.intent]
+  return MOVEMENT.baseSpeed * energyFactor * INTENT_SPEED[intent]
 }
 
 // Scratch vectors reused every step (no per-frame allocations).
@@ -112,6 +119,10 @@ export function stepMovement(creature: Creature, world: World, dt: number): void
         MOVEMENT.maxIntentForce,
       )
       addScaled(creature.velocity, intentForce, weights.intent * dt)
+      break
+    case 'held':
+      heldForce(intentForce, world, creature)
+      addScaled(creature.velocity, intentForce, dt)
       break
     case 'standoff':
       brake(intentForce, creature, MOVEMENT.maxIntentForce)

@@ -4,15 +4,20 @@
  * - Pitch from size (bigger = lower), snapped to a C-major pentatonic scale so overlapping chirps
  *   always harmonize, plus a tiny per-creature detune so no two creatures are identical.
  * - Timbre from personality (waveform, filter, vibrato).
- * - Contour from the emote (? rises, ! blips, 💢 grumbles downward, ♥ coos up two notes).
+ * - Contour from the emote (? rises, ! blips, 💢 grumbles downward, ♥ coos up two notes) or the
+ *   interaction (grab: a surprised "eep!", squeak: a short wobbly struggle squeak, boop: a tiny "bip").
  * Pure and deterministic: same creature + same emote → same sound. `synth.ts` plays these.
  */
 import type { EmoteKind } from '../simulation/expression'
+import type { InteractionSoundKind } from '../simulation/interaction'
 import { CREATURE_LIMITS, type Creature } from '../simulation/creature'
 import type { Archetype } from '../simulation/traits'
 import { hash2 } from '../render/noise'
 
 export type Waveform = 'sine' | 'triangle' | 'square' | 'sawtooth'
+
+/** Everything a creature can voice: emotes and interaction sounds. */
+export type VoiceKind = EmoteKind | InteractionSoundKind
 
 export interface ChirpNote {
   /** Seconds after the chirp starts. */
@@ -103,7 +108,7 @@ export function baseStep(creature: Creature): number {
   return Math.round(smallness * 6) + TIMBRE[creature.archetype].register
 }
 
-export function chirpFor(creature: Creature, emote: EmoteKind): ChirpSpec {
+export function chirpFor(creature: Creature, emote: VoiceKind): ChirpSpec {
   const timbre = TIMBRE[creature.archetype]
   const base = baseStep(creature)
   const tune = detune(creature)
@@ -131,6 +136,17 @@ export function chirpFor(creature: Creature, emote: EmoteKind): ChirpSpec {
         { offset: 0, duration: 0.14 * tempo, startHz: hz(base), endHz: hz(base) },
         { offset: 0.16 * tempo, duration: 0.2 * tempo, startHz: hz(base + 2), endHz: hz(base + 2) },
       ]
+      break
+    case 'grab': // a surprised "eep!" — a fast upward squeak
+      notes = [{ offset: 0, duration: 0.12 * tempo, startHz: hz(base + 2), endHz: hz(base + 5) }]
+      break
+    case 'squeak': // a short, wobbly struggle squeak
+      notes = [{ offset: 0, duration: 0.1 * tempo, startHz: hz(base + 4), endHz: hz(base + 2) }]
+      vibratoHz = Math.max(vibratoHz, 14)
+      vibratoDepth = Math.max(vibratoDepth, 0.05)
+      break
+    case 'boop': // a tiny "bip"
+      notes = [{ offset: 0, duration: 0.08, startHz: hz(base + 5), endHz: hz(base + 5) }]
       break
   }
 

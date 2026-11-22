@@ -10,7 +10,9 @@ It should feel like **discovering** something alive, not using a website.
 
 ## Experience principles
 1. **Alive before interactive.** Even if you do nothing, the creatures breathe, blink, and wander.
-2. **Noticed, not controlled.** The visitor is an observer the creatures react to, not a player issuing commands.
+2. **Noticed, then gently played with.** The creatures notice the visitor first; the visitor can also boop, pick up
+   and play with them — but never command them. Every interaction is soft (no damage, creatures always recover), and
+   each creature answers in its own personality. *(Updated 2026-11-22, task #20: was "noticed, not controlled".)*
 3. **Personality over spectacle.** Small, believable behaviors beat flashy effects.
 4. **Gentle and cozy.** Soft shapes, calm motion, no fail states, no UI clutter.
 5. **Smooth always.** Stuttering kills the illusion of life; performance is a feature.

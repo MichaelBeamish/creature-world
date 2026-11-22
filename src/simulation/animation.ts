@@ -25,6 +25,9 @@ export interface CreatureAnimation {
   blinksQueued: number
   /** 0 = closed, 1 = fully open. */
   eyeOpenness: number
+  /** Boop squash (0 = rest; positive = squished wide) and its velocity — a damped spring. */
+  squash: number
+  squashVel: number
 }
 
 export const ANIMATION = {
@@ -41,6 +44,9 @@ export const ANIMATION = {
   /** Pause between the two blinks of a double blink. */
   doubleBlinkGap: 0.12,
   doubleBlinkChance: 0.15,
+  /** Squash spring: stiffness (1/s²) and damping (1/s) — a little wobble, then rest. */
+  squashStiffness: 120,
+  squashDamping: 9,
 } as const
 
 export function createAnimation(rng: Rng): CreatureAnimation {
@@ -59,6 +65,8 @@ export function createAnimation(rng: Rng): CreatureAnimation {
     blinkElapsed: -1,
     blinksQueued: 0,
     eyeOpenness: 1,
+    squash: 0,
+    squashVel: 0,
   }
 }
 
@@ -70,6 +78,11 @@ export function stepAnimation(anim: CreatureAnimation, dt: number, rng: Rng): vo
   anim.swayPhase = (anim.swayPhase + anim.swayRate * dt) % TAU
 
   stepBlink(anim, dt, rng)
+
+  // Squash spring (semi-implicit Euler, like the creatures' motion).
+  anim.squashVel +=
+    (-ANIMATION.squashStiffness * anim.squash - ANIMATION.squashDamping * anim.squashVel) * dt
+  anim.squash = Math.max(-0.6, Math.min(1, anim.squash + anim.squashVel * dt))
 }
 
 /** Blink state machine: waiting → blinking → (queued double blink | new random wait). */

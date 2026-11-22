@@ -11,6 +11,7 @@ export interface PresenceInput {
   x: number
   y: number
   active: boolean
+  pressed: boolean
 }
 
 export interface Presence {
@@ -22,6 +23,11 @@ export interface Presence {
   /** Smoothed velocity (px/s) — an exponential moving average, so one jittery sample can't fake a flick. */
   velocity: Vec2
   speed: number
+  /** A button/finger is down. */
+  pressed: boolean
+  /** Edges for this step: pressed down / released (exactly one step each). */
+  justPressed: boolean
+  justReleased: boolean
 }
 
 export const PRESENCE = {
@@ -31,24 +37,40 @@ export const PRESENCE = {
 
 export function createPresence(): Presence {
   return {
-    input: { x: 0, y: 0, active: false },
+    input: { x: 0, y: 0, active: false, pressed: false },
     active: false,
     position: vec2(),
     velocity: vec2(),
     speed: 0,
+    pressed: false,
+    justPressed: false,
+    justReleased: false,
   }
 }
 
 /** Store the latest raw pointer sample; it takes effect on the next `updatePresence`. */
-export function setPresenceInput(presence: Presence, x: number, y: number, active: boolean): void {
+export function setPresenceInput(
+  presence: Presence,
+  x: number,
+  y: number,
+  active: boolean,
+  pressed = false,
+): void {
   presence.input.x = x
   presence.input.y = y
   presence.input.active = active
+  presence.input.pressed = pressed
 }
 
 /** Advance one fixed step: apply the input and update the smoothed velocity. */
 export function updatePresence(presence: Presence, dt: number): void {
   const { input } = presence
+
+  // Press / release edges (a visitor who leaves the window has released).
+  const pressedNow = input.active && input.pressed
+  presence.justPressed = pressedNow && !presence.pressed
+  presence.justReleased = !pressedNow && presence.pressed
+  presence.pressed = pressedNow
 
   if (!input.active) {
     presence.active = false
