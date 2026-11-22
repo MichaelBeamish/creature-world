@@ -21,13 +21,13 @@ import { BODY, type Creature } from './creature'
 import { showEmote, type EmoteKind } from './expression'
 import type { IntentKind } from './mindState'
 import { spawnInk } from './ink'
-import { canTake, dropProp, overChest, slotAt, type PropKind } from './props'
+import { canTake, dropProp, overChest, removeProp, slotAt, toyAt, type PropKind } from './props'
 import { createRng, int, range, type Rng } from './rng'
 import { vec2, type Vec2 } from './vec2'
 import type { World } from './world'
 
 export type GrabPart = 'head' | 'tentacle'
-export type InteractionSoundKind = 'grab' | 'squeak' | 'boop' | 'ink' | 'hiccup' | 'nom'
+export type InteractionSoundKind = 'grab' | 'squeak' | 'boop' | 'ink' | 'hiccup' | 'nom' | 'squee'
 
 export interface InteractionSound {
   kind: InteractionSoundKind
@@ -333,12 +333,17 @@ export function stepInteraction(world: World, dt: number): void {
     }
   }
 
-  // A press on an open chest's item takes it (if available) — checked before the creatures.
-  const slot =
-    p.justPressed && !it.hold && !it.press ? slotAt(world, p.position.x, p.position.y) : null
+  // A press on an open chest's item takes it (if available), then a toy in the water is picked up —
+  // both checked before the creatures.
+  const pressing = p.justPressed && !it.hold && !it.press && !it.carry
+  const slot = pressing ? slotAt(world, p.position.x, p.position.y) : null
+  const toy = pressing && !slot ? toyAt(world, p.position.x, p.position.y) : null
   if (slot) {
     if (canTake(world, slot)) it.carry = { kind: slot }
-  } else if (p.justPressed && !it.hold && !it.press && !it.carry) {
+  } else if (toy) {
+    removeProp(world, toy.id) // in the hand now: dropped in the water again, or back in the chest
+    it.carry = { kind: toy.kind }
+  } else if (pressing) {
     const hit = creatureAt(world, p.position.x, p.position.y)
     if (hit) {
       it.press = {

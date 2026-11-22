@@ -13,7 +13,7 @@ import {
 } from '../simulation/props'
 import type { World } from '../simulation/world'
 import type { MotionSettings } from './motion'
-import { drawShrimp } from './props'
+import { drawBall, drawDuck, drawShrimp } from './props'
 
 const LOOK = {
   wood: '#5b3f2c',
@@ -214,6 +214,8 @@ function drawItem(
   scale = 1,
 ): void {
   if (kind === 'shrimp') drawShrimp(ctx, x + 2, y, scale, 0.15, alpha)
+  else if (kind === 'duck') drawDuck(ctx, x, y + 2, scale * 0.95, 1, 0, alpha)
+  else drawBall(ctx, x, y, scale * 1.1, 0.4, alpha)
 }
 
 function roundRect(

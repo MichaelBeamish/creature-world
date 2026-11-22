@@ -5,6 +5,7 @@
 import type { Creature } from './creature'
 import type { IntentKind } from './mindState'
 import { mealSpeed, mealTarget } from './feeding'
+import { PLAY, playTarget } from './play'
 import { chaseForce, dizzyForce, heldForce, INTERACTION, jetLimit } from './interaction'
 import { MIND } from './mind'
 import { PERCEPTION } from './perception'
@@ -50,6 +51,8 @@ export const INTENT_SPEED: Record<Exclude<IntentKind, 'held' | 'chase' | 'dizzy'
   /** Going for food: × the personality's feeding speed (`mealSpeed`). */
   eat: 1,
   guard: 1,
+  /** Playing with a toy: × `PLAY.speed`. */
+  play: 1,
 }
 
 /** This creature's top speed right now: base × energy (0.88–1.24) × intent. */
@@ -61,7 +64,12 @@ export function speedLimit(creature: Creature): number {
   if (intent === 'chase') return INTERACTION.chaseSpeed
   if (intent === 'dizzy') return INTERACTION.dizzySpeed
   const energyFactor = 0.7 + 0.6 * creature.traits.energy
-  const food = intent === 'eat' || intent === 'guard' ? mealSpeed(creature) : 1
+  const food =
+    intent === 'eat' || intent === 'guard'
+      ? mealSpeed(creature)
+      : intent === 'play'
+        ? PLAY.speed
+        : 1
   return MOVEMENT.baseSpeed * energyFactor * INTENT_SPEED[intent] * food
 }
 
@@ -159,6 +167,18 @@ export function stepMovement(creature: Creature, world: World, dt: number): void
         )
         addScaled(creature.velocity, intentForce, weights.intent * dt)
       }
+      break
+    }
+    case 'play': {
+      const how = playTarget(world, creature, mealPoint)
+      if (how?.away) {
+        // Back off and watch (Peeker) / keep away (Scaredy).
+        flee(intentForce, creature, mealPoint, PLAY.peekBack, limit, MOVEMENT.maxIntentForce)
+      } else if (how) {
+        // Get behind the toy, then swim through it (the push happens on contact).
+        arrive(intentForce, creature, mealPoint, 0, 30, limit, MOVEMENT.maxIntentForce)
+      }
+      if (how) addScaled(creature.velocity, intentForce, weights.intent * dt)
       break
     }
     case 'standoff':

@@ -9,6 +9,7 @@ import { footprint, type Creature } from './creature'
 import { stepEmotion } from './emotion'
 import { chooseMeal } from './feeding'
 import { interactionIntent } from './interaction'
+import { choosePlay } from './play'
 import { range, type Rng } from './rng'
 import { swimBounds } from './scenery'
 import type { World } from './world'
@@ -65,9 +66,13 @@ export const ruleMind: Mind = {
     // Food (task #28): only a calm creature (content or curious) goes for a shrimp — how, depends on personality.
     if (mind.emotion.kind === 'content' || mind.emotion.kind === 'curious') {
       const meal = chooseMeal(creature, world, dt)
+      // Toys (task #29): only when not going for food (food beats play).
+      const play = meal ? null : choosePlay(creature, world)
       if (meal) mind.intent = meal
+      else if (play) mind.intent = play
     } else {
       mind.meal = null
+      mind.play = null
     }
 
     if (mind.intent === 'peek') {

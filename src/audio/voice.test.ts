@@ -15,6 +15,7 @@ const EMOTES: VoiceKind[] = [
   'boop',
   'hiccup',
   'nom',
+  'squee',
 ]
 
 function creature(archetype: Archetype, size: number, id = 1) {
@@ -43,10 +44,19 @@ describe('chirpFor', () => {
 
   it('every creature in a world has its own voice', () => {
     const world = createWorld({ seed: 42, width: 1280, height: 720, creatureCount: 5 })
-    for (const e of EMOTES) {
+    // (The duck's squeak is the duck's sound, not a voice: deliberately the same for everyone — tested below.)
+    for (const e of EMOTES.filter((k) => k !== 'squee')) {
       const specs = world.creatures.map((c) => JSON.stringify(chirpFor(c, e)))
       expect(new Set(specs).size).toBe(specs.length)
     }
+  })
+
+  it('the rubber duck squeaks the same for everyone: a quick rising squeak', () => {
+    const world = createWorld({ seed: 42, width: 1280, height: 720, creatureCount: 4 })
+    const specs = world.creatures.map((c) => JSON.stringify(chirpFor(c, 'squee')))
+    expect(new Set(specs).size).toBe(1)
+    const first = chirpFor(world.creatures[0]!, 'squee').notes[0]!
+    expect(first.endHz).toBeGreaterThan(first.startHz)
   })
 
   it('bigger creatures sound lower', () => {

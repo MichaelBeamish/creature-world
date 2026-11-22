@@ -109,6 +109,8 @@ export function baseStep(creature: Creature): number {
 }
 
 export function chirpFor(creature: Creature, emote: VoiceKind): ChirpSpec {
+  // The rubber duck's squeak is the duck's own sound, not a creature's voice: the same for everyone.
+  if (emote === 'squee') return DUCK_SQUEAK
   const timbre = TIMBRE[creature.archetype]
   const base = baseStep(creature)
   const tune = detune(creature)
@@ -175,6 +177,19 @@ export function chirpFor(creature: Creature, emote: VoiceKind): ChirpSpec {
     filterHz: timbre.filterHz,
     volume: timbre.volume,
   }
+}
+
+/** A rubber-duck "squee": a quick rising squeak with a little fall at the end (task #29). */
+const DUCK_SQUEAK: ChirpSpec = {
+  wave: 'square',
+  notes: [
+    { offset: 0, duration: 0.09, startHz: 780, endHz: 1250 },
+    { offset: 0.09, duration: 0.07, startHz: 1250, endHz: 1050 },
+  ],
+  vibratoHz: 0,
+  vibratoDepth: 0,
+  filterHz: 2200,
+  volume: 0.4,
 }
 
 /** Stereo position from the creature's horizontal position: -0.7 (left) .. 0.7 (right). */

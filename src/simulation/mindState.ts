@@ -23,6 +23,8 @@ export type IntentKind =
   /** Feeding (task #28): going for a shrimp / a Grumpy guarding one */
   | 'eat'
   | 'guard'
+  /** Playing with a toy (task #29): fetch / nudge / keeping away from it */
+  | 'play'
 
 export interface MindState {
   emotion: EmotionState
@@ -33,6 +35,11 @@ export interface MindState {
   hideTarget: Vec2
   /** The food it's going for (task #28): which prop, and a timer (a Scaredy's wait / a Grumpy's guard). */
   meal: { propId: number; timer: number } | null
+  /** The toy it's playing with (task #29): which, since when, and whether it's going for it or backing off. */
+  play: { propId: number; since: number; phase: 'go' | 'back'; phaseSince: number } | null
+  /** Bored of toys until this world time; when a Grumpy last swatted a toy. */
+  playBoredUntil: number
+  swattedAt: number
 }
 
 export function createMindState(): MindState {
@@ -42,5 +49,8 @@ export function createMindState(): MindState {
     peekPhase: 'in',
     hideTarget: vec2(),
     meal: null,
+    play: null,
+    playBoredUntil: -Infinity,
+    swattedAt: -Infinity,
   }
 }

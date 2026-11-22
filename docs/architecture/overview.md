@@ -85,6 +85,15 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   drift and rests on the sand (at most 3 shrimp). Feeding (`feeding.ts`) is a layer in the mind, only when calm:
   by trait dials the Friendly races, the Peeker sneaks in while the hand is away, the Scaredy waits for the hand to
   leave, the Grumpy guards (others keep off) then eats — new intents `eat`, `guard`. Eating: ♥, squish, "nom".
+- **Toys** (task #29) — the duck and the ball are props with real (simple) physics: the duck has neutral buoyancy
+  (stays at its depth); the ball sinks, bounces with restitution, rolls with friction and pops up when hit; both
+  spin, stay in the pool, and a gentle current near the walls eases them out of corners,
+  and each exists once (draggable from the water back to the chest; press order slots → toys → creatures). Pushing
+  isn't scripted: after constraints, `resolveToyContacts` (`play.ts`) pushes any toy a creature's body touches (with
+  the creature's speed + a kick; the duck squeaks). Play is a mind layer after food (intent `play`), by trait dials:
+  the Friendly plays *fetch* toward the hand (steering to a point behind the toy, then through it — "kick from
+  behind"), the Peeker nudges and backs off, the Grumpy swats toys that come close (a swatted ball flies), the Scaredy plays shyly only when nobody's
+  watching (otherwise keeps away).
 - **Ink reactions by personality** (task #27) — trait-defined, like everything else. Scaredy/Peeker: ink and flee (above).
   A bold, incurious creature (`standsItsGround`: the Grumpy) gets mad: it recoils, then *chases* the hand for ~4 s
   (intent `chase`, *pursuit with velocity matching* — `chaseForce`: the hand's velocity + a closing speed
@@ -132,7 +141,7 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   flee/hide (burst), while it keeps darting (trickle), or on entering standoff (Grumpy huff); own random stream.
 - **UI shell** — Vue overlays: `DebugPanel`, `MuteToggle` (bottom-right), `ChestToggle` (over the drawn chest),
   `FirstVisitHint` (fades out on first interaction).
-- **Step order** — presence (incl. press/release edges) → interaction (boop / hold / carry) → props → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → tether → constraints → bubbles → ink → animation.
+- **Step order** — presence (incl. press/release edges) → interaction (boop / hold / carry) → props → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → tether → constraints → toy contacts → bubbles → ink → animation.
 
 ## Game loop
 Fixed timestep (e.g. 60 Hz) with an accumulator, so behavior is deterministic and testable regardless of
