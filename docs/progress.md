@@ -2,6 +2,30 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #27: Ink reactions — Grumpy chase, Friendly dizzy ✅
+- **One override above the mind:** `interactionIntent` (held > chase > dizzy) replaces the held-only special case;
+  new intents `chase`, `dizzy`; trait-defined `forgives` (bold + curious) next to `standsItsGround`.
+- **Grumpy gets mad:** after its cloud it chases for ~4 s with *pursuit + velocity matching* (`chaseForce`: the hand's
+  velocity + a closing speed ∝ gap, capped at 650 px/s) — walking away fails, fast dodging works; it settles at
+  3.2 × size and squirts small aimed puffs within 130 px, at most every 0.5 s; then the standoff + grudge.
+- **Friendly forgives:** a tiny hiccup puff + "hic!", ~3 s dizzy (loops from a rotating target velocity; spiral eyes,
+  orbiting stars, wobble), then a squish + ♥ and it swims back; rattled ≤ 0.1, trust kept.
+- **Jet swimming** (renderer, any fast creature): head first (`swimAngle`), bundled streaming tentacles, rhythmic
+  strokes with a body squeeze (`propulsion`, `JET`). Up close a chasing Grumpy *turns and fires* (`aimAtHand`, by
+  distance — no flicker): tentacles toward the hand, fitted to end just short of the cursor, squirts from the tips,
+  drawn in front of its own ink.
+- **Owner feedback → changes:** chase much faster; tentacles should propel it; ink looked like it came from its head
+  (→ turn and fire); tentacles went still while firing (→ strokes while aimed); stopped on the cursor (→ pursuit +
+  stop distance + fitted tentacles); ink sound sounded like a snare → a low "poof" was inaudible on laptop speakers →
+  **owner decision: ink is silent**; the creatures' own voices carry the moment (noise synth removed).
+- Also: #24 (pop bubbles) **dropped** by the owner (bubbles are small and pop on their own); #27 moved ahead of #22.
+- **Verified:** 248 tests (+14 net) — chase cadence, caught when walking away, top speed, dodge distance, stop
+  distance, early end; Friendly hiccup/dizzy/loop/♥/return; aim blend and muzzle; jet helpers; silent ink.
+  Browser screenshots across seven seeds (chase, turn-and-fire, dizzy). All five checks pass; docs updated.
+- **Learned:** I misremembered a constant (tentacles are 2.9 × size, not 1.2) — the screenshot caught it; fitting
+  visuals to measured geometry beats tuning constants. Pursuit needs the target's velocity (feed-forward), or a fast
+  chaser lags a moving target and overshoots a still one.
+
 ## 2026-11-22 — Task #21: Shake → ink ✅
 - **Shake detection:** while held, the hand's *speed jolts* (how sharply its speed changes; smoothed twice, so
   mouse-event jitter doesn't count) fill a **leaky bucket** of stress with a capped fill rate (only sustained shaking

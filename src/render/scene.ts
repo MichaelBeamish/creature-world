@@ -1,5 +1,5 @@
 import { lerp } from '../simulation/math'
-import { stressFraction } from '../simulation/interaction'
+import { aimAtHand, dizziness, stressFraction } from '../simulation/interaction'
 import type { World } from '../simulation/world'
 import { drawBackground, drawVignette } from './background'
 import { drawBubbles } from './bubbles'
@@ -38,7 +38,10 @@ export function drawScene(
   const ordered = [...world.creatures].sort((a, b) => a.position.y - b.position.y)
   const hold = world.interaction.hold
   const hand = world.presence.position
-  for (const creature of ordered) {
+  // Ink is a smoke screen in front of the creatures — except a chasing Grumpy, which charges out of its own cloud
+  // (drawn after the ink, so its firing tentacles stay visible).
+  const charging = world.interaction.chase?.creatureId
+  const draw = (creature: World['creatures'][number]) => {
     const x = lerp(creature.prevPosition.x, creature.position.x, alpha)
     const y = lerp(creature.prevPosition.y, creature.position.y, alpha)
     const held =
@@ -49,10 +52,16 @@ export function drawScene(
             stress: stressFraction(world, creature),
           }
         : null
-    drawCreature(ctx, creature, x, y, motion, held)
+    drawCreature(ctx, creature, x, y, motion, {
+      held,
+      dizzy: dizziness(world, creature),
+      aim: { amount: aimAtHand(world, creature), hand: { x: hand.x - x, y: hand.y - y } },
+      time: world.time,
+    })
   }
-
+  for (const creature of ordered) if (creature.id !== charging) draw(creature)
   drawInk(ctx, world, motion) // in front of the creatures: a smoke screen
+  for (const creature of ordered) if (creature.id === charging) draw(creature)
   drawBubbles(ctx, world, motion)
   drawEmotes(ctx, world, alpha, motion)
   drawVignette(ctx, width, height)

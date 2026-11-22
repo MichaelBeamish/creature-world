@@ -56,11 +56,10 @@ describe('interaction sounds', () => {
 })
 
 describe('ink sound', () => {
-  it('reports an ink puff once, tagged so the canvas plays a noise puff instead of a chirp', () => {
+  it("ink is silent: the event is ignored, while the creature's own voice still sounds", () => {
     const world = createWorld({ seed: 1, width: 800, height: 600, creatureCount: 2 })
     const watch = createEmoteWatcher()
-    world.interaction.sounds.push({ kind: 'ink', creatureId: 1 })
-    expect(watch(world).map((e) => [e.kind, e.creature.id])).toEqual([['ink', 1]])
-    expect(watch(world)).toEqual([])
+    world.interaction.sounds.push({ kind: 'ink', creatureId: 1 }, { kind: 'hiccup', creatureId: 2 })
+    expect(watch(world).map((e) => [e.kind, e.creature.id])).toEqual([['hiccup', 2]])
   })
 })

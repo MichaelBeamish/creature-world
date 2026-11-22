@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { CREATURE_LIMITS } from '../simulation/creature'
 import {
   grabbedTentacle,
+  propulsion,
+  swimAngle,
   mantleRadii,
   TENTACLE_ROOT,
   tentacleOutline,
@@ -79,5 +81,29 @@ describe('grabbedTentacle', () => {
     expect(grabbedTentacle(30, 6, 60)).toBe(5) // far right → rightmost
     const middle = grabbedTentacle(30, 7, 0)
     expect(middle).toBe(3) // straight below → the middle one
+  })
+})
+
+describe('jet swimming (fast: a chase or an escape)', () => {
+  it('only kicks in above normal swimming speeds, fully at chase speed', () => {
+    expect(propulsion(0)).toBe(0)
+    expect(propulsion(45)).toBe(0) // wandering
+    expect(propulsion(90)).toBe(0) // a normal flee
+    expect(propulsion(200)).toBeGreaterThan(0)
+    expect(propulsion(200)).toBeLessThan(1)
+    expect(propulsion(600)).toBe(1) // a mad Grumpy, or a jet escape
+  })
+
+  it('turns the body to face its travel, head first', () => {
+    expect(swimAngle(0, 0, -500, 1)).toBeCloseTo(0) // swimming up: upright
+    expect(swimAngle(0, 500, 0, 1)).toBeCloseTo(Math.PI / 2) // right: a quarter turn clockwise
+    expect(swimAngle(0, -500, 0, 1)).toBeCloseTo(-Math.PI / 2) // left
+    expect(swimAngle(0.1, 500, 0, 0)).toBe(0.1) // slow: just the usual lean
+    expect(swimAngle(0, 500, 0, 0.5)).toBeCloseTo(Math.PI / 4) // halfway
+  })
+
+  it('always turns the short way round', () => {
+    // Heading straight down is ±π; from a lean of 3 rad it must turn by a little, not almost a full circle.
+    expect(Math.abs(swimAngle(3, 0, 500, 1) - 3)).toBeLessThan(0.2)
   })
 })

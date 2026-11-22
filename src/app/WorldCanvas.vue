@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef } from 'vue'
 import { createEmoteWatcher } from '../audio/soundEvents'
 import { createSynth, type Synth } from '../audio/synth'
-import { chirpFor, panFor, puffFor } from '../audio/voice'
+import { chirpFor, panFor } from '../audio/voice'
 import { createPointerInput, type PointerInput } from '../input/pointer'
 import { FULL_MOTION, motionSettings } from '../render/motion'
 import { drawScene } from '../render/scene'
@@ -123,8 +123,7 @@ onMounted(() => {
       if (synth && soundOn) {
         for (const e of events) {
           const pan = panFor(e.creature.position.x, s.width)
-          if (e.kind === 'ink') synth.puff(puffFor(e.creature), pan)
-          else synth.play(chirpFor(e.creature, e.kind), pan)
+          synth.play(chirpFor(e.creature, e.kind), pan)
         }
       }
 

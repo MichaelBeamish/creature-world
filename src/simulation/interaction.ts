@@ -11,18 +11,22 @@
  *   struggles. A top speed (`maxHeldSpeed`) keeps catch-ups fast but never instant.
  * - **Shake → ink** (task #21): shaking the hand fills a **stress** bucket that leaks when calm; past the creature's
  *   limit (bold/curious ones put up with more) it squirts ink, slips free, darts off and stays rattled for a while.
- * - **Sound events** (grab, struggle squeaks, boop, ink) are recorded here; the audio layer plays them.
+ *   How each personality reacts (task #27): Scaredy/Peeker ink and flee; the Grumpy (`standsItsGround`) *chases*
+ *   the hand for a few seconds, inking whenever it's in range; the Friendly (`forgives`) only hiccups a tiny puff,
+ *   gets *dizzy*, then forgives with a ♥. `interactionIntent` is the one override above the mind (held > chase > dizzy).
+ * - **Sound events** (grab, struggle squeaks, boop, ink, hiccup) are recorded here; the audio layer plays them.
  * - Own random stream for squeak timing, so the creatures' randomness is unchanged.
  */
 import { BODY, type Creature } from './creature'
 import { showEmote, type EmoteKind } from './expression'
+import type { IntentKind } from './mindState'
 import { spawnInk } from './ink'
-import { createRng, range, type Rng } from './rng'
+import { createRng, int, range, type Rng } from './rng'
 import { vec2, type Vec2 } from './vec2'
 import type { World } from './world'
 
 export type GrabPart = 'head' | 'tentacle'
-export type InteractionSoundKind = 'grab' | 'squeak' | 'boop' | 'ink'
+export type InteractionSoundKind = 'grab' | 'squeak' | 'boop' | 'ink' | 'hiccup'
 
 export interface InteractionSound {
   kind: InteractionSoundKind
@@ -63,8 +67,10 @@ export interface Interaction {
   sounds: InteractionSound[]
   /** The creature jetting away after inking, and until when (world time). */
   jet: { creatureId: number; until: number } | null
-  /** A Grumpy's second squirt, aimed at the hand: who, and when (world time). */
-  followUp: { creatureId: number; at: number } | null
+  /** A Grumpy chasing the hand after inking: who, until when, and when it may squirt again (world time). */
+  chase: { creatureId: number; until: number; nextInkAt: number } | null
+  /** A Friendly dizzy after being shaken: who, since and until when (world time). */
+  dizzy: { creatureId: number; since: number; until: number } | null
   rng: Rng
 }
 
@@ -113,11 +119,36 @@ export const INTERACTION = {
   /** After inking, a jet escape: this fast (px/s), easing off over this long (s), above the normal speed limit. */
   jetSpeed: 380,
   jetSeconds: 0.5,
-  /** A bold, incurious creature (the Grumpy) stands its ground instead: a small recoil (px/s), then a second
-   *  squirt aimed straight at the hand this long (s) after the first, with this much aim (0..1). */
+  /** A bold, incurious creature (the Grumpy) gets mad instead: a small recoil (px/s), then it chases the hand for
+   *  `chaseSeconds` at up to `chaseSpeed` (px/s — as fast as a quick hand: you have to dodge it), squirting a small aimed puff whenever the
+   *  hand is within `chaseInkRange` (px), at most every `chaseInkEvery` (s). */
   recoil: 90,
-  followUpDelay: 0.35,
-  followUpAim: 0.85,
+  chaseSeconds: 4,
+  chaseSpeed: 650,
+  /** How snappily it steers toward you (1/s): ~0.15 s to full speed — you have to dodge, not just walk away. */
+  chaseGain: 6.5,
+  /** It settles this far from the hand (× its size: its outstretched tentacles end just short of the cursor).
+   *  Pursuit: it matches the hand's velocity and closes the remaining gap at `chaseClose` × gap (px/s per px). */
+  chaseStop: 3.2,
+  chaseClose: 4,
+  chaseInkRange: 130,
+  chaseInkEvery: 0.5,
+  chasePuffs: [5, 7],
+  chasePuffScale: 0.55,
+  chaseAim: 0.85,
+  /** Chase squirts start this far (× size) from the center toward the hand: at its tentacle tips. And it turns
+   *  its tentacles toward the hand within inking range, blending back to head-first chasing by `aimFade` × range. */
+  chaseMuzzle: 2.8,
+  aimFade: 1.6,
+  /** A bold, curious creature (the Friendly) only hiccups a tiny puff, then is dizzy for `dizzySeconds`: it swims
+   *  small loops (`dizzySpeed` px/s, `dizzyLoopHz` turns per second), then forgives with a ♥. It stays only
+   *  slightly rattled (`forgiveRattled`, which fades in a few seconds) and keeps its trust. */
+  hiccupPuffs: 3,
+  hiccupScale: 0.3,
+  dizzySeconds: 3,
+  dizzySpeed: 110,
+  dizzyLoopHz: 0.6,
+  forgiveRattled: 0.1,
   /** Sideways wriggle (px/s² at full struggle). */
   wriggleForce: 160,
   wriggleHz: 2.5,
@@ -138,7 +169,8 @@ export function createInteraction(seed: number): Interaction {
     hold: null,
     sounds: [],
     jet: null,
-    followUp: null,
+    chase: null,
+    dizzy: null,
     rng: createRng(seed ^ INTERACTION.streamSalt),
   }
 }
@@ -203,15 +235,49 @@ export function stepInteraction(world: World, dt: number): void {
   const p = world.presence
   const find = (id: number) => world.creatures.find((c) => c.id === id)
 
-  // A Grumpy's second squirt: straight at the hand.
-  if (it.followUp && world.time >= it.followUp.at) {
-    const grump = find(it.followUp.creatureId)
-    it.followUp = null
-    if (grump) {
+  // A mad Grumpy chases the hand and squirts whenever it's close — until it gives up, the visitor leaves,
+  // or it gets picked up again.
+  if (it.chase) {
+    const chase = it.chase
+    const grump = find(chase.creatureId)
+    if (
+      !grump ||
+      world.time >= chase.until ||
+      !p.active ||
+      it.hold?.creatureId === chase.creatureId
+    ) {
+      it.chase = null
+    } else if (
+      world.time >= chase.nextInkAt &&
+      Math.hypot(p.position.x - grump.position.x, p.position.y - grump.position.y) <=
+        INTERACTION.chaseInkRange
+    ) {
       const [tx, ty] = towardHand(world, grump)
-      spawnInk(world.ink, grump, world.time, tx, ty, INTERACTION.followUpAim)
+      spawnInk(world.ink, grump, world.time, tx, ty, {
+        count: int(it.rng, INTERACTION.chasePuffs[0], INTERACTION.chasePuffs[1]),
+        scale: INTERACTION.chasePuffScale,
+        aim: INTERACTION.chaseAim,
+        // Out of its tentacles: it has turned them toward the hand (see `aimAtHand`).
+        from: {
+          x: grump.position.x + tx * grump.size * INTERACTION.chaseMuzzle,
+          y: grump.position.y + ty * grump.size * INTERACTION.chaseMuzzle,
+        },
+      })
       showEmote(grump, 'anger')
       sound(it, 'ink', grump.id)
+      chase.nextInkAt = world.time + INTERACTION.chaseInkEvery
+    }
+  }
+
+  // A dizzy Friendly: when it wears off, it shakes it off (a squish) and forgives (♥).
+  if (it.dizzy) {
+    const friend = find(it.dizzy.creatureId)
+    if (!friend || it.hold?.creatureId === it.dizzy.creatureId) {
+      it.dizzy = null
+    } else if (world.time >= it.dizzy.until) {
+      it.dizzy = null
+      friend.anim.squashVel += INTERACTION.boopSquash
+      showEmote(friend, 'heart')
     }
   }
 
@@ -333,17 +399,75 @@ function towardHand(world: World, c: Creature): [number, number] {
   return len < 1e-6 ? [0, -1] : [tx / len, ty / len]
 }
 
-/** A bold, incurious creature (the Grumpy) doesn't run from a fight. */
+/** A bold, incurious creature (the Grumpy) doesn't run from a fight — it gets mad and chases. */
 export function standsItsGround(c: Creature): boolean {
   return c.traits.boldness >= 0.5 && c.traits.curiosity < 0.5
 }
 
+/** A bold, curious creature (the Friendly) doesn't hold a grudge — it gets dizzy and forgives. */
+export function forgives(c: Creature): boolean {
+  return c.traits.boldness >= 0.5 && c.traits.curiosity >= 0.5
+}
+
 /**
- * Squirt ink toward the hand, slip free, and remember it (rattled). Most creatures jet away and flee;
- * a Grumpy recoils a little, squirts again straight at the hand, and stays to glare (its grudge is in the mood).
+ * The override above the mind (ADR 0004's layering): what the visitor's interaction makes this creature do right
+ * now, or null to let its mind decide. Held beats everything; then a Grumpy's chase; then a Friendly's dizziness.
+ */
+export function interactionIntent(world: World, c: Creature): IntentKind | null {
+  const it = world.interaction
+  if (it.hold?.creatureId === c.id) return 'held'
+  if (it.chase?.creatureId === c.id) return 'chase'
+  if (it.dizzy?.creatureId === c.id) return 'dizzy'
+  return null
+}
+
+/**
+ * 0..1 — how much a chasing Grumpy turns its tentacles toward the hand ("turn and fire"), for the renderer: fully
+ * within inking range, fading out by `aimFade` × the range, 0 when not chasing. A function of distance (not of when
+ * it last squirted), so it never flips back and forth between squirts.
+ */
+export function aimAtHand(world: World, c: Creature): number {
+  const chase = world.interaction.chase
+  if (!chase || chase.creatureId !== c.id) return 0
+  const d = Math.hypot(
+    world.presence.position.x - c.position.x,
+    world.presence.position.y - c.position.y,
+  )
+  const range = INTERACTION.chaseInkRange
+  const fadeOut = range * INTERACTION.aimFade
+  return Math.max(0, Math.min(1, (fadeOut - d) / (fadeOut - range)))
+}
+
+/** 0..1 — how dizzy the creature looks (eases in and out), for the renderer. 0 when not dizzy. */
+export function dizziness(world: World, c: Creature): number {
+  const d = world.interaction.dizzy
+  if (!d || d.creatureId !== c.id) return 0
+  const inEase = Math.min(1, (world.time - d.since) / 0.2)
+  const outEase = Math.min(1, (d.until - world.time) / 0.4)
+  return Math.max(0, Math.min(inEase, outEase))
+}
+
+/**
+ * The shake limit is reached. Scaredy/Peeker: squirt a cloud toward the hand, jet away, flee (rattled, trust lost).
+ * Grumpy: squirt, recoil, then chase the hand (see `stepInteraction`); its grudge lives in its mood.
+ * Friendly: only a tiny hiccup puff, then dizzy; barely rattled, trust kept.
  */
 function squirtInk(world: World, c: Creature): void {
   const [tx, ty] = towardHand(world, c)
+  if (forgives(c)) {
+    spawnInk(world.ink, c, world.time, tx, ty, {
+      count: INTERACTION.hiccupPuffs,
+      scale: INTERACTION.hiccupScale,
+    })
+    c.perception.rattled = Math.max(c.perception.rattled, INTERACTION.forgiveRattled)
+    world.interaction.dizzy = {
+      creatureId: c.id,
+      since: world.time,
+      until: world.time + INTERACTION.dizzySeconds,
+    }
+    sound(world.interaction, 'hiccup', c.id)
+    return
+  }
   spawnInk(world.ink, c, world.time, tx, ty)
   c.perception.startle = 1
   c.perception.rattled = 1
@@ -351,7 +475,11 @@ function squirtInk(world: World, c: Creature): void {
   if (standsItsGround(c)) {
     c.velocity.x = -tx * INTERACTION.recoil
     c.velocity.y = -ty * INTERACTION.recoil
-    world.interaction.followUp = { creatureId: c.id, at: world.time + INTERACTION.followUpDelay }
+    world.interaction.chase = {
+      creatureId: c.id,
+      until: world.time + INTERACTION.chaseSeconds,
+      nextInkAt: world.time + INTERACTION.chaseInkEvery,
+    }
     showEmote(c, 'anger')
   } else {
     c.velocity.x = -tx * INTERACTION.jetSpeed
@@ -383,6 +511,46 @@ export function pullOffset(out: Vec2, c: Creature, hold: Hold, time: number): Ve
 }
 
 const pull = vec2()
+
+/**
+ * Chasing (intent 'chase'): **pursuit with velocity matching**. The desired velocity is the hand's own velocity plus a
+ * closing speed proportional to the gap beyond the stop distance (capped at `chaseSpeed`), so it keeps pace with a
+ * moving hand and settles just short of a still one without overshooting. Returns desired − current velocity.
+ */
+export function chaseForce(out: Vec2, world: World, c: Creature): Vec2 {
+  const I = INTERACTION
+  const hand = world.presence
+  const dx = hand.position.x - c.position.x
+  const dy = hand.position.y - c.position.y
+  const d = Math.hypot(dx, dy)
+  const close = (d - c.size * I.chaseStop) * I.chaseClose
+  let vx = hand.velocity.x + (d > 1e-6 ? (dx / d) * close : 0)
+  let vy = hand.velocity.y + (d > 1e-6 ? (dy / d) * close : 0)
+  const speed = Math.hypot(vx, vy)
+  if (speed > I.chaseSpeed) {
+    vx *= I.chaseSpeed / speed
+    vy *= I.chaseSpeed / speed
+  }
+  out.x = vx - c.velocity.x
+  out.y = vy - c.velocity.y
+  return out
+}
+
+/** Dizzy swimming (intent 'dizzy'): steer toward a velocity that keeps turning — small loop-de-loops. */
+export function dizzyForce(out: Vec2, world: World, c: Creature): Vec2 {
+  const d = world.interaction.dizzy
+  if (!d) {
+    out.x = 0
+    out.y = 0
+    return out
+  }
+  const I = INTERACTION
+  const angle = (world.time - d.since) * I.dizzyLoopHz * Math.PI * 2 + c.id
+  const gain = 4 // how quickly it follows the turning target velocity (1/s)
+  out.x = (Math.cos(angle) * I.dizzySpeed - c.velocity.x) * gain
+  out.y = (Math.sin(angle) * I.dizzySpeed - c.velocity.y) * gain
+  return out
+}
 
 /** Spring toward the hand (+ the creature's pull) and a sideways wriggle, for intent 'held'. */
 export function heldForce(out: Vec2, world: World, c: Creature): Vec2 {

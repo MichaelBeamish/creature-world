@@ -4,7 +4,7 @@
  */
 import type { Creature } from './creature'
 import type { IntentKind } from './mindState'
-import { heldForce, INTERACTION, jetLimit } from './interaction'
+import { chaseForce, dizzyForce, heldForce, INTERACTION, jetLimit } from './interaction'
 import { MIND } from './mind'
 import { PERCEPTION } from './perception'
 import { swimBounds } from './scenery'
@@ -38,7 +38,7 @@ export const MOVEMENT = {
  * Speed multiplier per intent: a scared octopus darts, a curious one is eager.
  * (A held creature is moved by the hand instead: `INTERACTION.maxHeldSpeed`.)
  */
-export const INTENT_SPEED: Record<Exclude<IntentKind, 'held'>, number> = {
+export const INTENT_SPEED: Record<Exclude<IntentKind, 'held' | 'chase' | 'dizzy'>, number> = {
   wander: 1,
   rest: 1,
   approach: 1.3,
@@ -53,6 +53,9 @@ export function speedLimit(creature: Creature): number {
   const intent = creature.mind.intent
   // Held: the hand moves it, not its own swimming — one fixed top speed (fast, never instant).
   if (intent === 'held') return INTERACTION.maxHeldSpeed
+  // A mad Grumpy chases very fast (you have to dodge it); a dizzy Friendly loops slowly.
+  if (intent === 'chase') return INTERACTION.chaseSpeed
+  if (intent === 'dizzy') return INTERACTION.dizzySpeed
   const energyFactor = 0.7 + 0.6 * creature.traits.energy
   return MOVEMENT.baseSpeed * energyFactor * INTENT_SPEED[intent]
 }
@@ -120,6 +123,15 @@ export function stepMovement(creature: Creature, world: World, dt: number): void
         MOVEMENT.maxIntentForce,
       )
       addScaled(creature.velocity, intentForce, weights.intent * dt)
+      break
+    case 'chase':
+      // Pursuit: keep pace with the hand and settle just short of it (its tentacles end just before the cursor).
+      chaseForce(intentForce, world, creature)
+      addScaled(creature.velocity, intentForce, dt * INTERACTION.chaseGain)
+      break
+    case 'dizzy':
+      dizzyForce(intentForce, world, creature)
+      addScaled(creature.velocity, intentForce, dt)
       break
     case 'held':
       heldForce(intentForce, world, creature)

@@ -7,6 +7,7 @@
  */
 import { footprint, type Creature } from './creature'
 import { stepEmotion } from './emotion'
+import { interactionIntent } from './interaction'
 import { range, type Rng } from './rng'
 import { swimBounds } from './scenery'
 import type { World } from './world'
@@ -36,9 +37,10 @@ export const ruleMind: Mind = {
     stepEmotion(mind.emotion, perception, traits, dt)
     stepActivity(creature, dt, world.rng) // the calm wander/rest rhythm keeps ticking underneath
 
-    // Layered override (ADR 0004): while the visitor holds it, the body follows the hand.
-    if (world.interaction.hold?.creatureId === creature.id) {
-      mind.intent = 'held'
+    // Layered override (ADR 0004): held, chasing or dizzy — the visitor's interaction decides what the body does.
+    const override = interactionIntent(world, creature)
+    if (override) {
+      mind.intent = override
       return
     }
 

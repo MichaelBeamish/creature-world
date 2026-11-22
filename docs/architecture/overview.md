@@ -78,9 +78,22 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   tell (tremble, darker flush, faster squeaks). Past it: ink (`ink.ts`, a second pooled particle system with analytic
   motion, aimed toward the hand like a smoke screen), the hold ends, a short jet escape (briefly above the normal speed limit), and `perception.rattled = 1`, which
   fades over ~30 s, caps trust at 1 − rattled and dampens curiosity — so even a Friendly keeps its distance for a while.
-  A bold, incurious creature (`standsItsGround`: the Grumpy) doesn't flee: it recoils, squirts a second time straight
-  at the hand, and glares (being rattled keeps its grumpiness up — `EMOTION.grudge` — about 14 s).
-- **Intent** — `wander`, `rest`, `approach`, `peek`, `flee`, `hide`, `standoff`, `held`; `movement.ts` maps each to
+- **Ink reactions by personality** (task #27) — trait-defined, like everything else. Scaredy/Peeker: ink and flee (above).
+  A bold, incurious creature (`standsItsGround`: the Grumpy) gets mad: it recoils, then *chases* the hand for ~4 s
+  (intent `chase`, *pursuit with velocity matching* — `chaseForce`: the hand's velocity + a closing speed
+  proportional to the gap, capped at ~650 px/s — so walking away fails, dodging works, and it settles just short of
+  a still hand) and squirts a small aimed puff whenever the hand
+  is within range, at most every 0.5 s; then it glares (being rattled keeps its grumpiness up — `EMOTION.grudge`).
+  A bold, curious creature (`forgives`: the Friendly) only hiccups a tiny puff, is *dizzy* for ~3 s (intent `dizzy`:
+  loops from a rotating target velocity; spiral eyes, stars, wobble in the renderer), then forgives with a ♥ —
+  barely rattled, trust kept. `interactionIntent` is the single override above the mind: held > chase > dizzy.
+  Rendering: above normal swimming speed (a chase, a jet escape) a creature *jet swims* — it turns head first
+  (`swimAngle`), its tentacles bundle and stream behind, and it pulses in jet strokes (`propulsion`, `JET`).
+  Within inking range a chasing Grumpy instead *turns and fires*: it points its tentacles at the hand (`aimAtHand`,
+  a function of distance, so it never flips between squirts), keeps its jet strokes going with the tentacles fitted to
+  end just short of the cursor, squirts from the tentacle tips, and is drawn in front of the ink (charging out of it).
+- **Intent** — `wander`, `rest`, `approach`, `peek`, `flee`, `hide`, `standoff`, plus the interaction overrides `held`,
+  `chase`, `dizzy`; `movement.ts` maps each to
   steering (wander, arrive, flee, brake) with a personal speed limit (energy × intent).
 - **Steering** (`steering.ts`) — Reynolds steering behaviors as pure functions returning desired forces:
   `wander`, `stayInBounds`, `separate` (later: seek, flee, arrive). `movement.ts` blends them with weights, applies
@@ -96,7 +109,7 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   `shallowRef`, so Vue never tracks simulation objects. `fpsMeter.ts` reports FPS and per-frame work time (the
   `frame` hook in `gameLoop.ts`). Zero cost while hidden.
 - **Audio** (`src/audio/`) — an output layer that observes the world: `createEmoteWatcher` turns new emotes and
-  interaction sound events into sounds (the ink *pfft* is a noise puff: white-noise buffer → sweeping band-pass); `chirpFor` (pure) designs each creature's voice (pentatonic pitch from size, timbre from archetype, contour
+  interaction sound events into sounds (ink itself is silent — owner decision in task #27: the creatures' own voices carry it); `chirpFor` (pure) designs each creature's voice (pentatonic pitch from size, timbre from archetype, contour
   from emote); `synth.ts` plays it (oscillator → low-pass → envelope → stereo pan → quiet master, ≤ 4 voices). Muted by
   default; the AudioContext is created only on the unmute click (browser autoplay policy).
 - **Scene & motion** — `render/background.ts` draws water, drifting caustics and floating motes (a pure function of

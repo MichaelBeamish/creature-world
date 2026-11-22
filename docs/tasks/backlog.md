@@ -1,7 +1,7 @@
 # Backlog
 
 Ordered by table position. Task numbers are stable IDs (never renumbered), so new tasks get the next free number.
-Each task is small and independently verifiable. Status: `todo` · `planned` · `in-progress` · `done`.
+Each task is small and independently verifiable. Status: `todo` · `planned` · `in-progress` · `done` · `dropped` (kept for the record, with the reason).
 Before starting a task, run `/plan-task <n>` to write a detailed spec and get approval.
 
 | # | Task | Status |
@@ -26,9 +26,10 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 18 | Tentacle root corner peeks out (small fix) | done |
 | 20 | Boop + drag with struggle | done |
 | 21 | Shake → ink | done |
+| 27 | Ink reactions: Grumpy chase, Friendly dizzy | done |
 | 22 | Feeding | todo |
 | 23 | Petting (slow strokes) | todo |
-| 24 | Pop bubbles | todo |
+| 24 | Pop bubbles | dropped |
 | 25 | Names + personality card | todo |
 | 26 | Move shells (creatures investigate) | todo |
 | 19 | "Hear them?" sound nudge | todo |
@@ -284,7 +285,9 @@ Slowly stroking over a creature's head (a gentle drag-free hover motion, or slow
 faster; Friendly purrs (sound) and blushes; Scaredy relaxes slowly; Grumpy tolerates it only once it trusts you.
 - **Accept:** stroke detection distinguishes petting from chasing/grabbing; per-archetype response; all checks pass.
 
-### 24. Pop bubbles
+### 24. Pop bubbles — dropped (owner, 2026-11-22)
+> Not worth it: the bubbles are small and pop on their own within seconds, so visitors would hardly notice.
+
 Click a rising bubble to pop it early with a tiny *plip* (only when unmuted).
 - **Accept:** hit-testing on bubbles; pop animation reused; does not grab a creature behind it; all checks pass.
 
@@ -298,6 +301,28 @@ personality, current mood. Helps visitors connect with individuals (addresses "p
 Drag a shell along the sand; curious creatures come to inspect it where it lands. First step of roadmap #10.
 - **Accept:** shells are draggable (scenery data updates), stay on the sand, never end up under a rock; curious
   archetypes investigate; all checks pass.
+
+
+### 27. Ink reactions: Grumpy chase, Friendly dizzy — owner request 2026-11-22
+Make the two bold personalities' ink reactions as distinct as the Scaredy's escape (refines #21).
+- **Grumpy gets mad and chases:** replaces #21's double squirt. After its first squirt it switches to a *chase*
+  (~4 s): it swims at the cursor (faster than its normal swim, slower than a hand, so the visitor can escape) and,
+  whenever the cursor is within inking range (~80 px), squirts a small aimed puff — at most every 0.5 s — each with 💢
+  and a *pfft*. Then it gives up into the existing standoff + grudge. Ends early if the visitor leaves the pool.
+  Likely a new intent (`chase`) driven by the interaction layer; the ink pool may need to grow (more puffs).
+- **Friendly gets dizzy, then forgives** (owner's choice): no cloud — only a tiny "hiccup" puff. Dizzy for ~3 s:
+  spiral eyes, little stars, wobbly loop-de-loop swimming. Then it shakes it off, drifts back to the visitor and
+  nuzzles with a ♥ — no grudge (rattled clears quickly), the opposite of the Grumpy.
+- Scaredy and Peeker keep #21's ink-and-flee.
+- **Accept:** Grumpy chases for a bounded time, inks only within range and never more often than every 0.5 s, gives
+  up and stands off; it is fast — walking away isn't enough, but a visitor can dodge it (owner feedback); Friendly hiccup-puff + dizzy + returns with ♥ and isn't rattled long;
+  reduced motion (dizzy wobble toned down); sounds only when unmuted; deterministic; all checks pass.
+- **Approved spec decisions (2026-11-22):** `interactionIntent` generalises the override above the mind (held >
+  chase/dizzy); *new* intents `chase`, `dizzy`; trait-defined *new* `forgives` (bold + curious) next to
+  `standsItsGround`. Grumpy: chase ~4 s at ~200 px/s (`arrive` toward the cursor), inks within ~80 px at most every
+  0.5 s, ends on leaving/grab → standoff + grudge; replaces `followUp`. Friendly: tiny hiccup puff + 'hic' chirp, dizzy
+  ~3 s (spiral eyes, orbiting stars, wobble tilt, loop swimming from a rotating target velocity), then squish + ♥;
+  low, short rattled, trust kept. `spawnInk` gains count/scale; `INK.capacity` 128. Reduced motion: `dizzyWobble`.
 
 ### 13. CI with GitHub Actions
 `.github/workflows/ci.yml` runs on every push to `main` and every pull request: install with the locked
