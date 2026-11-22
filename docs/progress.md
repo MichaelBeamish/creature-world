@@ -2,6 +2,22 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-21 — Task #16: Bubbles ✅
+- **Done:** `simulation/bubbles.ts` — a particle system: fixed 64-slot ring-buffer pool (allocated once), analytic
+  closed-form motion (`bubbleAt`: rise with gentle acceleration, wobble, growth, pop at the surface or end of life),
+  spawned on intent edges (burst on flee/hide, trickle while darting, Grumpy huff on standoff), own random stream.
+  `render/bubbles.ts` draws them (rim, highlight, pop ring); reduced motion = no wobble.
+- **Owner feedback:** "might be too many bubbles" → halved: burst 2–3 (was 3–6), huff 1 (was 2), trickle every
+  0.6–1.2 s (was 0.3–0.6). Owner: "yes perfect".
+- **Verified:** 185/185 tests (spawn rules, trickle, analytic motion incl. surface pop, no wobble under reduced motion,
+  pool identity unchanged through 30 s of constant scaring, creatures' rng untouched, full-world determinism).
+  Real browser: bursts, trickle and huff visible; 1.0 ms/frame while constantly scaring. Code map, overview and README
+  updated; the drift test caught the new file on creation.
+- **Learned / notes:** object pooling with a ring buffer; analytic vs integrated motion (integrate when things
+  interact); solving a quadratic for an event time; edge detection on state; test names should not hardcode tunable
+  numbers.
+- **Next:** task #18 (tentacle root corner) or deploy (roadmap #1).
+
 ## 2026-11-21 — Task #15: Sea floor ✅
 - **Done:** look B "Moonlit reef" (owner's pick from a 3-style preview). `simulation/scenery.ts`: `floorHeight`,
   `swimBounds` (single source of truth for the swimmable area, used by spawning, steering, constraints and hiding),

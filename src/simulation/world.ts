@@ -1,4 +1,5 @@
 import { stepAnimation } from './animation'
+import { createBubbles, stepBubbles, type BubbleSystem } from './bubbles'
 import { resolveConstraints } from './constraints'
 import { stepExpression } from './expression'
 import { createCreature, GOLDEN_ANGLE, type Creature } from './creature'
@@ -29,6 +30,8 @@ export interface World {
   presence: Presence
   /** Rocks, shells and seaweed on the sea floor (from an independent random stream). */
   scenery: SceneryItem[]
+  /** Bubble particles (fixed pool, own random stream). */
+  bubbles: BubbleSystem
 }
 
 export interface WorldConfig {
@@ -58,6 +61,7 @@ export function createWorld(config: WorldConfig): World {
     creatures,
     presence: createPresence(),
     scenery: createScenery(config.seed),
+    bubbles: createBubbles(config.seed),
   }
 }
 
@@ -81,6 +85,7 @@ export function stepWorld(world: World, dt: number): void {
     addScaled(creature.position, creature.velocity, dt)
   }
   resolveConstraints(world)
+  stepBubbles(world, dt)
   for (const creature of world.creatures) {
     stepAnimation(creature.anim, dt, world.rng)
   }

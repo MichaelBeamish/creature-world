@@ -84,6 +84,9 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   swimmable area (window minus the sand, plus a small allowance so tentacles rest on it); spawning, steering,
   constraints and hiding all use it. Scenery (rocks, shells, seaweed) is plain data with relative positions from an
   independent seeded stream (it never shifts the creatures' random draws), ready for future interaction.
+- **Bubbles** (`bubbles.ts`, `render/bubbles.ts`) — a particle system: a fixed 64-slot ring-buffer pool of spawn
+  records (no per-frame allocation), analytic closed-form motion (`bubbleAt`), spawned when a creature's intent becomes
+  flee/hide (burst), while it keeps darting (trickle), or on entering standoff (Grumpy huff); own random stream.
 - **UI shell** — Vue overlays: `DebugPanel`, `MuteToggle`, `FirstVisitHint` (fades out on first interaction).
 - **Step order** — presence → perception → mind (emotion, intent) → expression → steering → velocity → position (semi-implicit Euler) → constraints → animation.
 

@@ -18,7 +18,8 @@ Every creature has a personality — an **archetype** on shared trait dials (cur
 | **Not curious** | **Scaredy** — keeps its distance, hides in a far corner       | **Grumpy** — ignores you until bothered, then puffs up red 💢   |
 
 They read what you're doing — **calm presence**, **sudden movement**, or **chasing** — and show how they feel with
-their eyes, body language, emote bubbles, and (if you unmute) their own little voices.
+their eyes, body language, emote bubbles, and (if you unmute) their own little voices. Scare one and it darts off
+in a stream of bubbles; annoy a Grumpy and it huffs.
 
 ## Try it
 
@@ -84,5 +85,5 @@ decisions; [Claude Code](https://claude.com/claude-code) planned, implemented, t
 ## Status & roadmap
 
 The MVP — "The Tide Pool" ([scope & success criteria](docs/product/mvp.md)) — is complete (success criteria 1–5 verified; the informal
-first-viewer test is pending), and a sea floor has since been added. Next up: bubbles and a public deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md)
+first-viewer test is pending), and a sea floor and bubbles have since been added. Next up: a public deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md)
 (direct interaction, social life, an LLM-guided mind, …).

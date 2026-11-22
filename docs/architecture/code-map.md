@@ -39,6 +39,7 @@
 | `src/simulation/steering.ts` | Reynolds steering behaviors as pure force functions | `STEERING`, `wander`, `stayInBounds`, `separate`, `arrive`, `seek`, `flee`, `brake` |
 | `src/simulation/constraints.ts` | Position-based pass: no overlaps, stay in bounds | `resolveConstraints` |
 | `src/simulation/scenery.ts` | Sea floor: sand height, the swimmable area, seeded rocks/shells/seaweed (own random stream) | `SceneryItem`, `FLOOR`, `SCENERY`, `floorHeight`, `swimBounds`, `createScenery` |
+| `src/simulation/bubbles.ts` | Bubble particles: fixed 64-slot pool, analytic motion, spawned on flee/hide/standoff (own random stream) | `BUBBLES`, `BubbleSystem`, `createBubbles`, `stepBubbles`, `bubbleAt` |
 | `src/simulation/animation.ts` | Breathing/sway oscillators and the blink state machine | `CreatureAnimation`, `ANIMATION`, `stepAnimation` |
 | `src/simulation/rng.ts` | Seeded PRNG (mulberry32) — the only randomness in the simulation | `Rng`, `createRng`, `next`, `range`, `int`, `pick` |
 | `src/simulation/vec2.ts` | 2D vector helpers (mutate in place, no allocations) | `Vec2`, `vec2`, `addScaled`, `limitLength` |
@@ -48,9 +49,10 @@
 
 | File | Purpose | Key exports |
 |---|---|---|
-| `src/render/scene.ts` | Draws one frame: background → floor → creatures (back to front) → emotes → vignette → debug | `drawScene`, `SceneOptions` |
+| `src/render/scene.ts` | Draws one frame: background → floor → creatures (back to front) → bubbles → emotes → vignette → debug | `drawScene`, `SceneOptions` |
 | `src/render/floor.ts` | "Moonlit reef" sea floor: sand, mossy rocks, glowing shells, swaying seaweed | `drawFloor` |
 | `src/render/drawCreature.ts` | The "little octopus": body, fur, tentacles, eyes, mood body language | `drawCreature` |
+| `src/render/bubbles.ts` | Draws live bubbles (rim + highlight) and their pop rings | `drawBubbles` |
 | `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade | `drawEmotes` |
 | `src/render/background.ts` | Water, caustics, floating motes (pure function of time), vignette | `drawBackground`, `drawVignette`, `motePosition` |
 | `src/render/motion.ts` | Decorative-motion settings (full vs reduced motion) | `MotionSettings`, `FULL_MOTION`, `REDUCED_MOTION`, `motionSettings` |
@@ -132,6 +134,12 @@
 | How often calm creatures glance at each other | `EXPRESSION.glanceEvery` | `src/simulation/expression.ts` |
 | Faster breathing when scared | `EXPRESSION.breathBoost` | `src/simulation/expression.ts` |
 | Emote pop-in time / float distance | `POP_SECONDS` | `src/render/emotes.ts` |
+| **Bubbles** | | |
+| Bubbles released when a creature starts fleeing | `BUBBLES.burst` | `src/simulation/bubbles.ts` |
+| Bubbles in a Grumpy huff | `BUBBLES.huff` | `src/simulation/bubbles.ts` |
+| Trickle rate while darting | `BUBBLES.trickleEvery` | `src/simulation/bubbles.ts` |
+| How fast bubbles rise | `BUBBLES.riseSpeed` | `src/simulation/bubbles.ts` |
+| Max bubbles alive at once (pool size) | `BUBBLES.capacity` | `src/simulation/bubbles.ts` |
 | **Scene** | | |
 | Number of floating motes | `MOTE_COUNT` | `src/render/background.ts` |
 | Number of light patches (caustics) | `CAUSTIC_COUNT` | `src/render/background.ts` |

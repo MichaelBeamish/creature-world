@@ -22,7 +22,8 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 12 | MVP polish + success-criteria review | done |
 | 17 | Code map + drift check | done |
 | 15 | Sea floor (sand, rocks, shells) | done |
-| 16 | Bubbles (particle system) | todo |
+| 16 | Bubbles (particle system) | done |
+| 18 | Tentacle root corner peeks out (small fix) | todo |
 
 ---
 
@@ -199,6 +200,21 @@ spawning from events, lifetimes, object pooling (no per-frame allocations).
 - **Accept:** bubbles spawn on flee/startle, rise and pop at the surface; bounded particle count; no measurable frame
   cost at 5 creatures; reduced motion respected; all checks pass.
 - **Verify:** tests + visual check. Plan with `/plan-task 16`.
+- **Approved spec decisions (2026-11-21):** bubble records live in the simulation (*new* `src/simulation/bubbles.ts`:
+  fixed 64-slot ring-buffer pool of spawn events, per-creature last intent + trickle timers, independent seeded
+  stream) with **analytic motion** (`bubbleAt`: rise, wobble, slight growth, pop at surface/lifetime); burst of 2–3
+  when intent becomes `flee`/`hide`, trickle every 0.6–1.2 s while fleeing fast, **Grumpy huff** (1 bubble on
+  entering `standoff`) — halved after owner feedback; *new* `src/render/bubbles.ts` draws them after creatures, before emotes; reduced motion =
+  no wobble.
+
+### 18. Tentacle root corner peeks out (small fix)
+Owner noticed: sometimes a corner of an outer tentacle's root (usually the right-most) is slightly visible outside
+the body. Confirmed in code: `taperedCurve` in `src/render/drawCreature.ts` rounds the **tip** (an arc at `p3`) but
+ends the **root** with a flat edge `size * 0.36` wide; outer roots sit at ±0.75 × size, near the body edge, so when
+the body shrinks (breathing inhale, scared shrink) a corner pokes out.
+- **Fix idea (owner's):** round the root end like the tip (a semicircle at `p0`); if needed, tuck outer roots in.
+- **Accept:** no root corner visible outside the body across breathing, scared shrink, grumpy puff, and lean
+  (close-up screenshots); all checks pass. Low priority — do when convenient.
 
 ### 13. CI with GitHub Actions
 `.github/workflows/ci.yml` runs on every push to `main` and every pull request: install with the locked

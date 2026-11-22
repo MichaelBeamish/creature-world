@@ -1,6 +1,7 @@
 import { lerp } from '../simulation/math'
 import type { World } from '../simulation/world'
 import { drawBackground, drawVignette } from './background'
+import { drawBubbles } from './bubbles'
 import { drawCreature } from './drawCreature'
 import { drawPerceptionDebug } from './debugDraw'
 import { drawEmotes } from './emotes'
@@ -39,6 +40,7 @@ export function drawScene(
     drawCreature(ctx, creature, x, y, motion)
   }
 
+  drawBubbles(ctx, world, motion)
   drawEmotes(ctx, world, alpha, motion)
   drawVignette(ctx, width, height)
   if (options.debug) drawPerceptionDebug(ctx, world, alpha)
