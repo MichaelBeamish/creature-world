@@ -11,6 +11,7 @@ Ideas, not commitments. Each becomes a planned milestone only after discussion.
 7. **Ecosystem** — food, day/night, creatures that sleep, new creatures appearing.
 8. **Mobile-first interactions** — touch gestures as first-class input.
 9. **Direct interaction: pick up / drag, boop, shake** — the visitor can physically play with creatures.
+   → **Now scheduled** as backlog tasks #20–#21 (plus #22–#25: feeding, petting, popping bubbles, names).
    - Fits the architecture: input layer → events/state in simulation → renderer; animation stays a layer on top.
    - Drag: a "held" state follows the pointer; hit-testing uses the shared `BODY` proportions.
    - Boop: an event → velocity impulse, squash impulse, forced blink/emote; temporarily faster breathing/sway
@@ -20,7 +21,8 @@ Ideas, not commitments. Each becomes a planned milestone only after discussion.
      (follow-through), and a squash spring in `anim`.
    - Determinism holds for a given input-event sequence, so tests can feed synthetic input.
    - Note: shifts the vision from "noticed, not controlled" toward play — decide deliberately.
-10. **Interactive sea-floor objects** — builds on task #15 (rocks/shells as simulation data) and the mind (task #8):
+10. **Interactive sea-floor objects** — builds on task #15 (rocks/shells as simulation data) and the mind (task #8).
+    → First step scheduled as backlog task #26 (move shells):
     - a Scaredy hides **behind a rock** instead of in a corner;
     - a curious creature inspects or carries a shell;
     - a Grumpy guards its favourite rock;

@@ -19,6 +19,8 @@ export interface MotionSettings {
   background: number
   /** Bubble side-to-side wobble (0 = bubbles rise straight up). */
   bubbleWobble: number
+  /** Boop squash-and-wobble multiplier. */
+  squash: number
 }
 
 export const FULL_MOTION: MotionSettings = {
@@ -30,6 +32,7 @@ export const FULL_MOTION: MotionSettings = {
   emoteFloat: 1,
   background: 1,
   bubbleWobble: 1,
+  squash: 1,
 }
 
 export const REDUCED_MOTION: MotionSettings = {
@@ -41,6 +44,7 @@ export const REDUCED_MOTION: MotionSettings = {
   emoteFloat: 0.3,
   background: 0,
   bubbleWobble: 0,
+  squash: 0.4,
 }
 
 export function motionSettings(reduced: boolean): MotionSettings {

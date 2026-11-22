@@ -34,10 +34,16 @@ export function drawScene(
 
   // Painter's algorithm: draw back-to-front, so creatures lower on screen appear in front.
   const ordered = [...world.creatures].sort((a, b) => a.position.y - b.position.y)
+  const hold = world.interaction.hold
+  const hand = world.presence.position
   for (const creature of ordered) {
     const x = lerp(creature.prevPosition.x, creature.position.x, alpha)
     const y = lerp(creature.prevPosition.y, creature.position.y, alpha)
-    drawCreature(ctx, creature, x, y, motion)
+    const held =
+      hold?.creatureId === creature.id
+        ? { hand: { x: hand.x - x, y: hand.y - y }, part: hold.part }
+        : null
+    drawCreature(ctx, creature, x, y, motion, held)
   }
 
   drawBubbles(ctx, world, motion)

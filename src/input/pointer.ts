@@ -11,6 +11,8 @@ export interface PointerSample {
   x: number
   y: number
   active: boolean
+  /** A mouse button or finger is down (for grabbing / booping). */
+  pressed: boolean
 }
 
 export interface PointerInput {
@@ -27,6 +29,8 @@ export interface PointerTarget {
   addEventListener(type: string, listener: (event: PointerEvent) => void): void
   removeEventListener(type: string, listener: (event: PointerEvent) => void): void
   getBoundingClientRect(): { left: number; top: number }
+  /** Keeps receiving pointer events while dragging outside the element (optional for test fakes). */
+  setPointerCapture?(pointerId: number): void
 }
 
 export function createPointerInput(target: PointerTarget, clock: () => number): PointerInput {
@@ -35,6 +39,9 @@ export function createPointerInput(target: PointerTarget, clock: () => number): 
   let mouseInside = false
   let touchDown = false
   let touchUntil = -Infinity
+  let pressed = false
+  /** A press happened since the last sample (so a very quick click is never missed). */
+  let pressLatch = false
 
   const moveTo = (event: PointerEvent) => {
     const rect = target.getBoundingClientRect()
@@ -49,16 +56,23 @@ export function createPointerInput(target: PointerTarget, clock: () => number): 
     },
     pointerdown(event) {
       moveTo(event)
+      pressed = true
+      pressLatch = true
       if (event.pointerType === 'touch') touchDown = true
       else mouseInside = true
+      // Keep getting moves while dragging, even if the pointer leaves the canvas.
+      target.setPointerCapture?.(event.pointerId)
     },
     pointerup(event) {
+      moveTo(event)
+      pressed = false
       if (event.pointerType === 'touch') {
         touchDown = false
         touchUntil = clock() + TOUCH_LINGER_MS
       }
     },
     pointercancel(event) {
+      pressed = false
       if (event.pointerType === 'touch') {
         touchDown = false
         touchUntil = clock() + TOUCH_LINGER_MS
@@ -74,7 +88,9 @@ export function createPointerInput(target: PointerTarget, clock: () => number): 
   return {
     sample(now) {
       const active = mouseInside || touchDown || now < touchUntil
-      return { x, y, active }
+      const wasPressed = pressed || pressLatch
+      pressLatch = false
+      return { x, y, active, pressed: wasPressed && active }
     },
     destroy() {
       for (const [type, handler] of Object.entries(handlers)) {

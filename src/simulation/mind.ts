@@ -36,6 +36,12 @@ export const ruleMind: Mind = {
     stepEmotion(mind.emotion, perception, traits, dt)
     stepActivity(creature, dt, world.rng) // the calm wander/rest rhythm keeps ticking underneath
 
+    // Layered override (ADR 0004): while the visitor holds it, the body follows the hand.
+    if (world.interaction.hold?.creatureId === creature.id) {
+      mind.intent = 'held'
+      return
+    }
+
     const previous = mind.intent
     switch (mind.emotion.kind) {
       case 'content':

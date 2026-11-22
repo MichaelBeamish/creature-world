@@ -63,6 +63,7 @@ export function stepPerception(
   position: Vec2,
   presence: Presence,
   dt: number,
+  held = false,
 ): void {
   const P = PERCEPTION
   const dx = position.x - presence.position.x
@@ -95,6 +96,11 @@ export function stepPerception(
   perception.pressure = clamp01(
     perception.pressure + (approaching ? dt / P.pressureBuild : -dt / P.pressureFade),
   )
+  if (held) {
+    // Being held is as intense as it gets: full attention, full pressure.
+    perception.attention = 1
+    perception.pressure = 1
+  }
 
   // Calm presence: nearby and slow → trust builds slowly.
   const calm = inRange && speed < P.calmSpeed

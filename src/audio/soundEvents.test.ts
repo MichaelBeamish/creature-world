@@ -39,3 +39,18 @@ describe('createEmoteWatcher', () => {
     expect(world).toEqual(before)
   })
 })
+
+describe('interaction sounds', () => {
+  it('reports each grab / squeak / boop exactly once, in the creature’s own voice', () => {
+    const world = createWorld({ seed: 1, width: 800, height: 600, creatureCount: 3 })
+    const watch = createEmoteWatcher()
+    world.interaction.sounds.push({ kind: 'grab', creatureId: 2 })
+    expect(watch(world).map((e) => [e.kind, e.creature.id])).toEqual([['grab', 2]])
+    expect(watch(world)).toEqual([])
+    world.interaction.sounds.push(
+      { kind: 'squeak', creatureId: 2 },
+      { kind: 'squeak', creatureId: 2 },
+    )
+    expect(watch(world).map((e) => e.kind)).toEqual(['squeak', 'squeak'])
+  })
+})

@@ -7,6 +7,7 @@ import { createPointerInput, type PointerInput } from '../input/pointer'
 import { FULL_MOTION, motionSettings } from '../render/motion'
 import { drawScene } from '../render/scene'
 import { createStage, type Stage } from '../render/stage'
+import { creatureAt } from '../simulation/interaction'
 import { setPresenceInput } from '../simulation/presence'
 import { createWorld, resizeWorld, stepWorld } from '../simulation/world'
 import DebugPanel from './DebugPanel.vue'
@@ -104,7 +105,7 @@ onMounted(() => {
         resizeWorld(world, s.width, s.height)
       // Sample input at the boundary: the simulation only ever sees plain data, once per fixed step.
       const sample = input.sample(performance.now())
-      setPresenceInput(world.presence, sample.x, sample.y, sample.active)
+      setPresenceInput(world.presence, sample.x, sample.y, sample.active, sample.pressed)
       if (hintPending && sample.active) {
         hintPending = false
         hintVisible.value = false // a single reactive write, once
@@ -112,10 +113,12 @@ onMounted(() => {
       stepWorld(world, dt)
     },
     render(alpha) {
+      updateCursor(world)
       drawScene(s.ctx, world, alpha, s.width, s.height, { debug: showDebug, motion })
     },
     frame(now, workMs) {
-      // Sound is an output layer: it observes new emotes (always, so nothing stale plays on unmute).
+      // Sound is an output layer: it observes new emotes and interaction sounds (always, so nothing
+      // stale plays on unmute).
       const events = watchEmotes(world)
       if (synth && soundOn) {
         for (const e of events)
@@ -127,6 +130,21 @@ onMounted(() => {
       if (publish(now)) snapshot.value = createDebugSnapshot(world, seed, meter.stats())
     },
   })
+  /** Hand cursor: "grab" over a creature, "grabbing" while holding one. Written only when it changes. */
+  let cursor = ''
+  function updateCursor(w: typeof world) {
+    const p = w.presence
+    const next = w.interaction.hold
+      ? 'grabbing'
+      : p.active && creatureAt(w, p.position.x, p.position.y)
+        ? 'grab'
+        : ''
+    if (next !== cursor && canvasEl.value) {
+      cursor = next
+      canvasEl.value.style.cursor = next
+    }
+  }
+
   loop.start()
 })
 

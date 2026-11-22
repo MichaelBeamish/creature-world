@@ -10,12 +10,19 @@ import { hash2 } from './noise'
  * lean and tentacle trailing from `creature.velocity`; mood (puff, flush, bristles, eyes, blush)
  * from the smoothed emotion levels — so every change of mood blends in and out continuously.
  */
+/** While the visitor holds a creature: where the hand is, relative to the mantle center, and what it holds. */
+export interface HeldPose {
+  hand: { x: number; y: number }
+  part: 'head' | 'tentacle'
+}
+
 export function drawCreature(
   ctx: CanvasRenderingContext2D,
   creature: Creature,
   screenX: number,
   screenY: number,
   motion: MotionSettings = FULL_MOTION,
+  held: HeldPose | null = null,
 ): void {
   const { id, size, anim, velocity } = creature
   const mood = creature.mind.emotion.levels
@@ -23,9 +30,15 @@ export function drawCreature(
   const grumpy = mood.grumpy
 
   const fast = MOVEMENT.baseSpeed * 2
+  // Boop squash: wider and flatter while squished, a little taller on the rebound (volume roughly kept).
+  const squash = anim.squash * motion.squash
   const { rx, ry } = mantleRadii(size, scared, grumpy, anim.breathPhase, motion.breath, {
-    x: 1 + MOOD.stretch * Math.min(1, Math.abs(velocity.x) / fast),
-    y: 1 + MOOD.stretch * Math.min(1, Math.abs(velocity.y) / fast),
+    x:
+      (1 + MOOD.stretch * Math.min(1, Math.abs(velocity.x) / fast)) *
+      (1 + MOOD.squashWide * squash),
+    y:
+      (1 + MOOD.stretch * Math.min(1, Math.abs(velocity.y) / fast)) *
+      (1 - MOOD.squashFlat * squash),
   })
 
   // Grumpy flushes toward red; scared goes pale.
@@ -44,11 +57,20 @@ export function drawCreature(
   const leanAmount = Math.max(-1, Math.min(1, velocity.x / MOVEMENT.baseSpeed))
   ctx.save()
   ctx.translate(screenX, screenY)
-  ctx.rotate(leanAmount * MOTION.maxLean * motion.lean)
+  const lean = leanAmount * MOTION.maxLean * motion.lean
+  ctx.rotate(lean)
   const x = 0
   const y = 0
 
-  drawTentacles(ctx, creature, x, y, colors.tentacle, motion)
+  // The hand in this rotated local frame (only a tentacle grab bends a tentacle to it).
+  const hand =
+    held?.part === 'tentacle'
+      ? {
+          x: held.hand.x * Math.cos(lean) + held.hand.y * Math.sin(lean),
+          y: -held.hand.x * Math.sin(lean) + held.hand.y * Math.cos(lean),
+        }
+      : null
+  drawTentacles(ctx, creature, x, y, colors.tentacle, motion, held !== null, hand)
   // Fur bristles (stands on end) when scared or grumpy.
   const bristle = 1 + MOOD.bristle * Math.max(scared, grumpy)
   drawFuzz(ctx, id, x, y, rx, ry, size, colors.fuzz, bristle)
@@ -117,6 +139,9 @@ const MOOD = {
   puff: 0.12,
   shrink: 0.06,
   stretch: 0.1,
+  /** Boop squash at full squash: this much wider / flatter. */
+  squashWide: 0.3,
+  squashFlat: 0.25,
   /** How far grumpy pulls the hue toward red (0..1). */
   flush: 0.6,
   /** Extra fur length when bristling (1 + this × mood). */
@@ -139,6 +164,12 @@ const MOTION = {
   maxLean: 0.14,
   /** Tentacle tips trail behind by velocity × this many seconds (roots trail least). */
   trailSeconds: 0.45,
+  /** While held: trailing ×, tentacle length ×, and fan spread × (hang down, closer together). */
+  dangleTrail: 1.8,
+  dangleLength: 1.15,
+  dangleFan: 0.6,
+  /** Longest trail (× size), however fast the creature moves (e.g. dragged quickly). */
+  maxTrail: 1.2,
 } as const
 
 /** Blend hue `from` toward `to` by t (0..1), the short way around the color wheel. */
@@ -161,15 +192,29 @@ function drawTentacles(
   y: number,
   color: string,
   motion: MotionSettings,
+  dangling = false,
+  hand: { x: number; y: number } | null = null,
 ): void {
   const { id, size, tentacleCount: n, anim, velocity } = creature
   // Trailing: tentacles lag behind the motion (follow-through), more toward the tips.
-  const trailX = -velocity.x * MOTION.trailSeconds * motion.trail
-  const trailY = -velocity.y * MOTION.trailSeconds * motion.trail
+  // Held creatures dangle: more trailing, tentacles hang longer and closer together.
+  const trail = MOTION.trailSeconds * motion.trail * (dangling ? MOTION.dangleTrail : 1)
+  // Capped, so a fast drag bends the tentacles back instead of smearing them into long streaks.
+  const trailLength = Math.hypot(velocity.x, velocity.y) * trail
+  const trailCap = size * MOTION.maxTrail
+  const trailScale = trailLength > trailCap ? (trail * trailCap) / trailLength : trail
+  const trailX = -velocity.x * trailScale
+  const trailY = -velocity.y * trailScale
+  const fan = dangling ? MOTION.dangleFan : 1
+  const grabbed = hand ? grabbedTentacle(size, n, hand.x) : -1
   ctx.fillStyle = color
   for (let i = 0; i < n; i++) {
-    const s = n === 1 ? 0 : (i / (n - 1)) * 2 - 1 // -1 (left) .. 1 (right)
-    const length = size * BODY.tentacleLength * (0.85 + hash2(id, i) * 0.3)
+    const s = (n === 1 ? 0 : (i / (n - 1)) * 2 - 1) * fan // -1 (left) .. 1 (right)
+    const length =
+      size *
+      BODY.tentacleLength *
+      (0.85 + hash2(id, i) * 0.3) *
+      (dangling ? MOTION.dangleLength : 1)
     const wave = (i % 2 === 0 ? -1 : 1) * size * (0.4 + hash2(id, i + 50) * 0.3)
     const root = tentacleRoot(size, i, n)
     const rootX = x + root.x
@@ -181,6 +226,22 @@ function drawTentacles(
     const sway1 = swing * 0.35 * Math.sin(phase)
     const sway2 = swing * 0.7 * Math.sin(phase - SWAY.lag)
     const sway3 = swing * Math.sin(phase - SWAY.lag * 2)
+
+    if (i === grabbed && hand) {
+      // The tentacle the visitor holds: stretched from its root to the hand, with a gentle S-bend.
+      const dx = hand.x - rootX
+      const dy = hand.y - rootY
+      taperedCurve(
+        ctx,
+        [rootX, rootY],
+        [rootX + dx * 0.33 + wave * 0.4 + sway1, rootY + dy * 0.33],
+        [rootX + dx * 0.66 - wave * 0.3 + sway2, rootY + dy * 0.66],
+        [hand.x, hand.y],
+        size * TENTACLE_ROOT.width,
+        size * TENTACLE_ROOT.tipWidth,
+      )
+      continue
+    }
 
     // Cubic Bézier: fan outward, with an S-shaped wave plus the sway.
     taperedCurve(
@@ -196,6 +257,21 @@ function drawTentacles(
       size * TENTACLE_ROOT.tipWidth,
     )
   }
+}
+
+/** Which tentacle a hand at local x is holding: the one whose (resting) tip is closest. Pure. */
+export function grabbedTentacle(size: number, n: number, handX: number): number {
+  let best = 0
+  let bestGap = Infinity
+  for (let i = 0; i < n; i++) {
+    const s = n === 1 ? 0 : (i / (n - 1)) * 2 - 1
+    const gap = Math.abs(tentacleRoot(size, i, n).x + s * size * 1.3 - handX)
+    if (gap < bestGap) {
+      bestGap = gap
+      best = i
+    }
+  }
+  return best
 }
 
 export type Point = readonly [number, number]

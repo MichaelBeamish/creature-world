@@ -29,18 +29,19 @@
 | `src/simulation/world.ts` | The world state (incl. `scenery`) and the fixed-step order of everything | `World`, `createWorld`, `stepWorld`, `resizeWorld` |
 | `src/simulation/creature.ts` | Creature data, body proportions, spawn footprint, seeded spawning | `Creature`, `BODY`, `CREATURE_LIMITS`, `footprint`, `createCreature` |
 | `src/simulation/traits.ts` | Personality: archetypes on trait dials, dealt without replacement | `Archetype`, `ARCHETYPES`, `dealArchetypes`, `createTraits` |
-| `src/simulation/presence.ts` | The visitor (cursor/finger) as data; smoothed velocity | `Presence`, `setPresenceInput`, `updatePresence` |
+| `src/simulation/presence.ts` | The visitor (cursor/finger) as data; smoothed velocity; press/release edges | `Presence`, `setPresenceInput`, `updatePresence` |
+| `src/simulation/interaction.ts` | Boop and grab-and-drag: hit-testing (head + tentacle zone), boop-vs-hold, the held spring + rhythmic pull + wriggle, tether with a top speed, interaction sound events (own random stream) | `INTERACTION`, `Interaction`, `creatureAt`, `stepInteraction`, `heldForce`, `pullOffset`, `applyTether`, `struggleLevel`, `isHeld` |
 | `src/simulation/perception.ts` | What a creature notices: attention, trust, pressure, startle → stimulus | `Perception`, `Stimulus`, `PERCEPTION`, `stepPerception` |
 | `src/simulation/emotion.ts` | Utility-scored emotions, smoothing, hysteresis, fear reflex | `EmotionKind`, `EMOTION`, `scoreEmotions`, `stepEmotion` |
 | `src/simulation/mindState.ts` | The mind's state as data (split out to avoid an import cycle) | `IntentKind`, `MindState`, `createMindState` |
 | `src/simulation/mind.ts` | `Mind` interface + `ruleMind`: emotion → intent; calm wander/rest rhythm | `Mind`, `MIND`, `ruleMind`, `stepActivity` |
-| `src/simulation/expression.ts` | Gaze, emote events, mood-scaled animation speed | `Expression`, `EmoteKind`, `EXPRESSION`, `stepExpression` |
+| `src/simulation/expression.ts` | Gaze, emote events, mood-scaled animation speed | `Expression`, `EmoteKind`, `EXPRESSION`, `stepExpression`, `showEmote` |
 | `src/simulation/movement.ts` | Intent → steering forces, drag, personal speed limit | `MOVEMENT`, `INTENT_SPEED`, `speedLimit`, `stepMovement` |
 | `src/simulation/steering.ts` | Reynolds steering behaviors as pure force functions | `STEERING`, `wander`, `stayInBounds`, `separate`, `arrive`, `seek`, `flee`, `brake` |
-| `src/simulation/constraints.ts` | Position-based pass: no overlaps, stay in bounds | `resolveConstraints` |
+| `src/simulation/constraints.ts` | Position-based pass: no overlaps, stay in bounds; a held creature shoves others at a limited speed (else it is blocked) | `CONSTRAINTS`, `resolveConstraints` |
 | `src/simulation/scenery.ts` | Sea floor: sand height, the swimmable area, seeded rocks/shells/seaweed (own random stream) | `SceneryItem`, `FLOOR`, `SCENERY`, `floorHeight`, `swimBounds`, `createScenery` |
 | `src/simulation/bubbles.ts` | Bubble particles: fixed 64-slot pool, analytic motion, spawned on flee/hide/standoff (own random stream) | `BUBBLES`, `BubbleSystem`, `createBubbles`, `stepBubbles`, `bubbleAt` |
-| `src/simulation/animation.ts` | Breathing/sway oscillators and the blink state machine | `CreatureAnimation`, `ANIMATION`, `stepAnimation` |
+| `src/simulation/animation.ts` | Breathing/sway oscillators, the blink state machine, the boop squash spring | `CreatureAnimation`, `ANIMATION`, `stepAnimation` |
 | `src/simulation/rng.ts` | Seeded PRNG (mulberry32) — the only randomness in the simulation | `Rng`, `createRng`, `next`, `range`, `int`, `pick` |
 | `src/simulation/vec2.ts` | 2D vector helpers (mutate in place, no allocations) | `Vec2`, `vec2`, `addScaled`, `limitLength` |
 | `src/simulation/math.ts` | Small numeric helpers | `clamp`, `lerp` |
@@ -51,7 +52,7 @@
 |---|---|---|
 | `src/render/scene.ts` | Draws one frame: background → floor → creatures (back to front) → bubbles → emotes → vignette → debug | `drawScene`, `SceneOptions` |
 | `src/render/floor.ts` | "Moonlit reef" sea floor: sand, mossy rocks, glowing shells, swaying seaweed | `drawFloor` |
-| `src/render/drawCreature.ts` | The "little octopus": body, fur, tentacles, eyes, mood body language | `drawCreature`, `mantleRadii`, `tentacleRoot`, `tentacleOutline`, `TENTACLE_ROOT` |
+| `src/render/drawCreature.ts` | The "little octopus": body, fur, tentacles, eyes, mood body language; squash, dangling and the grabbed tentacle | `drawCreature`, `HeldPose`, `mantleRadii`, `tentacleRoot`, `tentacleOutline`, `grabbedTentacle`, `TENTACLE_ROOT` |
 | `src/render/bubbles.ts` | Draws live bubbles (rim + highlight) and their pop rings | `drawBubbles` |
 | `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade | `drawEmotes` |
 | `src/render/background.ts` | Water, caustics, floating motes (pure function of time), vignette | `drawBackground`, `drawVignette`, `motePosition` |
@@ -64,14 +65,14 @@
 
 | File | Purpose | Key exports |
 |---|---|---|
-| `src/input/pointer.ts` | Pointer Events (mouse/pen/touch) → latest sample; touch lingers briefly | `createPointerInput`, `TOUCH_LINGER_MS` |
+| `src/input/pointer.ts` | Pointer Events (mouse/pen/touch) → latest sample incl. `pressed` (latched, pointer capture); touch lingers briefly | `createPointerInput`, `TOUCH_LINGER_MS` |
 
 ### `src/audio/` — Web Audio output layer (observes the world)
 
 | File | Purpose | Key exports |
 |---|---|---|
-| `src/audio/voice.ts` | Pure voice design: pitch/timbre/contour per creature and emote | `chirpFor`, `panFor`, `pentatonicHz`, `ChirpSpec` |
-| `src/audio/soundEvents.ts` | Detects each new emote exactly once | `createEmoteWatcher` |
+| `src/audio/voice.ts` | Pure voice design: pitch/timbre/contour per creature and emote or interaction sound | `chirpFor`, `panFor`, `pentatonicHz`, `ChirpSpec`, `VoiceKind` |
+| `src/audio/soundEvents.ts` | Detects each new emote and interaction sound exactly once | `createEmoteWatcher` |
 | `src/audio/synth.ts` | Plays chirp specs (oscillator → filter → envelope → pan → master) | `createSynth`, `Synth` |
 
 ### `src/app/` — Vue shell, game loop, wiring
@@ -157,6 +158,24 @@
 | Overall volume | `MASTER_VOLUME` | `src/audio/synth.ts` |
 | Max chirps at once | `MAX_VOICES` | `src/audio/synth.ts` |
 | A personality's voice (wave, register, filter) | `TIMBRE.grumpy` | `src/audio/voice.ts` |
+| **Interaction (boop, grab & drag)** | | |
+| How forgiving clicking a head is | `INTERACTION.headTolerance` | `src/simulation/interaction.ts` |
+| How far below the head a tentacle grab reaches | `INTERACTION.tentacleReach` | `src/simulation/interaction.ts` |
+| What counts as a boop (time / movement) | `INTERACTION.boopSeconds` | `src/simulation/interaction.ts` |
+| How tightly a held creature follows the hand | `INTERACTION.spring` | `src/simulation/interaction.ts` |
+| How far it can trail behind the hand | `INTERACTION.tether` | `src/simulation/interaction.ts` |
+| How fast a dragged creature can shove others out of the way | `CONSTRAINTS.shoveSpeed` | `src/simulation/constraints.ts` |
+| How far upset creatures pull away from your hand | `INTERACTION.maxPull` | `src/simulation/interaction.ts` |
+| Rhythm of the yanks (timid fast, bold slow) | `INTERACTION.pullHz` | `src/simulation/interaction.ts` |
+| How upset a creature must be before it struggles | `INTERACTION.calmUpset` | `src/simulation/interaction.ts` |
+| How hard creatures wriggle | `INTERACTION.wriggleForce` | `src/simulation/interaction.ts` |
+| Top speed of a held creature (catching up after being blocked) | `INTERACTION.maxHeldSpeed` | `src/simulation/interaction.ts` |
+| How often struggle squeaks play | `INTERACTION.squeakEvery` | `src/simulation/interaction.ts` |
+| How hard a boop squishes | `INTERACTION.boopSquash` | `src/simulation/interaction.ts` |
+| How bouncy the squash is | `ANIMATION.squashStiffness` | `src/simulation/animation.ts` |
+| How the squash looks (wider / flatter) | `MOOD.squashWide` | `src/render/drawCreature.ts` |
+| How tentacles dangle while held | `MOTION.dangleTrail` | `src/render/drawCreature.ts` |
+| Longest tentacle trail (fast drags) | `MOTION.maxTrail` | `src/render/drawCreature.ts` |
 | **Input & debug** | | |
 | How long a tap counts as presence | `TOUCH_LINGER_MS` | `src/input/pointer.ts` |
 | Debug panel refresh rate | `SNAPSHOT_INTERVAL_MS` | `src/app/WorldCanvas.vue` |
@@ -189,6 +208,12 @@
 1. `src/simulation/scenery.ts`: extend `SceneryKind`, add its count/size to `SCENERY`, place it in `createScenery`.
 2. `src/render/floor.ts`: draw it in `drawFloor` (a new `draw…` function, using `hash2` for stable detail).
 3. Tests: `src/simulation/scenery.test.ts` (counts and ranges).
+
+**Add a new interaction sound (e.g. a purr)**
+
+1. `src/simulation/interaction.ts`: extend `InteractionSoundKind` and record it with `sound()` where it happens.
+2. `src/audio/voice.ts`: give it a contour in `chirpFor` (`soundEvents.ts` already reports it).
+3. Tests: `src/simulation/interaction.test.ts`, and add it to the list in `src/audio/voice.test.ts`.
 
 **Add or rename a tuning knob**
 

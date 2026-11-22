@@ -8,6 +8,13 @@ import { stepMovement } from './movement'
 import { stepPerception } from './perception'
 import { createPresence, updatePresence, type Presence } from './presence'
 import { createRng, range, type Rng } from './rng'
+import {
+  applyTether,
+  createInteraction,
+  isHeld,
+  stepInteraction,
+  type Interaction,
+} from './interaction'
 import { createScenery, swimBounds, type SceneryItem } from './scenery'
 import { dealArchetypes } from './traits'
 import { addScaled, copyVec2 } from './vec2'
@@ -32,6 +39,8 @@ export interface World {
   scenery: SceneryItem[]
   /** Bubble particles (fixed pool, own random stream). */
   bubbles: BubbleSystem
+  /** Boop / grab-and-drag state and its sound events (own random stream). */
+  interaction: Interaction
 }
 
 export interface WorldConfig {
@@ -62,19 +71,27 @@ export function createWorld(config: WorldConfig): World {
     presence: createPresence(),
     scenery: createScenery(config.seed),
     bubbles: createBubbles(config.seed),
+    interaction: createInteraction(config.seed),
   }
 }
 
 /**
  * Advance the world by exactly one fixed step of `dt` seconds. Mutates in place.
  * Order matters (and is fixed, for determinism):
- * presence → perception → mind (emotion, intent) → expression → steering → velocity → position → constraints → animation.
+ * presence → interaction → perception → mind (emotion, intent) → expression → steering → velocity → position → constraints → animation.
  */
 export function stepWorld(world: World, dt: number): void {
   updatePresence(world.presence, dt)
+  stepInteraction(world, dt)
   for (const creature of world.creatures) {
     copyVec2(creature.prevPosition, creature.position)
-    stepPerception(creature.perception, creature.position, world.presence, dt)
+    stepPerception(
+      creature.perception,
+      creature.position,
+      world.presence,
+      dt,
+      isHeld(world, creature),
+    )
     MIND.think(creature, world, dt)
     stepExpression(creature, world, dt)
     stepMovement(creature, world, dt)
@@ -84,7 +101,8 @@ export function stepWorld(world: World, dt: number): void {
     // More stable than explicit Euler for steering/springs, at the same cost.
     addScaled(creature.position, creature.velocity, dt)
   }
-  resolveConstraints(world)
+  applyTether(world, dt) // the held creature never trails the hand by more than the tether
+  resolveConstraints(world, dt)
   stepBubbles(world, dt)
   for (const creature of world.creatures) {
     stepAnimation(creature.anim, dt, world.rng)
