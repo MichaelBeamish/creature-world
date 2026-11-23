@@ -11,6 +11,7 @@
  *
  * Reduced motion: no hops, spins or taps — a gentle sway only.
  */
+import { CHEER_UP } from '../simulation/cheerUp'
 import type { DanceStyle } from '../simulation/dance'
 
 export interface DanceMoves {
@@ -71,4 +72,22 @@ export function danceMoves(
     tap: 0,
     wave: Math.sin(Math.PI * beats) * amount,
   }
+}
+
+/**
+ * The Grumpy being cheered up by the rose (task #38), `t` seconds in: a slow suspicious tilt while he's sceptical,
+ * then a little hop and stretch as he perks up. Reduced motion: still.
+ */
+export function cheerUpMoves(t: number, full: boolean): DanceMoves {
+  if (!full) return STILL
+  if (t < CHEER_UP.doubt) {
+    // Eyeing it: a slow tilt one way, then the other (and a slight shrink — not sure about this).
+    return { ...STILL, lean: Math.sin(t * 1.6) * 0.2, squash: 0.96 }
+  }
+  const u = t - CHEER_UP.doubt
+  if (u < CHEER_UP.perk) {
+    const k = Math.sin(Math.PI * (u / CHEER_UP.perk)) // up and back down
+    return { ...STILL, bob: -0.45 * k, squash: 1 + 0.18 * k, flare: 1 + 0.4 * k }
+  }
+  return STILL
 }

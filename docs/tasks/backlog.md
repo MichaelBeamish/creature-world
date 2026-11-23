@@ -40,7 +40,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 32d | Party: dancing by personality | done |
 | 36 | Party track picker: a small iPod by the mute button | todo |
 | 37 | Casting: one Grumpy, one Friendly | done |
-| 38 | Cheer up the Grumpy (something special) | todo |
+| 38 | Cheer up the Grumpy (the rose) | done |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | dropped |
@@ -430,12 +430,18 @@ Scaredy). Seeded and reproducible as now.
 - **Accept:** for many seeds and counts up to 6, at most one Grumpy and at most one Friendly; every personality still
   appears (4+ creatures); existing seeded behavior tests still pass (or are updated deliberately); all checks pass.
 
-### 38. Cheer up the Grumpy — owner request 2026-11-22 (brainstorm first)
+### 38. Cheer up the Grumpy — owner request 2026-11-22 — done
 Some way to make the Grumpy happy — maybe by giving him **something special**. To brainstorm with the owner before
 planning (what the gift is, how he reacts, whether it lasts, how it fits his personality without losing it).
 - **Owner idea (2026-11-22):** "if a grumpy changes his mood he can become a friendly" — cheered up for good, he
   turns into a Friendly (the one exception to "one Friendly" in #37).
-- **Accept:** decided in the brainstorm.
+- **Approved spec (owner, 2026-11-22), the MVP:** the **rose** cheers him up. A ~5.5 s moment: sceptical (freezes,
+  eyes it, a suspicious tilt, "?", still flushed — he doesn't shake it off) → perks up (flush drains, hop + stretch,
+  "!") → hearts (a burst of hearts, one soft glow; he *becomes* a Friendly here, so the heart chirp is the Friendly's
+  voice). Then he acts exactly like a Friendly (archetype + dials switch; his color and energy kept; keeps the rose).
+  The rose on anyone else is just a rose. *New* `simulation/cheerUp.ts`, `creature.cheerUp`.
+- **Accept:** the rose on the Grumpy starts the moment; the phases in order; he doesn't shake it off; afterwards a
+  Friendly by personality and behavior; others unaffected; light-safe; all checks pass.
 
 ### 36. Party track picker: a small iPod — owner request 2026-11-22
 During the party, a small **iPod** appears in the corner near the mute button to change tracks (the songs in

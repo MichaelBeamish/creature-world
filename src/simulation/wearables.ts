@@ -19,6 +19,7 @@ import {
   type WearSpot,
 } from './props'
 import type { IntentKind } from './mindState'
+import { startCheerUp } from './cheerUp'
 import type { Vec2 } from './vec2'
 import type { World } from './world'
 
@@ -66,8 +67,11 @@ export function wearOn(world: World, c: Creature, kind: WearableKind): void {
     if (c.dress[spot]) dropOff(world, c, spot)
   }
   for (const spot of spotsOf(kind)) c.dress[spot] = kind
-  // The Grumpy doesn't like it.
-  if (minds(c) && !isFinite(c.dress.shakeAt)) c.dress.shakeAt = world.time + WEAR.firstShake
+  // The Grumpy doesn't like it — except the rose (task #38): that one melts his heart.
+  if (minds(c) && kind === 'rose') startCheerUp(world, c)
+  else if (minds(c) && !c.cheerUp && !isFinite(c.dress.shakeAt)) {
+    c.dress.shakeAt = world.time + WEAR.firstShake
+  }
 }
 
 /** Take the item in a spot off (it leaves every spot it filled). Returns what it was. */
@@ -203,7 +207,7 @@ export function stepWearables(world: World): void {
   for (const c of world.creatures) {
     const d = c.dress
     if (!isDressed(d)) continue
-    if (!minds(c)) continue
+    if (!minds(c) || c.cheerUp) continue // (being cheered up: no shaking)
     if (world.time >= d.shakeAt && d.shakingSince < d.shakeAt) {
       d.shakingSince = world.time // start a shake
       showEmote(c, 'anger')

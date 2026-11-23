@@ -3,7 +3,7 @@ import { INTERACTION } from '../simulation/interaction'
 import { MOVEMENT } from '../simulation/movement'
 import { shakeAmount } from '../simulation/wearables'
 import { drawCuffs, drawHeld, drawWorn, type Curve } from './wearables'
-import { danceMoves, type DanceMoves } from './dance'
+import { cheerUpMoves, danceMoves, type DanceMoves } from './dance'
 import type { DanceStyle } from '../simulation/dance'
 import { FULL_MOTION, type MotionSettings } from './motion'
 import { hash2 } from './noise'
@@ -36,6 +36,8 @@ export interface CreaturePose {
   aim?: { amount: number; hand: { x: number; y: number } }
   /** Dancing at the party (task #32d): its style, how hard (0..1), and the beat clock. */
   dance?: { style: DanceStyle; amount: number; beats: number } | null
+  /** Being cheered up by the rose (task #38): seconds into the moment. */
+  cheerUp?: number | null
 }
 
 export function drawCreature(
@@ -55,7 +57,9 @@ export function drawCreature(
   const grumpy = mood.grumpy
   const moves = pose.dance
     ? danceMoves(pose.dance.style, pose.dance.amount, pose.dance.beats, motion.dance)
-    : null
+    : pose.cheerUp != null
+      ? cheerUpMoves(pose.cheerUp, motion.dance)
+      : null
 
   const fast = MOVEMENT.baseSpeed * 2
   // Jet swimming (fast: a chase or an escape): the head leads, tentacles stream behind, rhythmic strokes.
