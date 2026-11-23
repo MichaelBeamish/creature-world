@@ -109,6 +109,14 @@
 | `src/app/ChestToggle.vue` | Invisible but real button laid over the drawn chest: Tab, Enter/Space, click/tap; `aria-expanded` | — |
 | `src/app/FirstVisitHint.vue` | "move your cursor near them…" hint, gone after the first interaction | — |
 
+### Project files (outside `src/`)
+
+| File | What it does |
+|---|---|
+| `vite.config.ts` | Vite + Vitest config; the production `base` is `/creature-world/` (GitHub Pages sub-path), dev stays at `/` |
+| `.github/workflows/ci.yml` | CI on every PR and push to `main`: format, lint, typecheck, test, build (Node 22 + latest LTS) |
+| `.github/workflows/deploy.yml` | Deploy on every push to `main`: the same checks, then build and publish to GitHub Pages (ADR 0005) |
+
 ## To change X, edit Y
 
 | To change… | Edit | In |
