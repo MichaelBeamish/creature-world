@@ -99,6 +99,13 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   they stay in sync, and a fade `level`. The lights are render-only (`render/party.ts`): a dimming layer, sweeping
   beams and mirror-ball spots drawn additively (`'lighter'`), with a light-safe twinkle (smooth, < 3 per second,
   tested); reduced motion holds them still.
+  **Music** (32b) is an output layer like the chirps: `audio/music.ts` is the song as pure data (an original
+  deep house in A minor — the creatures' pentatonic chirps share its notes; the party plays `PARTY_SONG`, an
+  extended arrangement with builds and 16-bar drops; two earlier songs are kept in `SONGS` for a future track
+  picker), and `audio/musicPlayer.ts` books
+  the next ~0.15 s of notes on the Web Audio clock each frame ("two clocks": sample-accurate timing despite frame
+  jitter), pinned to the beat clock and re-pinned on drift. The bass and stabs duck on each kick (sidechain pump).
+  During the party chirps start on the next half-beat. Starting the party while muted shows a "turn on sound" nudge.
 - **Held items** (task #33) — two more spots: `hand` (glow stick, cutlass, soda can, magic wand, balloon,
   rose, trident) and `cuffs` (kandi), so cuffs + a held item combine. A tentacle tip only exists in the renderer, so
   `drawTentacles` now returns every curve: the holding tentacle is bent into a raised arm and the item is drawn at its

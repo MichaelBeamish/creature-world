@@ -12,7 +12,10 @@ import type { ChirpSpec } from './voice'
 export interface Synth {
   /** Must be called from a user gesture (click/tap/key) the first time it unmutes. */
   setMuted(muted: boolean): void
-  play(spec: ChirpSpec, pan: number): void
+  /** `delay` (s): start a little later — during the party, chirps wait for the next half-beat. */
+  play(spec: ChirpSpec, pan: number, delay?: number): void
+  /** The audio context and master output (for the party music), once sound has first been turned on. */
+  audio(): { ctx: AudioContext; out: AudioNode } | null
   close(): void
 }
 
@@ -46,9 +49,9 @@ export function createSynth(): Synth {
       master.gain.setTargetAtTime(muted ? 0 : MASTER_VOLUME, ctx.currentTime, FADE)
     },
 
-    play(spec, pan) {
+    play(spec, pan, delay = 0) {
       if (muted || !ctx || !master || voices >= MAX_VOICES) return
-      const now = ctx.currentTime
+      const now = ctx.currentTime + delay
       const filter = ctx.createBiquadFilter()
       filter.type = 'lowpass'
       filter.frequency.value = spec.filterHz
@@ -96,6 +99,10 @@ export function createSynth(): Synth {
           }
         }
       }
+    },
+
+    audio() {
+      return ctx && master ? { ctx, out: master } : null
     },
 
     close() {

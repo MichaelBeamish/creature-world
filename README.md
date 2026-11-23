@@ -44,7 +44,8 @@ pnpm dev        # http://localhost:5173
   ball** into the water. Drag a toy back onto the chest to put it away.
   Turn the pages with ‹ › or jump straight to one with the dots below them: **dress-up** items and things to hold — drop one on a creature to put it on, press it to take it off. Items
   left on the sand go back into the chest by themselves. On the last page: a **disco ball** — let it go in the water
-  and the party starts (drag it back to the chest to end it).
+  and the party starts: the lights dim and deep house plays — builds, drops and all (with sound on — there's a
+  nudge if it's off). Drag it back to the chest to end it.
 - Click the 🔈 button (bottom-right) for sound — it always starts muted.
 - Press **D** (dev) or add `?debug` to the URL to see what each creature perceives and feels, plus FPS.
 - Add `?seed=42` to revisit a specific world (each visit otherwise gets a random one).
