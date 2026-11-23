@@ -15,6 +15,7 @@ import {
   SLOT_COUNT,
   slotPosition,
   type PropKind,
+  TOY,
 } from '../simulation/props'
 import { drawWearableIcon } from './wearables'
 import { drawDiscoBall } from './party'
@@ -240,7 +241,8 @@ function drawItem(
 ): void {
   if (kind === 'shrimp') drawShrimp(ctx, x + 2, y, scale, 0.15, alpha)
   else if (kind === 'duck') drawDuck(ctx, x, y + 2, scale * 0.95, 1, 0, alpha)
-  else if (kind === 'ball') drawBall(ctx, x, y, scale * 1.1, 0.4, alpha)
+  // (The ball is big in the water; its icon stays chest-sized.)
+  else if (kind === 'ball') drawBall(ctx, x, y, (scale * 15.4) / TOY.radius.ball, 0.4, alpha)
   else if (kind === 'discoBall') drawDiscoBall(ctx, x, y, 15 * scale, 0, alpha)
   else if (isWearable(kind)) drawWearableIcon(ctx, kind, x, y, 18 * scale, 0, alpha)
 }

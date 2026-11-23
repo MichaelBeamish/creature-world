@@ -41,8 +41,8 @@ pnpm dev        # http://localhost:5173
 
 - **Click** a creature to boop it; **press and hold** (head or tentacle) to pick it up and drag it. Works with touch too.
   Shake it hard and it inks — each personality has its own limit (watch for the tremble).
-- Click the **treasure chest** (bottom-left) to open it, and drag a **shrimp**, the **rubber duck** or the **soccer
-  ball** into the water. Drag a toy back onto the chest to put it away.
+- Click the **treasure chest** (bottom-left) to open it, and drag **shrimp**, **rubber ducks** (up to 3 of each) or the
+  big **soccer ball** into the water. Drag a toy back onto the chest to put it away.
   Turn the pages with ‹ › or jump straight to one with the dots below them: **dress-up** items and things to hold — drop one on a creature to put it on, press it to take it off. Items
   left on the sand go back into the chest by themselves. On the last page: a **disco ball** — let it go in the water
   and the party starts: the lights dim, deep house plays — builds, drops and all (with sound on — there's a

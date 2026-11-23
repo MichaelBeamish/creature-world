@@ -9,6 +9,8 @@ import {
   dropProp,
   slotPosition,
   toggleChest,
+  PROPS,
+  removeProp,
   TOY,
   toyFloor,
 } from './props'
@@ -109,16 +111,18 @@ describe('toy physics', () => {
   it('a hit ball pops up a bit and arcs back down', () => {
     const w = make([['scaredy', 300, 560]])
     w.creatures[0]!.traits = { curiosity: 0.6, boldness: 0.2, energy: 0.6 }
-    const ball = dropProp(w, 'ball', 340, 560)
+    const ball = dropProp(w, 'ball', 340, 560) // (it rests on the sand: big balls sit higher)
+    const start = ball.position.y
+    const hitter = w.creatures[0]!
+    hitter.position.x = hitter.prevPosition.x = ball.position.x - 60 // just touching it, level with it
+    hitter.position.y = hitter.prevPosition.y = start
     w.creatures[0]!.velocity.x = 150
     stepWorld(w, DT) // the hit…
-    const c = w.creatures[0]!
-    c.position.x = c.prevPosition.x = 1000 // …then it swims off, so nothing touches the ball again
-    c.position.y = c.prevPosition.y = 150
+    w.creatures.splice(0) // …then it leaves, so nothing touches the ball again (the big ball is easy to reach)
     let highest = Infinity
     run(w, 10, () => (highest = Math.min(highest, ball.position.y)))
-    expect(560 - highest).toBeGreaterThan(40) // it flew up…
-    expect(560 - highest).toBeLessThan(220) // …a bit
+    expect(start - highest).toBeGreaterThan(40) // it flew up…
+    expect(start - highest).toBeLessThan(220) // …a bit
     expect(ball.position.y).toBeCloseTo(toyFloor(w, 'ball'), 0) // and came back down
   })
 })
@@ -240,12 +244,29 @@ describe('play by personality', () => {
 })
 
 describe('toys and the chest', () => {
-  it('each toy exists once: its slot is greyed out while it is in the pool', () => {
+  it('the ball exists once: its slot is greyed out while it is in the pool', () => {
     const w = make([])
-    expect(canTake(w, 'duck')).toBe(true)
-    dropProp(w, 'duck', 400, 300)
-    expect(canTake(w, 'duck')).toBe(false)
     expect(canTake(w, 'ball')).toBe(true)
+    dropProp(w, 'ball', 400, 300)
+    expect(canTake(w, 'ball')).toBe(false)
+  })
+
+  it('up to 3 ducks, like the shrimp (task #39) — one in the hand counts too', () => {
+    const w = make([])
+    for (let i = 0; i < PROPS.maxDucks; i++) {
+      expect(canTake(w, 'duck')).toBe(true)
+      dropProp(w, 'duck', 300 + i * 100, 300)
+    }
+    expect(canTake(w, 'duck')).toBe(false)
+    removeProp(w, w.props.items.find((p) => p.kind === 'duck')!.id)
+    expect(canTake(w, 'duck')).toBe(true)
+    w.interaction.carry = { kind: 'duck' }
+    expect(canTake(w, 'duck')).toBe(false)
+  })
+
+  it('the ball is big in the water (about 2.3× the duck-sized original)', () => {
+    expect(TOY.radius.ball).toBeGreaterThanOrEqual(28)
+    expect(TOY.radius.ball).toBeLessThanOrEqual(35)
   })
 
   it('a toy in the water can be picked up and dropped back into the chest', () => {

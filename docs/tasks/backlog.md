@@ -41,6 +41,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 36 | Party track picker: a small iPod by the mute button | todo |
 | 37 | Casting: one Grumpy, one Friendly | done |
 | 38 | Cheer up the Grumpy (the rose) | done |
+| 39 | A bigger soccer ball, up to 3 ducks | done |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | dropped |
@@ -429,6 +430,13 @@ any of them. New deck: one Friendly, one Grumpy, two Peekers, two Scaredies (5 c
 Scaredy). Seeded and reproducible as now.
 - **Accept:** for many seeds and counts up to 6, at most one Grumpy and at most one Friendly; every personality still
   appears (4+ creatures); existing seeded behavior tests still pass (or are updated deliberately); all checks pass.
+
+### 39. A bigger soccer ball, up to 3 ducks — owner request 2026-11-22 — done
+The last MVP tweak before deploying. The soccer ball is ~2.3× bigger **in the water** (radius 14 → 32 px; the chest
+icon stays the same size); up to **3 rubber ducks** out at once, like the shrimp (`PROPS.maxDucks`; a duck in the
+hand counts). Play keeps room to get behind a big toy (measured from its edge).
+- **Accept:** the ball is ~2.3× bigger in the world, not in the chest, and still rolls, bounces and gets played with;
+  a 4th duck can't be taken while 3 are out; all checks pass.
 
 ### 38. Cheer up the Grumpy — owner request 2026-11-22 — done
 Some way to make the Grumpy happy — maybe by giving him **something special**. To brainstorm with the owner before

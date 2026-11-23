@@ -2,6 +2,15 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #39: A bigger soccer ball, up to 3 ducks ✅
+- The last MVP tweak before deploying: the soccer ball is ~2.3× bigger in the water (`TOY.radius.ball` 14 → 32 px;
+  the chest icon stays chest-sized); up to 3 rubber ducks out at once, like the shrimp (*new* `PROPS.maxDucks`; a duck
+  in the hand counts). Play measures "behind the toy" from its edge, so there's room to get behind the big ball.
+- **Verified:** 375 tests (+3): the duck cap, the ball once, its size; the ball-hit test re-placed for the bigger
+  ball (and the hitter removed after its hit — it kept coming back to the easier-to-reach ball). Chrome: ball + four
+  duck drags → a big ball on the sand, exactly three ducks, icons unchanged. Owner: "verified". All five checks pass.
+- **Learned:** sizes leak into behavior (aim points, contact) — measure from edges, not centers.
+
 ## 2026-11-22 — Task #38: Cheer up the Grumpy — the rose ✅
 - Give the Grumpy the **rose** and he comes round: a ~5.5 s moment in world data (*new* `simulation/cheerUp.ts`,
   `creature.cheerUp`) — sceptical (freezes, a suspicious tilt, "?", still flushed; he doesn't shake it off) → perks up

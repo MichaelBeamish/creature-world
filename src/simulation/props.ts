@@ -194,6 +194,8 @@ export const DISCO = {
 export const PROPS = {
   /** At most this many shrimp in the water at once. */
   maxShrimp: 3,
+  /** At most this many rubber ducks out at once (task #39). */
+  maxDucks: 3,
   /** Sinking speed (px/s), and a gentle side-to-side drift while sinking: amplitude (px) and rate (Hz). */
   sinkSpeed: 38,
   driftAmp: 10,
@@ -215,8 +217,8 @@ export const PROPS = {
 } as const
 
 export const TOY = {
-  /** Radius (px). */
-  radius: { duck: 16, ball: 14 } as Record<'duck' | 'ball', number>,
+  /** Radius (px) in the water (the ball is big — task #39; the chest's icon stays small). */
+  radius: { duck: 16, ball: 32 } as Record<'duck' | 'ball', number>,
   /** Near a wall (within `edgeMargin` px), a gentle current (px/s² at the wall) eases toys back toward open water,
    *  where creatures can reach them — so a toy never stays stuck in a corner. */
   edgeMargin: 80,
@@ -273,8 +275,12 @@ export function toggleChest(world: World): void {
 /** Can the visitor take this kind out right now? (Shrimp: only while fewer than the cap are in the water.) */
 export function canTake(world: World, kind: PropKind): boolean {
   if (kind === 'shrimp') return countOf(world, 'shrimp') < PROPS.maxShrimp
+  if (kind === 'duck') {
+    const inHand = world.interaction.carry?.kind === 'duck' ? 1 : 0
+    return countOf(world, 'duck') + inHand < PROPS.maxDucks
+  }
   if (isWearable(kind)) return outCount(world, kind) < PROPS.maxEach
-  // Each toy exists once (it's either in the chest, in the water, or in the visitor's hand).
+  // The other toys exist once (in the chest, in the water, or in the visitor's hand).
   return countOf(world, kind) === 0 && world.interaction.carry?.kind !== kind
 }
 
