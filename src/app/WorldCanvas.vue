@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef } from 'vue'
 import { createEmoteWatcher } from '../audio/soundEvents'
+import { chirpDelay } from '../audio/music'
+import { createMusicPlayer } from '../audio/musicPlayer'
 import { createSynth, type Synth } from '../audio/synth'
 import { chirpFor, panFor } from '../audio/voice'
 import { createPointerInput, type PointerInput } from '../input/pointer'
@@ -8,6 +10,7 @@ import { FULL_MOTION, motionSettings } from '../render/motion'
 import { drawScene } from '../render/scene'
 import { createStage, type Stage } from '../render/stage'
 import { creatureAt } from '../simulation/interaction'
+import { beatsAt, PARTY } from '../simulation/party'
 import { canTake, chestBox, pageDotAt, slotAt, toggleChest } from '../simulation/props'
 import { wornAt } from '../simulation/wearables'
 import type { World } from '../simulation/world'
@@ -17,6 +20,7 @@ import ChestToggle from './ChestToggle.vue'
 import DebugPanel from './DebugPanel.vue'
 import FirstVisitHint from './FirstVisitHint.vue'
 import MuteToggle from './MuteToggle.vue'
+import SoundNudge from './SoundNudge.vue'
 import { createDebugSnapshot, createPublisher, type DebugSnapshot } from './debugSnapshot'
 import { createFpsMeter } from './fpsMeter'
 import { createGameLoop, type GameLoop } from './gameLoop'
@@ -44,11 +48,33 @@ let soundOn = false
 let synth: Synth | null = null
 const watchEmotes = createEmoteWatcher()
 
+const music = createMusicPlayer()
+
 function toggleSound() {
   synth ??= createSynth()
   soundOn = !soundOn
   muted.value = !soundOn
   synth.setMuted(!soundOn)
+  if (soundOn) hideNudge(true)
+}
+
+// "Turn on sound for the music" (task #32b): when the party starts while muted — until sound has been on once.
+const nudgeVisible = ref(false)
+let soundEverOn = false
+let nudgeTimer: ReturnType<typeof setTimeout> | null = null
+let partyWasOn = false
+const NUDGE_SECONDS = 8
+function showNudge() {
+  if (soundEverOn || soundOn) return
+  nudgeVisible.value = true
+  if (nudgeTimer) clearTimeout(nudgeTimer)
+  nudgeTimer = setTimeout(() => hideNudge(false), NUDGE_SECONDS * 1000)
+}
+function hideNudge(forGood: boolean) {
+  if (forGood) soundEverOn = true
+  nudgeVisible.value = false
+  if (nudgeTimer) clearTimeout(nudgeTimer)
+  nudgeTimer = null
 }
 
 // Treasure chest (task #28): an accessible button laid over the chest drawn on the canvas. Its box only changes on
@@ -140,10 +166,19 @@ onMounted(() => {
       // stale plays on unmute).
       const events = watchEmotes(w)
       if (synth && soundOn) {
+        // During the party, chirps wait for the next half-beat — in time with the music.
+        const delay = w.party.on ? chirpDelay(beatsAt(w), PARTY.bpm) : 0
         for (const e of events) {
           const pan = panFor(e.creature.position.x, s.width)
-          synth.play(chirpFor(e.creature, e.kind), pan)
+          synth.play(chirpFor(e.creature, e.kind), pan, delay)
         }
+      }
+      // The party's music (task #32b), booked a little ahead on the audio clock.
+      music.update(w, synth?.audio() ?? null, !soundOn)
+      if (w.party.on !== partyWasOn) {
+        partyWasOn = w.party.on // a low-frequency UI change: written only when it flips
+        if (partyWasOn) showNudge()
+        else hideNudge(false)
       }
 
       if (!showDebug) return // zero cost while the overlay is off
@@ -190,6 +225,8 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeyDown)
   stopWatchingMotion?.()
   stopWatchingMotion = null
+  music.stop()
+  if (nudgeTimer) clearTimeout(nudgeTimer)
   synth?.close()
   synth = null
   loop = null
@@ -203,6 +240,7 @@ onBeforeUnmount(() => {
   <DebugPanel v-if="debugVisible && snapshot" :snapshot="snapshot" />
   <FirstVisitHint :visible="hintVisible" />
   <ChestToggle v-if="chestRect" :rect="chestRect" :open="chestOpen" @toggle="toggleChestUI" />
+  <SoundNudge :visible="nudgeVisible" @enable="toggleSound" />
   <MuteToggle :muted="muted" @toggle="toggleSound" />
 </template>
 

@@ -7,8 +7,8 @@
 import type { World } from './world'
 
 export const PARTY = {
-  /** Tempo (beats per minute) — house music. */
-  bpm: 124,
+  /** Tempo (beats per minute) — deep house / tech house. */
+  bpm: 126,
   /** Seconds for the party to fade fully in (lights dim) and out (lights come back up). */
   fadeIn: 2.5,
   fadeOut: 2,

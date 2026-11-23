@@ -35,9 +35,10 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 34 | Chest navigation: ‹ › arrows + page dots | done |
 | 35 | Fix: kandi cuffs drawn in front of the beard | done |
 | 32a | Party: disco ball + lights | done |
-| 32b | Party: music (+ "turn on sound" nudge) | todo |
+| 32b | Party: music (+ "turn on sound" nudge) | done |
 | 32c | Party: neon reef (seaweed + shells) | todo |
 | 32d | Party: dancing by personality | todo |
+| 36 | Party track picker: a small iPod by the mute button | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | dropped |
@@ -419,6 +420,14 @@ With 10 pages, the one-way ↻ circle takes forever to reach the end. Replace it
 - **Approved spec (owner, 2026-11-22):** `slotAt` returns 'prev' / 'next'; *new* `pageDotAt`, `goToPage`,
   `arrowPosition`, `pageDotPosition`; `turnPage(world, step)`; bigger dots (r 4, gap 14) with a forgiving hit area.
 
+### 36. Party track picker: a small iPod — owner request 2026-11-22
+During the party, a small **iPod** appears in the corner near the mute button to change tracks (the songs in
+`SONGS`: "Tide Pool Groove", "Deep End", "Deep End (Extended)", and any new ones). Replaces the dropped idea of
+skipping tracks by re-dropping the disco ball (it didn't feel right).
+- **Accept:** shows only during the party; accessible (a real button, keyboard + screen reader); next/previous
+  track, the current track's name; switching fades the old track out and starts the new one on the beat; all checks
+  pass.
+
 ### 32. Party: disco ball + club lights + music
 **Approved plan (owner, 2026-11-22): four steps, each its own branch + PR + feel-check.** The disco ball is one more
 chest item (one at a time); let go in the water, it slowly floats up to just below the top where it was placed and
@@ -428,10 +437,30 @@ everything. Extras approved: bubbles rise on the beat (32d), the Grumpy secretly
 - **32a Disco ball + lights:** the pool dims, mirror-ball light spots drift, soft colored spotlight beams sweep.
 - **32b Music:** original synthesized EDM/house groove (~124 BPM: four-on-the-floor kick, offbeat hats, rolling
   bass, chord stabs); starts with the ball, fades when it goes back; only when unmuted.
+  **Approved spec (owner, 2026-11-22):** deep, bass-heavy house — the style only, written from scratch, no copied
+  tracks/melodies/artist sounds. 126 BPM (`PARTY.bpm` 124 → 126), A minor, 4-bar loop Am–F–C–G. Deep sine sub +
+  detuned-saw growl bass with a moving filter, rolling syncopated offbeat line; punchy kick, clap on 2 & 4, swung
+  offbeat hats + 16th shaker, occasional rim; short dark minor stabs low in the mix; sidechain pump; intro bar (kick +
+  hats), a filter sweep every 8 bars; music under the chirps. *New* `audio/music.ts` (pure pattern,
+  `notesBetween`), *new* `audio/musicPlayer.ts` (instruments + look-ahead scheduler pinned to the beat clock,
+  re-pinned on > ~50 ms drift), `synth.ts` (shared context, chirp start delay), *new* `SoundNudge.vue`. Chirps wait
+  for the next half-beat during the party. Tests: pattern, key, swing, arrangement, chirp timing; tuning by ear.
+  **Owner feedback:** keep that song ("Tide Pool Groove") and add a second, "Deep End": more bass, builds and drops,
+  more variety; each time the disco ball is let go, skip to the next track. **Then:** "the super dancy part is
+  amazing but so short" — keep "Deep End" as-is and copy it into "Deep End (Extended)" (every section doubled,
+  16-bar drops that evolve halfway); touching the ball to change tracks didn't feel right → **one song** for now
+  (the extended one); the other songs are kept in code; a track picker is #36.
 - **32c Neon reef:** seaweed turns neon and pulses to the beat, more strands grow; shells sparkle and glint.
+  **Owner ideas (2026-11-22), for 32c/32d planning:** the **lights flash and move with the music** (pulse/sweep on
+  the beat, bigger and brighter in the drops — still ≤ 3 flashes/s: one pulse per beat at 126 BPM ≈ 2.1/s is fine,
+  16ths are not), and the **disco ball throws visible rays of light**.
 - **32d Dancing:** creatures notice and dance in their own style and chirp now and then — Friendly bouncy bops,
   Peeker sways and edges closer, Scaredy shy wiggles at the edge (braver over time), the Grumpy goes to the
   bottom-right corner and grumps (💢); a held glow stick waves to the beat.
+  **Owner idea (2026-11-22):** dancing follows the song's energy — little bobs and movements during the intro and
+  builds, **super into it when the drop hits**, calmer in the breakdown. Design note: the simulation will need the
+  song's section map (intro / build / drop / breakdown), so move it into a small shared pure module that both the
+  simulation and the music read (the simulation must not import audio code).
 The disco ball and club lights come out together: the pool dims, the disco ball throws moving spots of light, colored
 beams sweep, an **original synthesized tech-house / bass-house groove** plays (four-on-the-floor kick, offbeat hats,
 rolling bassline, chord stabs — the vibe of an Austin dance festival, not a copy of any real track or artist; no

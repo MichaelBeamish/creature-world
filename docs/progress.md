@@ -2,6 +2,26 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #32b: Party — music ✅
+- **Original deep house, synthesized live** (no audio files, nothing copied): *new* `audio/music.ts` holds the songs
+  as pure data; *new* `audio/musicPlayer.ts` plays them — kick, clap, snare, hats, shaker, rim, growl bass, sub,
+  wobble bass, stabs, pads, sweep, riser, impact — with a look-ahead scheduler pinned to the party's beat clock
+  (126 BPM) and a sidechain pump. Music fades with the party and plays only with sound on.
+- **Songs:** "Tide Pool Groove" (a 4-bar loop), "Deep End" (builds and drops), and the party song **"Deep End
+  (Extended)"** — every section doubled, 16-bar drops that evolve halfway (~2 min, loops back to the first build).
+- **Extras:** a "🔈 Turn on sound for the music" nudge when the party starts muted (*new* `SoundNudge.vue`); chirps
+  wait for the next half-beat during the party (the song's A minor shares the chirps' pentatonic notes).
+- **Owner feedback rounds:** deep, bass-heavy house in the style of the artists named (style only); keep the first
+  song and add one with more bass, builds and drops; skipping tracks by re-dropping the ball didn't feel right → one
+  song, the drops made longer via a copy ("don't want to risk losing this"); a track picker (iPod) is #36.
+- **Bugs found by tests:** the shaker played through the "silent" beat before a drop. Browser-script lessons: grab
+  the ball only after it has risen; a unit test proved the game was fine when the script wasn't.
+- **Verified:** 341 tests (+25): patterns, swing, key, arrangement, builds and silent beats, drops, loops, chirp
+  timing, the party song. Real Chrome: nudge → unmute → music through intro, build and drop with no errors. Owner,
+  by ear: "a lot better thank you. verified." All five checks pass; docs updated.
+- **Learned:** "two clocks" scheduling for web audio; songs as data (a new song is data, not audio code); copy-then-
+  edit to protect something that works; sidechain pumping.
+
 ## 2026-11-22 — Task #32a: Party — disco ball + lights ✅
 - **Plan:** the party (#32) is split into four steps, each its own PR: 32a disco ball + lights, 32b music, 32c neon
   reef, 32d dancing. All four of Claude's extra ideas approved (beat bubbles, the Grumpy's secret toe-tap, a "turn on

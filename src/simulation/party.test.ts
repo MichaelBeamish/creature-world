@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { setPresenceInput } from './presence'
 import { beatsAt, PARTY } from './party'
 import { canTake, DISCO, dropProp, removeProp } from './props'
 import { createWorld, stepWorld, type World } from './world'
@@ -68,4 +69,37 @@ describe('the party', () => {
     run(w, 3)
     expect(beatsAt(w)).toBeCloseTo((3 * PARTY.bpm) / 60, 0)
   })
+
+  it('moving the ball mid-party keeps the music going (the beat clock does not restart)', () => {
+    const w = createWorld({ seed: 3, width: 1280, height: 720, creatureCount: 0 })
+    const first = dropProp(w, 'discoBall', 700, 500)
+    run(w, 2)
+    const before = beatsAt(w)
+    removeProp(w, first.id)
+    dropProp(w, 'discoBall', 400, 300)
+    run(w, DT)
+    expect(beatsAt(w)).toBeGreaterThan(before)
+  })
+})
+
+it('the hanging disco ball can be grabbed and moved', () => {
+  const w = createWorld({ seed: 3, width: 1280, height: 720, creatureCount: 0 })
+  dropProp(w, 'discoBall', 700, 450)
+  for (let t = 0; t < 20; t += 1 / 60) stepWorld(w, 1 / 60)
+  const ball = w.props.items.find((p) => p.kind === 'discoBall')!
+  expect(ball.position.y).toBeCloseTo(DISCO.hangY, 0)
+  const steps: [number, number, boolean][] = [
+    [700, DISCO.hangY, false],
+    [700, DISCO.hangY, true],
+    [600, 200, true],
+    [500, 300, true],
+    [500, 300, false],
+  ]
+  for (const [x, y, pressed] of steps) {
+    setPresenceInput(w.presence, x, y, true, pressed)
+    stepWorld(w, 1 / 60)
+  }
+  const moved = w.props.items.find((p) => p.kind === 'discoBall')!
+  expect(moved.position.x).toBe(500)
+  expect(w.party.on).toBe(true)
 })

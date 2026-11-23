@@ -84,7 +84,9 @@
 |---|---|---|
 | `src/audio/voice.ts` | Pure voice design: pitch/timbre/contour per creature and emote or interaction sound | `chirpFor`, `panFor`, `pentatonicHz`, `ChirpSpec`, `VoiceKind` |
 | `src/audio/soundEvents.ts` | Detects each new emote and interaction sound exactly once (ink is deliberately silent) | `createEmoteWatcher` |
-| `src/audio/synth.ts` | Plays chirp specs (oscillator → filter → envelope → pan → master) | `createSynth`, `Synth` |
+| `src/audio/synth.ts` | Plays chirp specs (oscillator → filter → envelope → pan → master); optional start delay (chirps on the half-beat during the party); shares its audio context and master with the music | `createSynth`, `Synth` |
+| `src/audio/music.ts` | The party songs as pure data (task #32b), original deep house in A minor at the party tempo: "Tide Pool Groove" (a 4-bar loop, intro + 8-bar sweeps), "Deep End" (intro → build → drop → breakdown → build → drop 2, looping) and "Deep End (Extended)" (every section doubled, 16-bar drops that evolve halfway — **the party song**); the others are kept for a future track picker; chirp timing | `SONG`, `SONGS`, `PARTY_SONG`, `Song`, `DEEP_END`, `deepEndBar`, `DEEP_END_EXTENDED`, `deepEndExtendedBar`, `A_MINOR`, `Instrument`, `MusicNote`, `stepBeat`, `barNotes`, `notesBetween`, `midiHz`, `chirpDelay` |
+| `src/audio/musicPlayer.ts` | Plays the songs with Web Audio: synthesized kick / clap / snare / hats / shaker / rim / growl bass / sub / wobble bass / stabs / pads / sweep / riser / impact, a look-ahead scheduler pinned to the beat clock, the sidechain pump, fades with the party; a fresh channel per party (a restarted song fades the old one out fast) | `MUSIC`, `createMusicPlayer`, `MusicPlayer`, `AudioOut` |
 
 ### `src/app/` — Vue shell, game loop, wiring
 
@@ -100,6 +102,7 @@
 | `src/app/reducedMotion.ts` | Live watcher for the OS "reduce motion" setting | `watchReducedMotion` |
 | `src/app/DebugPanel.vue` | Display-only debug panel (press D / `?debug`) | — |
 | `src/app/MuteToggle.vue` | Accessible sound on/off button (starts muted), bottom-right | — |
+| `src/app/SoundNudge.vue` | "🔈 Turn on sound for the music": a button beside the mute toggle when the party starts while muted (task #32b) | — |
 | `src/app/ChestToggle.vue` | Invisible but real button laid over the drawn chest: Tab, Enter/Space, click/tap; `aria-expanded` | — |
 | `src/app/FirstVisitHint.vue` | "move your cursor near them…" hint, gone after the first interaction | — |
 
@@ -230,6 +233,12 @@
 | **Sound** | | |
 | Overall volume | `MASTER_VOLUME` | `src/audio/synth.ts` |
 | Max chirps at once | `MAX_VOICES` | `src/audio/synth.ts` |
+| How loud the party music is (under the chirps) | `MUSIC.volume` | `src/audio/musicPlayer.ts` |
+| How hard the bass/stabs pump on each kick | `MUSIC.duck` | `src/audio/musicPlayer.ts` |
+| How much the music shuffles (swing) | `SONG.swing` | `src/audio/music.ts` |
+| Where "Deep End"'s builds, drops and breakdown fall (bars) | `DEEP_END.drop` | `src/audio/music.ts` |
+| How long each part of the party song lasts (bars) | `DEEP_END_EXTENDED.drop` | `src/audio/music.ts` |
+| Which song the party plays | `PARTY_SONG` | `src/audio/music.ts` |
 | A personality's voice (wave, register, filter) | `TIMBRE.grumpy` | `src/audio/voice.ts` |
 | **Interaction (boop, grab & drag)** | | |
 | How forgiving clicking a head is | `INTERACTION.headTolerance` | `src/simulation/interaction.ts` |
