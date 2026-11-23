@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { momentAt, PARTY, PARTY_SONG_MAP } from '../simulation/party'
-import { beatGlow, LIGHTS, spotGlow, twinkle } from './party'
+import { beatGlow, LIGHTS, neonClumpCount, spotGlow, twinkle } from './party'
 
 /** Count flashes (WCAG: a rise and a fall of at least 10%) in every 1-second window of a brightness signal. */
 function maxFlashesPerSecond(brightness: (time: number) => number, seconds: number): number {
@@ -81,5 +81,13 @@ describe('party lights are light-safe (tasks #32a, #32c)', () => {
         expect(b).toBeLessThanOrEqual(1)
       }
     }
+  })
+})
+
+describe('the neon reef on small screens (task #42)', () => {
+  it('grows clumps by the width: 12 on a desktop, a few on a phone', () => {
+    expect(neonClumpCount(1280)).toBe(LIGHTS.extraSeaweed)
+    expect(neonClumpCount(1920)).toBe(LIGHTS.extraSeaweed)
+    expect(neonClumpCount(390)).toBe(3)
   })
 })

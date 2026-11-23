@@ -11,6 +11,11 @@ import {
   slotAt,
   slotPosition,
   toggleChest,
+  chestCovers,
+  DISCO,
+  discoRadius,
+  TOY,
+  toyRadius,
 } from './props'
 import { createScenery, SCENERY } from './scenery'
 import { createWorld, stepWorld, type World } from './world'
@@ -141,5 +146,77 @@ describe('a shrimp in the water', () => {
     const p = dropProp(w, 'shrimp', 640, w.height - 5)
     expect(p.resting).toBe(true)
     expect(p.position.y).toBe(restY(w))
+  })
+})
+
+describe('small screens (task #42)', () => {
+  it("chestCovers: anything reaching left of the chest's right edge (plus a gap) is in its corner", () => {
+    const right = CHEST.left + CHEST.width
+    expect(chestCovers(right - 10, 0)).toBe(true)
+    expect(chestCovers(right + 30, 25)).toBe(true) // its side reaches the chest
+    expect(chestCovers(right + 60, 25)).toBe(false)
+  })
+
+  it('toys and the disco ball are a little smaller on a phone, the same on a large screen', () => {
+    const big = world()
+    const phone = createWorld({ seed: 8, width: 390, height: 844, creatureCount: 0 })
+    expect(toyRadius(big, 'ball')).toBe(TOY.radius.ball)
+    expect(discoRadius(big)).toBe(DISCO.radius)
+    expect(toyRadius(phone, 'ball')).toBeCloseTo(TOY.radius.ball * 0.8)
+    expect(toyRadius(phone, 'duck')).toBeCloseTo(TOY.radius.duck * 0.8)
+    expect(discoRadius(phone)).toBeCloseTo(DISCO.radius * 0.8)
+  })
+
+  it('the disco ball floats up to the upper-left corner on a phone, straight up on a large screen', () => {
+    const phone = createWorld({ seed: 8, width: 390, height: 844, creatureCount: 0 })
+    const small = dropProp(phone, 'discoBall', 250, 600)
+    const big = world()
+    const large = dropProp(big, 'discoBall', 640, 500)
+    for (let i = 0; i < 30 * 60; i++) {
+      stepWorld(phone, DT)
+      stepWorld(big, DT)
+    }
+    expect(small.position.x).toBeCloseTo(discoRadius(phone) + DISCO.cornerGap, 0)
+    expect(small.position.y).toBeCloseTo(DISCO.hangY, 0)
+    expect(large.position.x).toBe(640)
+    expect(large.position.y).toBeCloseTo(DISCO.hangY, 0)
+  })
+})
+
+describe('the chest is solid for toys (task #42)', () => {
+  it('a ball rolling left along the sand bounces off the chest instead of rolling over it', () => {
+    for (const [width, height] of [
+      [1280, 720],
+      [390, 844],
+    ] as const) {
+      const w = createWorld({ seed: 8, width, height, creatureCount: 0 })
+      const box = chestBox(w)
+      const ball = dropProp(w, 'ball', box.x + box.width + 120, restY(w) - 40)
+      for (let i = 0; i < 3 * 60; i++) stepWorld(w, DT) // settle on the sand first
+      ball.velocity.x = -400
+      const r = toyRadius(w, 'ball')
+      let deepest = 0 // how far the ball ever got into the chest's box
+      for (let i = 0; i < 4 * 60; i++) {
+        stepWorld(w, DT)
+        const cx = Math.max(box.x, Math.min(box.x + box.width, ball.position.x))
+        const cy = Math.max(box.y, Math.min(box.y + box.height, ball.position.y))
+        deepest = Math.max(deepest, r - Math.hypot(ball.position.x - cx, ball.position.y - cy))
+      }
+      expect(deepest).toBeLessThan(1) // never into the chest
+      expect(ball.position.x).toBeGreaterThan(box.x + box.width) // and it ends up to the right of it
+    }
+  })
+
+  it('a ball dropped onto the chest lands on its lid, not inside it', () => {
+    const w = world()
+    const box = chestBox(w)
+    const ball = dropProp(w, 'ball', box.x + box.width / 2, box.y - 150)
+    for (let i = 0; i < 6 * 60; i++) stepWorld(w, DT)
+    const r = toyRadius(w, 'ball')
+    // It lands on the lid (the wall's edge current may nudge it along, or off to the right — never into the chest).
+    const onLid =
+      ball.position.x <= box.x + box.width && Math.abs(ball.position.y - (box.y - r)) < 1
+    const offToTheRight = ball.position.x >= box.x + box.width + r - 1
+    expect(onLid || offToTheRight).toBe(true)
   })
 })

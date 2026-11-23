@@ -11,10 +11,17 @@
  * a calm colored glow.
  */
 import { partyMoment, type PartyMoment } from '../simulation/party'
-import { DISCO } from '../simulation/props'
+import { chestSceneryEdge, DISCO, discoRadius } from '../simulation/props'
 import { floorHeight } from '../simulation/scenery'
 import type { World } from '../simulation/world'
-import { sandLine, sceneryAt, seaweedDance, seaweedStrand, type SeaweedDance } from './floor'
+import {
+  sandLine,
+  sceneryAt,
+  seaweedDance,
+  seaweedStrand,
+  underChest,
+  type SeaweedDance,
+} from './floor'
 import type { MotionSettings } from './motion'
 import { hash2 } from './noise'
 
@@ -29,9 +36,11 @@ export const LIGHTS = {
   /** Disco ball rays: how many, and how far they reach at low / full energy (px). */
   rays: 16,
   rayReach: [180, 620],
-  /** Neon seaweed colors; extra clumps that grow during the party, and how long they take to grow (s). */
+  /** Neon seaweed colors; extra clumps that grow during the party — at most `extraSeaweed`, one per `seaweedSpacing`
+   *  px of open sand, so a phone gets a few instead of a bunch (task #42) — and how long they take to grow (s). */
   neon: ['#ff4fd8', '#3de8ff', '#7dff5a', '#b06bff'],
   extraSeaweed: 12,
+  seaweedSpacing: 95,
   growSeconds: 8,
 } as const
 
@@ -101,7 +110,7 @@ export function drawPartyLights(
     drawRays(ctx, from, ball ? ball.angle * moves : 0, k, m, moves)
     ctx.restore()
   }
-  if (ball) drawDiscoBall(ctx, ball.position.x, ball.position.y, DISCO.radius, ball.angle, 1)
+  if (ball) drawDiscoBall(ctx, ball.position.x, ball.position.y, discoRadius(world), ball.angle, 1)
 }
 
 /** Soft spotlight beams from the surface: wider, faster sweeps with the energy; a swing on the beat in the drops. */
@@ -228,6 +237,7 @@ function drawNeonReef(
   ctx.lineJoin = 'round'
   for (const item of world.scenery) {
     const { x, y } = sceneryAt(item, width, height)
+    if (underChest(item, x)) continue // not drawn on the floor either (floor.ts)
     if (item.kind === 'seaweed') {
       neonClump(ctx, item, x, sandLine(x, top) + 6, time, dance, k * glow)
     } else if (item.kind === 'shell') {
@@ -237,13 +247,33 @@ function drawNeonReef(
   // Extra clumps sprout along the sand during the party (fixed spots; they grow in, and shrink as it ends).
   const grow = Math.min(1, Math.max(0, (world.time - world.party.since) / LIGHTS.growSeconds)) * k
   if (grow > 0.01) {
-    for (let i = 0; i < LIGHTS.extraSeaweed; i++) {
-      const x = ((i + 0.5) / LIGHTS.extraSeaweed + (hash2(i, 901) - 0.5) * 0.06) * width
-      if (x < 140) continue // leave the chest clear
+    // Spread over the sand between the chest and the right edge (task #42) — right up to the chest, never over it.
+    const { left, right } = neonSpan(width)
+    const count = neonClumpCount(width)
+    const step = count > 1 ? (right - left) / (count - 1) : 0
+    for (let i = 0; i < count; i++) {
+      const jitter = (hash2(i, 901) - 0.5) * 0.4 * step
+      const x = Math.max(left, Math.min(right, left + i * step + jitter))
       const size = (45 + 70 * hash2(i, 902)) * easeOut(grow)
       neonClump(ctx, { id: 1000 + i, size }, x, sandLine(x, top) + 6, time, dance, k * glow)
     }
   }
+}
+
+/** How far (px) an extra neon clump spreads sideways from its root (its strands and their sway). */
+const NEON_REACH = 24
+
+/** Where the extra neon clumps may root (px): from just right of the chest to near the right edge. */
+function neonSpan(width: number): { left: number; right: number } {
+  const left = chestSceneryEdge() + NEON_REACH
+  return { left, right: Math.max(left, width - NEON_REACH) }
+}
+
+/** How many extra neon clumps grow during the party: one per `LIGHTS.seaweedSpacing` px of open sand (at least one),
+ *  at most `extraSeaweed`. */
+export function neonClumpCount(width: number): number {
+  const { left, right } = neonSpan(width)
+  return Math.min(LIGHTS.extraSeaweed, Math.floor((right - left) / LIGHTS.seaweedSpacing) + 1)
 }
 
 function easeOut(x: number): number {

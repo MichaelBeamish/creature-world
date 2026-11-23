@@ -97,8 +97,9 @@ describe('movement over 60 seconds (normal window)', () => {
 describe('crowded and resized worlds', () => {
   it('in a small window, spawn overlaps are resolved (to sub-pixel) within 10 s and nobody leaves the bounds', () => {
     for (const seed of SEEDS) {
-      const world = createWorld({ seed, width: 520, height: 360, creatureCount: 5 })
-      expect(totalOverlap(world)).toBeGreaterThan(1) // every seed really starts overlapping (measured 5–70 px)
+      // Creatures are smaller on a small screen (task #42), so it takes a crowd of 9 to start overlapping here.
+      const world = createWorld({ seed, width: 520, height: 360, creatureCount: 9 })
+      expect(totalOverlap(world)).toBeGreaterThan(1) // every seed really starts overlapping (measured 10–61 px)
       for (let i = 0; i < 10 * 60; i++) {
         stepWorld(world, DT)
         for (const f of footprints(world)) expect(insideBounds(f, world)).toBe(true)

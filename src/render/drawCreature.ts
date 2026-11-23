@@ -38,6 +38,8 @@ export interface CreaturePose {
   dance?: { style: DanceStyle; amount: number; beats: number } | null
   /** Being cheered up by the rose (task #38): seconds into the moment. */
   cheerUp?: number | null
+  /** 0..1 — how far the party is in (task #42): the creature's colors dim with the pool. */
+  party?: number
 }
 
 export function drawCreature(
@@ -90,7 +92,8 @@ export function drawCreature(
   const warning = held
     ? Math.max(0, held.stress - INTERACTION.stressWarning) / (1 - INTERACTION.stressWarning)
     : 0
-  const light = (base: number) => base - 6 * grumpy + 6 * scared - MOOD.stressDarken * warning
+  const dim = partyDarken(pose.party ?? 0)
+  const light = (base: number) => base - 6 * grumpy + 6 * scared - MOOD.stressDarken * warning - dim
   const colors = {
     tentacle: `hsl(${hue} ${sat(40)}% ${light(60)}%)`,
     fuzz: `hsl(${hue} ${sat(42)}% ${light(64)}%)`,
@@ -303,7 +306,14 @@ const MOOD = {
   flush: 0.6,
   /** Extra fur length when bristling (1 + this × mood). */
   bristle: 1.6,
+  /** At the party (task #42): body colors dim by up to this much lightness (%), so they sit in the dimmed pool. */
+  partyDarken: 14,
 } as const
+
+/** How much lightness (%) the party takes off a creature's body colors: 0 without a party, the most at its peak. */
+export function partyDarken(partyLevel: number): number {
+  return MOOD.partyDarken * Math.min(1, Math.max(0, partyLevel))
+}
 
 /** Motion amplitudes — kept subtle so creatures read as calm, not jittery. */
 const BREATH = { height: 0.03, width: 0.02, widthLag: 0.8 } as const

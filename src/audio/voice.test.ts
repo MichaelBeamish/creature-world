@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { CREATURE_LIMITS } from '../simulation/creature'
 import { ARCHETYPES, type Archetype } from '../simulation/traits'
 import { createWorld } from '../simulation/world'
 import { baseStep, chirpFor, panFor, pentatonicHz, type VoiceKind } from './voice'
@@ -24,6 +25,8 @@ function creature(archetype: Archetype, size: number, id = 1) {
   c.archetype = archetype
   c.traits = { ...ARCHETYPES[archetype], energy: 0.6 }
   c.size = size
+  c.sizeRank =
+    (size - CREATURE_LIMITS.minSize) / (CREATURE_LIMITS.maxSize - CREATURE_LIMITS.minSize)
   return c
 }
 
@@ -121,5 +124,13 @@ describe('panFor', () => {
     expect(panFor(-300, 1000)).toBeCloseTo(-0.7, 9)
     expect(panFor(5000, 1000)).toBeCloseTo(0.7, 9)
     expect(panFor(10, 0)).toBe(0)
+  })
+})
+
+describe('voices on a small screen (task #42)', () => {
+  it('keep their pitch though the creatures are smaller', () => {
+    const big = createWorld({ seed: 7, width: 1280, height: 720, creatureCount: 5 }).creatures
+    const phone = createWorld({ seed: 7, width: 390, height: 844, creatureCount: 5 }).creatures
+    phone.forEach((c, i) => expect(baseStep(c)).toBe(baseStep(big[i]!)))
   })
 })

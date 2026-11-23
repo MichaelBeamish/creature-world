@@ -3,7 +3,7 @@
 [![CI](https://github.com/MichaelBeamish/creature-world/actions/workflows/ci.yml/badge.svg)](https://github.com/MichaelBeamish/creature-world/actions/workflows/ci.yml)
 [![Deploy](https://github.com/MichaelBeamish/creature-world/actions/workflows/deploy.yml/badge.svg)](https://github.com/MichaelBeamish/creature-world/actions/workflows/deploy.yml)
 
-**▶ Play it live: [michaelbeamish.github.io/creature-world](https://michaelbeamish.github.io/creature-world/)** (desktop browser; sound is off until you
+**▶ Play it live: [michaelbeamish.github.io/creature-world](https://michaelbeamish.github.io/creature-world/)** (desktop or phone; sound is off until you
 click 🔈)
 
 Shown on my portfolio, [michaelbeamish.github.io](https://michaelbeamish.github.io/), as **The Ink Tank**.
@@ -61,6 +61,8 @@ pnpm dev        # http://localhost:5173
 - Press **D** (dev) or add `?debug` to the URL to see what each creature perceives and feels, plus FPS.
 - Add `?seed=42` to revisit a specific world (each visit otherwise gets a random one).
 - Honors your OS **reduce motion** setting.
+- Fits small screens: on a phone (or a small window) the creatures and toys are smaller, the neon reef thins out
+  and the disco ball hangs in the top-left corner.
 
 | Command                                   | Purpose                              |
 | ----------------------------------------- | ------------------------------------ |

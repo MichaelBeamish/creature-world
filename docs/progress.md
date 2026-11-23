@@ -2,6 +2,21 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-23 — Task #42: Small-screen layout ✅
+- Phones and small windows (shorter side < 600 px, *new* `SCREEN` / `isSmallScreen` in `scenery.ts`) get a scaled-down
+  scene, easing smoothly towards 390 px: creatures 0.65–1 × size (fixed at spawn; *new* `Creature.sizeRank` keeps
+  their voice pitch), ball / ducks / disco ball 0.8–1 × (*new* `toyRadius`, `discoRadius`); the disco ball floats to
+  the upper-left corner; nothing in the chest's corner (rocks, shells, seaweed and its neon skipped at draw time,
+  *new* `underChest` / `chestCovers`); extra neon clumps spread over the open sand by width (*new* `neonClumpCount`);
+  creatures dim with the party (*new* `partyDarken`). Added at review: the chest is solid for toys — its sides are
+  walls, so the big ball bounces off instead of climbing over; toys from above land on the lid.
+- **Verified:** all five checks (388 tests, 13 new); one existing test changed deliberately (the crowded 520×360
+  window now needs 9 creatures to start overlapping); owner checked on desktop and phone, standalone and in the
+  portfolio iframe: "verified".
+- **Learned:** breakpoint + interpolation instead of device detection; judging by the shorter side makes portrait and
+  landscape agree; circle-vs-box collision, plus a game-feel tweak (walls) where the physics alone let the ball climb
+  the corner — the phone-size test caught it, the desktop one didn't.
+
 ## 2026-11-23 — Task #41: Show the app as "The Ink Tank" ✅
 - The portfolio (michaelbeamish.github.io) embeds the live app as "The Ink Tank", so visitors now see that name:
   `index.html` `<title>` and `og:title`, and the console seed message (`[The Ink Tank] seed …`). The repo,

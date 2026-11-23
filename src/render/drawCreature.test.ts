@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CREATURE_LIMITS } from '../simulation/creature'
 import {
+  partyDarken,
   grabbedTentacle,
   propulsion,
   swimAngle,
@@ -105,5 +106,14 @@ describe('jet swimming (fast: a chase or an escape)', () => {
   it('always turns the short way round', () => {
     // Heading straight down is ±π; from a lean of 3 rad it must turn by a little, not almost a full circle.
     expect(Math.abs(swimAngle(3, 0, 500, 1) - 3)).toBeLessThan(0.2)
+  })
+})
+
+describe('creatures at the party (task #42)', () => {
+  it('dim with the party: not at all without one, the most at its peak', () => {
+    expect(partyDarken(0)).toBe(0)
+    expect(partyDarken(0.5)).toBeGreaterThan(0)
+    expect(partyDarken(1)).toBeGreaterThan(partyDarken(0.5))
+    expect(partyDarken(2)).toBe(partyDarken(1)) // never past the peak
   })
 })

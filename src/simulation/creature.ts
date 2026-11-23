@@ -26,8 +26,10 @@ export interface Creature {
   velocity: Vec2
   /** Body color hue in degrees [0, 360). */
   hue: number
-  /** Mantle half-width in world units; all body proportions scale with it. */
+  /** Mantle half-width in world units; all body proportions scale with it. Smaller on small screens (task #42). */
   size: number
+  /** Where its size fell in the size range, 0 (smallest) .. 1 (biggest), whatever the screen — its voice uses this. */
+  sizeRank: number
   tentacleCount: number
   /** Idle-animation state (breathing, sway, blinking). */
   anim: CreatureAnimation
@@ -128,9 +130,14 @@ export function createCreature(
   hue: number,
   others: readonly Creature[] = [],
   archetype: Archetype = 'friendly',
+  /** × size: below 1 on small screens (see `creatureScale`). */
+  scale = 1,
 ): Creature {
   const traits = createTraits(rng, archetype)
-  const size = range(rng, CREATURE_LIMITS.minSize, CREATURE_LIMITS.maxSize)
+  const baseSize = range(rng, CREATURE_LIMITS.minSize, CREATURE_LIMITS.maxSize)
+  const size = baseSize * scale
+  const sizeRank =
+    (baseSize - CREATURE_LIMITS.minSize) / (CREATURE_LIMITS.maxSize - CREATURE_LIMITS.minSize)
   const tentacleCount = int(rng, CREATURE_LIMITS.minTentacles, CREATURE_LIMITS.maxTentacles)
 
   let best = randomPosition(rng, bounds, size)
@@ -151,6 +158,7 @@ export function createCreature(
     velocity: vec2(0, 0),
     hue: ((hue % 360) + 360) % 360,
     size,
+    sizeRank,
     tentacleCount,
     anim: createAnimation(rng),
     wanderAngle: range(rng, 0, Math.PI * 2),

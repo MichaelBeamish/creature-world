@@ -30,6 +30,8 @@
 - **Social (minimal):** creatures don't overlap and occasionally glance at a nearby creature.
 - **Debug overlay (dev only):** perception radii, current behavior state, trait values, FPS.
 - **Mobile fallback:** a tap acts as a brief cursor presence. No further mobile tuning.
+  *Since then (task #42, post-MVP):* small screens get a scaled-down layout (smaller creatures and toys, fewer neon
+  clumps, a clear chest corner, the disco ball in the upper-left corner).
 
 ## Out of scope (see `roadmap.md`)
 LLM conversation · persistence · needs/hunger/lifecycle · rich creature-to-creature play ·

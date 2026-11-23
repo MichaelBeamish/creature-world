@@ -5,6 +5,7 @@
  * Pure function of the world: reads state, never mutates it.
  */
 import { isWearable, PROPS, TOY, type Prop } from '../simulation/props'
+import { propScale } from '../simulation/scenery'
 import { drawFloatingBalloon, drawWearableIcon } from './wearables'
 import type { World } from '../simulation/world'
 import type { MotionSettings } from './motion'
@@ -24,8 +25,9 @@ export function drawProps(
   motion: MotionSettings,
 ): void {
   // (The disco ball is drawn later, above the party's dimming — see party.ts.)
+  const toyScale = propScale(world.width, world.height) // toys are a little smaller on small screens (task #42)
   for (const p of world.props.items)
-    if (p.kind !== 'discoBall') drawProp(ctx, p, world.time, motion)
+    if (p.kind !== 'discoBall') drawProp(ctx, p, world.time, motion, toyScale)
 }
 
 function drawProp(
@@ -33,6 +35,7 @@ function drawProp(
   p: Prop,
   time: number,
   motion: MotionSettings,
+  toyScale: number,
 ): void {
   if (p.kind === 'balloon') {
     // Let go of: full size (as when held), floating up and away.
@@ -59,11 +62,11 @@ function drawProp(
     // Bob at the surface (toned down under reduced motion); the spin turns it to face left / right.
     const bob = Math.sin(time * 2.2 + p.id) * 2 * motion.sway
     const tilt = Math.sin(time * 1.6 + p.id) * 0.12 * motion.sway + Math.sin(p.angle) * 0.15
-    drawDuck(ctx, p.position.x, p.position.y + bob, 1, Math.cos(p.angle) >= 0 ? 1 : -1, tilt)
+    drawDuck(ctx, p.position.x, p.position.y + bob, toyScale, Math.cos(p.angle) >= 0 ? 1 : -1, tilt)
     return
   }
   if (p.kind === 'ball') {
-    drawBall(ctx, p.position.x, p.position.y, 1, p.angle)
+    drawBall(ctx, p.position.x, p.position.y, toyScale, p.angle)
     return
   }
   // Sinking: a slow tumble; resting: lying still, slightly tilted.

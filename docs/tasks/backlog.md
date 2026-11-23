@@ -44,7 +44,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 39 | A bigger soccer ball, up to 3 ducks | done |
 | 40 | Public deploy (GitHub Pages) | done |
 | 41 | Show the app as "The Ink Tank" | done |
-| 42 | Small-screen layout (creatures, neon reef, chest, disco ball) | todo |
+| 42 | Small-screen layout (creatures, neon reef, chest, disco ball) | done |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | dropped |
@@ -435,7 +435,7 @@ name; the repo, package, URL and project name stay "Creature World".
 - **Approved spec (owner, 2026-11-23):** `index.html` `<title>` + `og:title`; `WorldCanvas.vue` `console.info` prefix;
   one README line under "Play it live".
 
-### 42. Small-screen layout — owner request 2026-11-23 — todo
+### 42. Small-screen layout — owner request 2026-11-23 — done
 More a responsive issue than a mobile one: on phones and small windows the scene looks crowded. It must work both
 standalone and inside the portfolio iframe.
 - Creatures get a **smaller size limit** on small screens.
@@ -443,7 +443,24 @@ standalone and inside the portfolio iframe.
   the treasure chest** (today it is in front).
 - **Shells and rocks** don't spawn near the bottom of the chest (they poke out from under it).
 - **Small screens only:** the disco ball floats up **and to the upper-left corner**.
-- **Accept:** to be refined in `/plan-task 42`.
+- Also (owner, at planning): creatures dim a little during the party; on small screens the disco ball, soccer ball and
+  ducks shrink a little.
+- **Accept:** "small" = the window's shorter side < 600 CSS px. (1) Creatures spawn at 0.65–1 × today's size there,
+  scaled smoothly; ≥ 600 px exactly as today; same seed → same creatures, only smaller; voice pitch unchanged.
+  (2) Extra neon clumps = min(12, width ÷ 105 px). (3) With the party on, the chest stays dimmed and no seaweed or neon
+  is drawn in front of or under it. (4) No rock, shell or seaweed under the chest or touching its right edge, at any
+  width. (5) Small screens: the disco ball floats up *and* to the upper-left corner (taken out or let go); large
+  screens: straight up. (6) Works standalone and in the portfolio iframe. (7) Creatures slightly dimmed during the
+  party, fading with it. (8) Small screens: ball, ducks and disco ball 0.8–1 × size, scaled smoothly, physics/play/dance
+  still work. All checks pass.
+- **Approved spec (owner, 2026-11-23):** *new* `SCREEN`, `isSmallScreen`, `creatureScale`, `propScale`
+  (`scenery.ts`); `createCreature` scale + *new* `Creature.sizeRank` (voice `baseStep` uses it); *new* `chestCovers`,
+  `toyRadius`, `discoRadius` (`props.ts`), the disco ball eases to the upper left in `stepProps`; *new*
+  `neonClumpCount` (`render/party.ts`); scenery under the chest skipped at draw time; party lightness offset in
+  `drawCreature`. Draw order unchanged (the chest stays dimmed).
+- **Added at review (owner, 2026-11-23):** the chest is solid for toys (its sides are walls, so the big ball bounces
+  off instead of rolling over it; toys falling from above land on the lid); the extra neon clumps spread over the open
+  sand from just right of the chest to the right edge (on a phone they had only grown on the right half).
 
 ### 37. Casting: one Grumpy, one Friendly — owner request 2026-11-22 — done
 "Two grumpies is too much." **Never two Grumpies or two Friendlies — only the Scaredy and the Peeker may repeat.**

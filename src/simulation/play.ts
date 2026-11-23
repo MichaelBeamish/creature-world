@@ -17,7 +17,7 @@ import type { Creature } from './creature'
 import { showEmote } from './expression'
 import { recordSound } from './interaction'
 import type { IntentKind } from './mindState'
-import { TOY, type Prop } from './props'
+import { toyRadius, type Prop } from './props'
 import type { Vec2 } from './vec2'
 import type { World } from './world'
 
@@ -198,10 +198,11 @@ export function playTarget(world: World, c: Creature, out: Vec2): { away: boolea
   const along = toC.x * gx + toC.y * gy // negative = behind
   const lateral = Math.abs(toC.x * -gy + toC.y * gx)
   // (Measured from the toy's edge, so a big ball still leaves room to get behind it.)
-  const behind = c.size * PLAY.behind + TOY.radius[toy.kind as 'duck' | 'ball']
+  const r = toyRadius(world, toy.kind as 'duck' | 'ball')
+  const behind = c.size * PLAY.behind + r
   if (along < 0 && lateral < c.size) {
-    out.x = toy.position.x + gx * (c.size + TOY.radius[toy.kind as 'duck' | 'ball'])
-    out.y = toy.position.y + gy * (c.size + TOY.radius[toy.kind as 'duck' | 'ball'])
+    out.x = toy.position.x + gx * (c.size + r)
+    out.y = toy.position.y + gy * (c.size + r)
   } else {
     out.x = toy.position.x - gx * behind
     out.y = toy.position.y - gy * behind
@@ -224,7 +225,7 @@ function bodyCircles(c: Creature): [number, number, number][] {
 export function resolveToyContacts(world: World): void {
   for (const toy of world.props.items) {
     if (!isToy(toy)) continue
-    const r = TOY.radius[toy.kind]
+    const r = toyRadius(world, toy.kind)
     for (const c of world.creatures) {
       // The Grumpy swats a toy that comes close (and isn't being carried by the visitor).
       if (playStyle(c) === 'swat') swat(world, c, toy)
@@ -286,7 +287,7 @@ function squeak(world: World, toy: Prop, c: Creature): void {
 
 function swat(world: World, c: Creature, toy: Prop): void {
   // Close to its body (head or tentacles)?
-  const r = TOY.radius[toy.kind as 'duck' | 'ball']
+  const r = toyRadius(world, toy.kind as 'duck' | 'ball')
   const near = bodyCircles(c).find(
     ([cx, cy, cr]) =>
       Math.hypot(toy.position.x - cx, toy.position.y - cy) < cr + r + c.size * PLAY.swatRange,

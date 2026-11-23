@@ -74,6 +74,7 @@ export function drawScene(
             }
           : null,
       cheerUp: creature.cheerUp ? world.time - creature.cheerUp.since : null,
+      party: world.party.level,
     })
   }
   for (const creature of ordered) if (creature.id !== charging) draw(creature)
