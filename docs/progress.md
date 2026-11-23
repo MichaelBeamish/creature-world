@@ -2,6 +2,16 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-23 — Task #41: Show the app as "The Ink Tank" ✅
+- The portfolio (michaelbeamish.github.io) embeds the live app as "The Ink Tank", so visitors now see that name:
+  `index.html` `<title>` and `og:title`, and the console seed message (`[The Ink Tank] seed …`). The repo,
+  `package.json` name, `/creature-world/` URL and project name stay "Creature World"; README gets one line linking the
+  portfolio. Added #42 (small-screen layout) to the backlog.
+- **Verified:** all five checks (Prettier collapsed the now-shorter `console.info` onto one line); the dev server
+  serves the new title and `og:title`; owner checked it standalone and inside the portfolio iframe: "looks good".
+- **Learned:** `<title>` (tab, bookmarks) and `og:title` (link previews) are separate; social sites cache previews,
+  so already-shared links may show the old name for a while.
+
 ## 2026-11-22 — Task #40: Public deploy — live on GitHub Pages ✅
 - **Live:** https://michaelbeamish.github.io/creature-world/ — *new* `.github/workflows/deploy.yml` runs the same five
   checks as CI on every push to `main`, then builds and publishes with GitHub's Pages actions; Pages is set to

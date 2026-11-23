@@ -130,9 +130,7 @@ onMounted(() => {
   stopWatchingMotion = watchReducedMotion((reduced) => (motion = motionSettings(reduced)))
 
   const seed = resolveSeed(window.location.search)
-  console.info(
-    `[Creature World] seed ${seed} — add ?seed=${seed} to the URL to see this world again`,
-  )
+  console.info(`[The Ink Tank] seed ${seed} — add ?seed=${seed} to the URL to see this world again`)
   const w = createWorld({
     seed,
     width: s.width,

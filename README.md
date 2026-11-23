@@ -6,6 +6,8 @@
 **▶ Play it live: [michaelbeamish.github.io/creature-world](https://michaelbeamish.github.io/creature-world/)** (desktop browser; sound is off until you
 click 🔈)
 
+Shown on my portfolio, [michaelbeamish.github.io](https://michaelbeamish.github.io/), as **The Ink Tank**.
+
 A tiny living tide pool in the browser. Above a moonlit sea floor of sand, mossy rocks, glowing shells and
 swaying seaweed, soft, furry, octopus-like creatures breathe, blink, wander and rest —
 and when you move your cursor near them, each one reacts in its own way. You can boop them, or pick them up

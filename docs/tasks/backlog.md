@@ -43,6 +43,8 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 38 | Cheer up the Grumpy (the rose) | done |
 | 39 | A bigger soccer ball, up to 3 ducks | done |
 | 40 | Public deploy (GitHub Pages) | done |
+| 41 | Show the app as "The Ink Tank" | done |
+| 42 | Small-screen layout (creatures, neon reef, chest, disco ball) | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | dropped |
@@ -423,6 +425,25 @@ With 10 pages, the one-way ↻ circle takes forever to reach the end. Replace it
   arrows and dots count as the chest (an item dropped there goes back in); all checks pass.
 - **Approved spec (owner, 2026-11-22):** `slotAt` returns 'prev' / 'next'; *new* `pageDotAt`, `goToPage`,
   `arrowPosition`, `pageDotPosition`; `turnPage(world, step)`; bigger dots (r 4, gap 14) with a forgiving hit area.
+
+### 41. Show the app as "The Ink Tank" — owner request 2026-11-23 — done
+The portfolio (michaelbeamish.github.io) embeds the live app as "The Ink Tank". Everything a visitor sees uses that
+name; the repo, package, URL and project name stay "Creature World".
+- **Accept:** browser tab title and `og:title` are "The Ink Tank" (standalone and in the portfolio iframe); the console
+  seed message starts `[The Ink Tank]` and `?seed=` still works; repo, `package.json` name and `/creature-world/` URL
+  unchanged; README mentions the portfolio name; all checks pass.
+- **Approved spec (owner, 2026-11-23):** `index.html` `<title>` + `og:title`; `WorldCanvas.vue` `console.info` prefix;
+  one README line under "Play it live".
+
+### 42. Small-screen layout — owner request 2026-11-23 — todo
+More a responsive issue than a mobile one: on phones and small windows the scene looks crowded. It must work both
+standalone and inside the portfolio iframe.
+- Creatures get a **smaller size limit** on small screens.
+- The party's **neon seaweed** is limited to the screen size (it bunches up on small screens) and is drawn **behind
+  the treasure chest** (today it is in front).
+- **Shells and rocks** don't spawn near the bottom of the chest (they poke out from under it).
+- **Small screens only:** the disco ball floats up **and to the upper-left corner**.
+- **Accept:** to be refined in `/plan-task 42`.
 
 ### 37. Casting: one Grumpy, one Friendly — owner request 2026-11-22 — done
 "Two grumpies is too much." **Never two Grumpies or two Friendlies — only the Scaredy and the Peeker may repeat.**
