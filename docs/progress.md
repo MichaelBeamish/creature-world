@@ -2,6 +2,26 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #32c: Party — neon reef + lights that follow the music ✅
+- **"Where we are in the song"** in one place: the party song's map moved into `simulation/party.ts`
+  (`PARTY_SONG_MAP`, also read by the music) with `momentAt` / `partyMoment` — section, energy (each section eases
+  in from the last over a bar) and a beat pulse — for the lights now and the dancing next.
+- **Lights follow the music:** calm intro; builds rise smoothly (no strobing with the snare roll); drops pulse on
+  every beat, beams swing to the beat, spots swirl faster; soft breakdown. **Rays** shoot out of the disco ball,
+  turning as it spins, reaching further with the energy.
+- **Neon reef:** seaweed glows neon and sways on the beat (the floor shares its strand geometry, `seaweedStrand`,
+  so the neon layer traces it exactly, on top of the dimming); 12 extra clumps grow in over ~8 s and shrink away
+  after; shells get colored halos and twinkling glints.
+- **Light safety, tested across the whole song:** flashes counted the WCAG way (≥ 10% up and down) in every
+  1-second window — beat glow ≈ 2/s, spots within the limit too; reduced motion: no pulses.
+- **Bugs found by tests:** section energy stepped between frames (→ crossfade from the previous section's end); a
+  reduced-motion test measured the wrong thing (→ "barely changes within a beat").
+- **Verified:** 349 tests (+8). Chrome screenshots in intro, build and drop. Owner: "soooooo gooooood" — verified.
+  All five checks pass; docs updated. FPS not measured (headless isn't representative) — the owner can check with D.
+- **Learned:** one source of truth for timing; accessibility rules as tests; cheap additive strokes instead of
+  canvas blur for glows.
+- **Backlog:** #37 only ever one Grumpy; #38 cheer up the Grumpy (brainstorm a special gift).
+
 ## 2026-11-22 — Task #32b: Party — music ✅
 - **Original deep house, synthesized live** (no audio files, nothing copied): *new* `audio/music.ts` holds the songs
   as pure data; *new* `audio/musicPlayer.ts` plays them — kick, clap, snare, hats, shaker, rim, growl bass, sub,

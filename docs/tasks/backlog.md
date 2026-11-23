@@ -36,9 +36,11 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 35 | Fix: kandi cuffs drawn in front of the beard | done |
 | 32a | Party: disco ball + lights | done |
 | 32b | Party: music (+ "turn on sound" nudge) | done |
-| 32c | Party: neon reef (seaweed + shells) | todo |
+| 32c | Party: neon reef (seaweed + shells) | done |
 | 32d | Party: dancing by personality | todo |
 | 36 | Party track picker: a small iPod by the mute button | todo |
+| 37 | Only ever one Grumpy | todo |
+| 38 | Cheer up the Grumpy (something special) | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | dropped |
@@ -419,6 +421,17 @@ With 10 pages, the one-way ↻ circle takes forever to reach the end. Replace it
   arrows and dots count as the chest (an item dropped there goes back in); all checks pass.
 - **Approved spec (owner, 2026-11-22):** `slotAt` returns 'prev' / 'next'; *new* `pageDotAt`, `goToPage`,
   `arrowPosition`, `pageDotPosition`; `turnPage(world, step)`; bigger dots (r 4, gap 14) with a forgiving hit area.
+
+### 37. Only ever one Grumpy — owner request 2026-11-22
+"Two grumpies is too much." World generation must never create more than one Grumpy (bold + incurious) creature;
+the others are drawn from the remaining personalities. Seeded and reproducible as now.
+- **Accept:** for many seeds, at most one creature is a Grumpy; the rest of the cast stays varied; existing seeded
+  behavior tests still pass (or are updated deliberately); all checks pass.
+
+### 38. Cheer up the Grumpy — owner request 2026-11-22 (brainstorm first)
+Some way to make the Grumpy happy — maybe by giving him **something special**. To brainstorm with the owner before
+planning (what the gift is, how he reacts, whether it lasts, how it fits his personality without losing it).
+- **Accept:** decided in the brainstorm.
 
 ### 36. Party track picker: a small iPod — owner request 2026-11-22
 During the party, a small **iPod** appears in the corner near the mute button to change tracks (the songs in
