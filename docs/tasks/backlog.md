@@ -39,7 +39,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 32c | Party: neon reef (seaweed + shells) | done |
 | 32d | Party: dancing by personality | done |
 | 36 | Party track picker: a small iPod by the mute button | todo |
-| 37 | Casting: one Grumpy, one Friendly | todo |
+| 37 | Casting: one Grumpy, one Friendly | done |
 | 38 | Cheer up the Grumpy (something special) | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
@@ -422,7 +422,7 @@ With 10 pages, the one-way ↻ circle takes forever to reach the end. Replace it
 - **Approved spec (owner, 2026-11-22):** `slotAt` returns 'prev' / 'next'; *new* `pageDotAt`, `goToPage`,
   `arrowPosition`, `pageDotPosition`; `turnPage(world, step)`; bigger dots (r 4, gap 14) with a forgiving hit area.
 
-### 37. Casting: one Grumpy, one Friendly — owner request 2026-11-22
+### 37. Casting: one Grumpy, one Friendly — owner request 2026-11-22 — done
 "Two grumpies is too much." **Never two Grumpies or two Friendlies — only the Scaredy and the Peeker may repeat.**
 Today `dealArchetypes` (traits.ts) shuffles a deck of the four and reshuffles when empty, so the 5th creature can be
 any of them. New deck: one Friendly, one Grumpy, two Peekers, two Scaredies (5 creatures: all four + a Peeker or a

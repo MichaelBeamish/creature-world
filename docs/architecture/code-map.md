@@ -28,7 +28,7 @@
 |---|---|---|
 | `src/simulation/world.ts` | The world state (incl. `scenery`) and the fixed-step order of everything | `World`, `createWorld`, `stepWorld`, `resizeWorld` |
 | `src/simulation/creature.ts` | Creature data, body proportions, spawn footprint, seeded spawning | `Creature`, `BODY`, `CREATURE_LIMITS`, `footprint`, `createCreature` |
-| `src/simulation/traits.ts` | Personality: archetypes on trait dials, dealt without replacement | `Archetype`, `ARCHETYPES`, `dealArchetypes`, `createTraits` |
+| `src/simulation/traits.ts` | Personality: archetypes on trait dials, dealt without replacement — the four first, then extras from a Peeker + Scaredy deck (never two Grumpies or Friendlies) | `Archetype`, `ARCHETYPES`, `ARCHETYPE_DECK`, `EXTRA_DECK`, `dealArchetypes`, `createTraits` |
 | `src/simulation/presence.ts` | The visitor (cursor/finger) as data; smoothed velocity; press/release edges | `Presence`, `setPresenceInput`, `updatePresence` |
 | `src/simulation/interaction.ts` | Boop and grab-and-drag: hit-testing (head + tentacle zone), boop-vs-hold, the held spring + rhythmic pull + wriggle, tether with a top speed, shake stress → ink; reactions by personality (flee / Grumpy chase / Friendly dizzy) as the one override above the mind; interaction sound events (own random stream) | `INTERACTION`, `Interaction`, `creatureAt`, `stepInteraction`, `heldForce`, `pullOffset`, `applyTether`, `struggleLevel`, `stressLimit`, `stressFraction`, `standsItsGround`, `forgives`, `interactionIntent`, `aimAtHand`, `chaseForce`, `dizziness`, `dizzyForce`, `jetLimit`, `isHeld` |
 | `src/simulation/perception.ts` | What a creature notices: attention, trust, pressure, startle → stimulus; `rattled` (after inking) caps trust | `Perception`, `Stimulus`, `PERCEPTION`, `stepPerception` |
@@ -115,6 +115,7 @@
 | **Personality & population** | | |
 | An archetype's curiosity/boldness | `ARCHETYPES.friendly` | `src/simulation/traits.ts` |
 | How much creatures vary within an archetype | `TRAIT_VARIATION` | `src/simulation/traits.ts` |
+| Which personalities may repeat in a bigger cast | `EXTRA_DECK` | `src/simulation/traits.ts` |
 | Energy (speed) range | `ENERGY_RANGE` | `src/simulation/traits.ts` |
 | Number of creatures | `CREATURE_COUNT` | `src/app/WorldCanvas.vue` |
 | **Perception** | | |
@@ -278,7 +279,7 @@
 
 **Add a new archetype**
 
-1. `src/simulation/traits.ts`: add it to the `Archetype` union, `ARCHETYPES` (its dials) and `ARCHETYPE_DECK`.
+1. `src/simulation/traits.ts`: add it to the `Archetype` union, `ARCHETYPES` (its dials) and `ARCHETYPE_DECK` (and `EXTRA_DECK` if it may repeat).
 2. `src/simulation/emotion.test.ts`: add a column to the `EXPECTED` grid (and check the variation-corner test).
 3. `src/audio/voice.ts`: give it a voice in `TIMBRE`.
 4. Docs: the grid in `docs/product/mvp.md` and the table in `README.md`.
