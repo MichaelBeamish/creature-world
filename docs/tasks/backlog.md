@@ -42,6 +42,7 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 37 | Casting: one Grumpy, one Friendly | done |
 | 38 | Cheer up the Grumpy (the rose) | done |
 | 39 | A bigger soccer ball, up to 3 ducks | done |
+| 40 | Public deploy (GitHub Pages) | in-progress |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
 | 24 | Pop bubbles | dropped |
@@ -430,6 +431,14 @@ any of them. New deck: one Friendly, one Grumpy, two Peekers, two Scaredies (5 c
 Scaredy). Seeded and reproducible as now.
 - **Accept:** for many seeds and counts up to 6, at most one Grumpy and at most one Friendly; every personality still
   appears (4+ creatures); existing seeded behavior tests still pass (or are updated deliberately); all checks pass.
+
+### 40. Public deploy (GitHub Pages) — 2026-11-22
+The MVP is feature-complete: put it live. **Approved (owner):** GitHub Pages, deployed by GitHub Actions on every push
+to `main` after the same five checks (ADR 0005); Vite `base` `/creature-world/` for the build; Claude enables Pages
+(source: GitHub Actions) via `gh api`.
+- **Accept:** the live URL loads and plays (creatures, chest, party, sound after unmuting; `?seed=` and `?debug`
+  work); deploys run automatically after merges, only when the checks pass; README links to it; ADR recorded; all
+  checks pass.
 
 ### 39. A bigger soccer ball, up to 3 ducks — owner request 2026-11-22 — done
 The last MVP tweak before deploying. The soccer ball is ~2.3× bigger **in the water** (radius 14 → 32 px; the chest

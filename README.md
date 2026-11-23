@@ -1,6 +1,10 @@
 # Creature World 🐙
 
 [![CI](https://github.com/MichaelBeamish/creature-world/actions/workflows/ci.yml/badge.svg)](https://github.com/MichaelBeamish/creature-world/actions/workflows/ci.yml)
+[![Deploy](https://github.com/MichaelBeamish/creature-world/actions/workflows/deploy.yml/badge.svg)](https://github.com/MichaelBeamish/creature-world/actions/workflows/deploy.yml)
+
+**▶ Play it live: [michaelbeamish.github.io/creature-world](https://michaelbeamish.github.io/creature-world/)** (desktop browser; sound is off until you
+click 🔈)
 
 A tiny living tide pool in the browser. Above a moonlit sea floor of sand, mossy rocks, glowing shells and
 swaying seaweed, soft, furry, octopus-like creatures breathe, blink, wander and rest —
@@ -63,6 +67,10 @@ pnpm dev        # http://localhost:5173
 | `pnpm format:check`                       | Prettier                             |
 | `pnpm build`                              | Type-check + production build        |
 
+**Deploy:** every merge into `main` runs the checks, builds and publishes to GitHub Pages
+(`.github/workflows/deploy.yml`, [ADR 0005](docs/decisions/0005-hosting-on-github-pages.md)). The production build
+is served from `/creature-world/` (Vite `base`); `pnpm dev` stays at `/`.
+
 ## How it works
 
 ```
@@ -89,7 +97,8 @@ Details: [architecture overview](docs/architecture/overview.md) (the *why*) ·
 [ADR 0001](docs/decisions/0001-vue-as-ui-shell.md) ·
 [0002](docs/decisions/0002-framework-free-simulation.md) ·
 [0003](docs/decisions/0003-canvas-2d-rendering.md) ·
-[0004](docs/decisions/0004-personality-emotion-mind.md)
+[0004](docs/decisions/0004-personality-emotion-mind.md) ·
+[0005](docs/decisions/0005-hosting-on-github-pages.md)
 
 ## How it was built — with Claude Code
 
