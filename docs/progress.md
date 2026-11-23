@@ -2,6 +2,19 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #40: Public deploy — live on GitHub Pages ✅
+- **Live:** https://michaelbeamish.github.io/creature-world/ — *new* `.github/workflows/deploy.yml` runs the same five
+  checks as CI on every push to `main`, then builds and publishes with GitHub's Pages actions; Pages is set to
+  publish from Actions. Only merged, checked code goes live — the owner's merge is the release button (ADR 0005).
+- Vite `base` `/creature-world/` for the build **and** `pnpm preview` (found by testing: preview counts as "serve",
+  so it first served at `/` and the JS 404'd); dev stays at `/`. README: "Play it live" link + Deploy badge;
+  `og:url`; code map: project files.
+- **Verified:** the production build on the sub-path locally (no errors, no failed requests; `?seed=`, `?debug`
+  at 120 FPS); the first Deploy run green; the live site in Chrome — normal and `?debug` clean, and a full party
+  (ball out, everyone notices, nudge → sound on, music with no errors). Owner: "looks great".
+- **Learned:** test the exact production artifact on its real path before going live; continuous deployment gated by
+  the same checks as CI.
+
 ## 2026-11-22 — Task #39: A bigger soccer ball, up to 3 ducks ✅
 - The last MVP tweak before deploying: the soccer ball is ~2.3× bigger in the water (`TOY.radius.ball` 14 → 32 px;
   the chest icon stays chest-sized); up to 3 rubber ducks out at once, like the shrimp (*new* `PROPS.maxDucks`; a duck

@@ -119,5 +119,6 @@ decisions; [Claude Code](https://claude.com/claude-code) planned, implemented, t
 The MVP — "The Tide Pool" ([scope & success criteria](docs/product/mvp.md)) — is complete (success criteria 1–5 verified; the informal
 first-viewer test is pending), and a sea floor and bubbles have since been added. Now in progress: the **interaction milestone** — boop, drag and
 shake → ink (with a reaction per personality), the treasure chest with shrimp, toys, dress-up and things to hold, and a
-disco party (lights, original house music, a neon reef and dancing) are in; next: cheering up the Grumpy, a party track
-picker, petting, names and moving shells — then a public deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md) (social life, an LLM-guided mind, …).
+disco party (lights, original house music, a neon reef and dancing) are in, and a rose cheers up the Grumpy. It's
+**live** ([play it](https://michaelbeamish.github.io/creature-world/)), redeployed on every merge. Next: a party track
+picker, petting, names and moving shells. Ideas beyond that live in the [roadmap](docs/product/roadmap.md) (social life, an LLM-guided mind, …).
