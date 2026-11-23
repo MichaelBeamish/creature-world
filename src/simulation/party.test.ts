@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { setPresenceInput } from './presence'
-import { beatsAt, PARTY } from './party'
+import { beatsAt, momentAt, PARTY, PARTY_SONG_MAP, partyMoment } from './party'
 import { canTake, DISCO, dropProp, removeProp } from './props'
 import { createWorld, stepWorld, type World } from './world'
 
@@ -102,4 +102,47 @@ it('the hanging disco ball can be grabbed and moved', () => {
   const moved = w.props.items.find((p) => p.kind === 'discoBall')!
   expect(moved.position.x).toBe(500)
   expect(w.party.on).toBe(true)
+})
+
+describe('where we are in the song (task #32c)', () => {
+  const M = PARTY_SONG_MAP
+  const at = (bar: number, beatInBar = 2) => momentAt(bar * 4 + beatInBar)
+
+  it('knows the sections: intro, build, drop, breakdown, build, drop — then loops to the first build', () => {
+    expect(at(0).section).toBe('intro')
+    expect(at(M.build).section).toBe('build')
+    expect(at(M.drop).section).toBe('drop')
+    expect(at(M.breakdown).section).toBe('breakdown')
+    expect(at(M.build2).section).toBe('build')
+    expect(at(M.drop2).section).toBe('drop')
+    expect(at(M.length).section).toBe('build') // looped
+  })
+
+  it('energy: low intro, rising through a build, full in a drop, soft in the breakdown', () => {
+    expect(at(2).energy).toBeLessThan(0.45)
+    expect(at(M.build + 1).energy).toBeLessThan(at(M.build + 6).energy)
+    expect(at(M.drop + 4).energy).toBeCloseTo(1)
+    expect(at(M.breakdown + 4).energy).toBeLessThan(0.3)
+  })
+
+  it('never jumps: energy changes smoothly, frame to frame, through the whole song', () => {
+    let prev = momentAt(0).energy
+    for (let beats = 0; beats < (M.length + 8) * 4; beats += 126 / 60 / 60) {
+      const e = momentAt(beats).energy
+      expect(Math.abs(e - prev)).toBeLessThan(0.02)
+      prev = e
+    }
+  })
+
+  it('pulses on the beat in the drops, not in the builds', () => {
+    expect(at(M.drop + 2, 0).pulse).toBeCloseTo(1)
+    expect(at(M.drop + 2, 0.9).pulse).toBeLessThan(0.05)
+    expect(at(M.drop + 2).pulseAmount).toBeCloseTo(1)
+    expect(at(M.build + 4).pulseAmount).toBe(0)
+  })
+
+  it('is calm when the party is off', () => {
+    const w = createWorld({ seed: 3, width: 1280, height: 720, creatureCount: 0 })
+    expect(partyMoment(w).energy).toBe(0)
+  })
 })

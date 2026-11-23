@@ -106,6 +106,12 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   the next ~0.15 s of notes on the Web Audio clock each frame ("two clocks": sample-accurate timing despite frame
   jitter), pinned to the beat clock and re-pinned on drift. The bass and stabs duck on each kick (sidechain pump).
   During the party chirps start on the next half-beat. Starting the party while muted shows a "turn on sound" nudge.
+  **Following the music** (32c): the party song's map lives in the simulation (`PARTY_SONG_MAP`, read by the audio
+  too), and `partyMoment` says where we are — section, an energy level (each section eases in from the last), and a
+  beat pulse. The lights read it: calm intro, smoothly rising builds, beat pulses in the drops (one per beat at most,
+  tested against the WCAG flash limit), the disco ball's rays reaching further with the energy. The neon reef traces
+  the floor's own seaweed geometry (`seaweedStrand`) on top of the dimming, so it really glows; extra clumps grow
+  in from fixed spots; the shells get halos and glints.
 - **Held items** (task #33) — two more spots: `hand` (glow stick, cutlass, soda can, magic wand, balloon,
   rose, trident) and `cuffs` (kandi), so cuffs + a held item combine. A tentacle tip only exists in the renderer, so
   `drawTentacles` now returns every curve: the holding tentacle is bent into a raised arm and the item is drawn at its

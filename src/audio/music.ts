@@ -14,6 +14,7 @@
  *
  * `notesBetween` is a pure function — the player (musicPlayer.ts) asks it what to play next; tests check the songs.
  */
+import { PARTY_SONG_MAP, songBar } from '../simulation/party'
 
 export type Instrument =
   | 'kick'
@@ -254,23 +255,11 @@ const deepEnd: Song = {
 // 3. "Deep End (Extended)" — a copy of "Deep End", every section doubled; the drops evolve halfway through
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Its sections (bars): where each starts. 64 bars (~2 min), then it loops back to the first build. */
-export const DEEP_END_EXTENDED = {
-  intro: 0,
-  build: 8,
-  drop: 16,
-  breakdown: 32,
-  build2: 40,
-  drop2: 48,
-  length: 64,
-  loopFrom: 8,
-} as const
+/** Its sections (bars) — the party song's map, shared with the lights and dancing (simulation/party.ts). */
+export const DEEP_END_EXTENDED = PARTY_SONG_MAP
 
 /** Where in the extended song bar `bar` is (after bar 63 it loops back to the first build). */
-export function deepEndExtendedBar(bar: number): number {
-  const { length, loopFrom } = DEEP_END_EXTENDED
-  return bar < length ? bar : loopFrom + ((bar - loopFrom) % (length - loopFrom))
-}
+export const deepEndExtendedBar = songBar
 
 const deepEndExtended: Song = {
   name: 'Deep End (Extended)',
