@@ -93,6 +93,11 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   the Grumpy minds (bold + incurious): it shakes one item off every few seconds (`stepWearables`). Fallen items sink and
   can be picked up again (`itemAt`); after 5 s on the sand they blink for 3 s, then return to the chest. At most 3 of
   each are out.
+- **Cheering up the Grumpy** (task #38) — the rose, put on a Grumpy, starts a timed moment in world data
+  (`creature.cheerUp`): sceptical (still flushed, holding still, a "?"), perks up (the flush drains, a "!"), hearts —
+  where he *becomes* a Friendly: archetype and trait dials switch (his color and energy kept). Since every behavior
+  reads the dials, he then acts exactly like a Friendly (voice included). The renderer adds the tilt, the hop and a
+  burst of hearts.
 - **Dancing** (task #32d) — a mind layer after food (`chooseDance`): with the party on, calm creatures get the
   `dance` intent and the Grumpy `sulk`, by trait dials (bounce / sway / shy / sulk). The simulation decides *where*
   (`danceTarget`: the floor under the ball, the Peeker and Scaredy edging closer, the Grumpy's corner) and *how much*

@@ -45,6 +45,7 @@
 | `src/simulation/feeding.ts` | Who goes for a shrimp and how, by trait dials (race / sneak / creep / guard); eating (♥, squish, "nom") | `FEEDING`, `feedingStyle`, `chooseMeal`, `mealTarget`, `mealSpeed`, `inReach` |
 | `src/simulation/wearables.ts` | Dress-up: wearing one item per spot (head / eyes / face / hand / cuffs; two-spot items), the raised hand's position, creatures picking up dropped items by personality, swapping, taking off, hit-testing worn items, the Grumpy shaking things off | `WEAR`, `HAND`, `COLLECT`, `chooseCollect`, `collectTarget`, `spotPosition`, `spotsOf`, `isDressed`, `wearOn`, `takeOff`, `dropOff`, `wornAt`, `shakeAmount`, `stepWearables` |
 | `src/simulation/party.ts` | The party (task #32): on while the disco ball is out (in the water or carried), its fade level, the one beat clock, and the party song's map — "where we are in the song" (section, energy, beat pulse) that the music, lights and dancing share | `PARTY`, `Party`, `createParty`, `discoBallOut`, `beatsAt`, `stepParty`, `PARTY_SONG_MAP`, `PartySection`, `songBar`, `sectionOf`, `PartyMoment`, `momentAt`, `partyMoment` |
+| `src/simulation/cheerUp.ts` | Cheering up the Grumpy (task #38): the rose starts a moment — sceptical (?), perks up (!), hearts (♥) — and he becomes a Friendly (its dials, his own color and energy) | `CHEER_UP`, `CheerUpPhase`, `startCheerUp`, `cheerUpPhase`, `stepCheerUps` |
 | `src/simulation/dance.ts` | Dancing at the party (task #32d), a mind layer after food: styles by trait dials (bounce / sway / shy / sulk), each one's spot on the dance floor (the Peeker and Scaredy edge closer over time; the Grumpy's bottom-right corner), noticing, chirp and 💢 cues, how hard it dances (follows the song's energy) | `DANCE`, `DanceStyle`, `danceStyle`, `chooseDance`, `danceTarget` |
 | `src/simulation/play.ts` | Toys by personality (fetch / nudge / swat / shy, a mind layer after food); creature–toy contact pushes, the duck's squeak, a Scaredy's flinch | `PLAY`, `playStyle`, `choosePlay`, `playTarget`, `resolveToyContacts` |
 | `src/simulation/bubbles.ts` | Bubble particles: fixed 64-slot pool, analytic motion, spawned on flee/hide/standoff (own random stream) | `BUBBLES`, `BubbleSystem`, `createBubbles`, `stepBubbles`, `bubbleAt` |
@@ -63,11 +64,11 @@
 | `src/render/bubbles.ts` | Draws live bubbles (rim + highlight) and their pop rings | `drawBubbles` |
 | `src/render/ink.ts` | Draws ink clouds: soft deep-indigo radial-gradient puffs | `drawInk` |
 | `src/render/party.ts` | Party lights (tasks #32a, #32c), following the music: dims the pool, the neon reef (neon beat-swaying seaweed, extra clumps that grow, shell halos and glints), sweeping beams, mirror-ball spots, rays off the disco ball, and the ball on top — light-safe (≤ 1 pulse per beat, tested); split into a backdrop (dimming + neon reef, behind the creatures) and the lights (in front) | `LIGHTS`, `twinkle`, `beatGlow`, `spotGlow`, `drawPartyBackdrop`, `drawPartyLights`, `drawDiscoBall` |
-| `src/render/dance.ts` | Dance moves (task #32d) as a pure function of style, amount and the beat: hops landing on the beat, squash, lean, the Friendly's spin, flared tentacles, a waving held item, the Grumpy's toe-tap; gentle sway only under reduced motion | `danceMoves`, `DanceMoves` |
+| `src/render/dance.ts` | Dance moves (task #32d) as a pure function of style, amount and the beat: hops landing on the beat, squash, lean, the Friendly's spin, flared tentacles, a waving held item, the Grumpy's toe-tap; the cheered-up Grumpy's sceptical tilt and perk-up hop (`cheerUpMoves`); gentle sway only under reduced motion | `danceMoves`, `cheerUpMoves`, `DanceMoves` |
 | `src/render/chest.ts` | Draws the treasure chest (wood, brass, moss; lid swings open with a golden glow), its floating item slots, and the carried item | `drawChest`, `drawChestItems` |
 | `src/render/wearables.ts` | Drawings of the 26 wearables (and the let-go balloon) (held items drawn at the raised tentacle tip; kandi cuffs across tentacle curves), relative to their spot (some hats sit lower: `SIT_LOWER`; rave gear glows); drawn on creatures (in their local frame) or as centered icons | `drawWorn`, `drawHeld`, `drawCuffs`, `drawFloatingBalloon`, `drawWearableIcon`, `WearExtras`, `Curve` |
 | `src/render/props.ts` | Draws items in the water: the shrimp, the rubber duck (bobs, turns with its spin) and the soccer ball (patches roll) | `drawProps`, `drawShrimp`, `drawDuck`, `drawBall` |
-| `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade | `drawEmotes` |
+| `src/render/emotes.ts` | Vector emote bubbles (? ! anger mark ♥) with pop/float/fade; a cheered-up Grumpy's burst of hearts and soft glow | `drawEmotes`, `drawCheerUps` |
 | `src/render/background.ts` | Water, caustics, floating motes (pure function of time), vignette | `drawBackground`, `drawVignette`, `motePosition` |
 | `src/render/motion.ts` | Decorative-motion settings (full vs reduced motion) | `MotionSettings`, `FULL_MOTION`, `REDUCED_MOTION`, `motionSettings` |
 | `src/render/debugDraw.ts` | `?debug` canvas layer: perception rings and labels | `drawPerceptionDebug` |
@@ -205,6 +206,7 @@
 | How fast the Scaredy gets braver at the party | `DANCE.braveSeconds` | `src/simulation/dance.ts` |
 | Where the Grumpy sulks | `DANCE.corner` | `src/simulation/dance.ts` |
 | How often dancers chirp / the Grumpy huffs | `DANCE.cheerEvery` | `src/simulation/dance.ts` |
+| How long each phase of cheering up the Grumpy lasts | `CHEER_UP.doubt` | `src/simulation/cheerUp.ts` |
 | Where the raised tentacle holds things | `HAND.x` | `src/simulation/wearables.ts` |
 | How fast a let-go balloon rises away | `PROPS.balloonLift` | `src/simulation/props.ts` |
 | Who picks up dropped items, and when | `COLLECT.notice` | `src/simulation/wearables.ts` |

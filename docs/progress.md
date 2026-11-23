@@ -2,6 +2,17 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #38: Cheer up the Grumpy — the rose ✅
+- Give the Grumpy the **rose** and he comes round: a ~5.5 s moment in world data (*new* `simulation/cheerUp.ts`,
+  `creature.cheerUp`) — sceptical (freezes, a suspicious tilt, "?", still flushed; he doesn't shake it off) → perks up
+  (the flush drains, a hop and stretch, "!") → hearts (a burst of hearts and one soft glow, drawn by
+  `drawCheerUps`) — where he *becomes* a Friendly: archetype + trait dials switch, his color and energy kept. Since
+  every behavior reads the dials, he then acts exactly like a Friendly (voice, fetch, dancing, keeps what he wears).
+- **Verified:** 373 tests (+8): the trigger, the phases and emotes, no shaking off, the switch, Friendly afterwards,
+  the rose does nothing to others, other items still shaken off; the moves (tilt, hop, reduced motion). Chrome: a
+  real scene in each phase. Owner: "perfect. works super well. verified." All five checks pass; docs updated.
+- **Learned:** behavior from data, not identity — one data change turns a Grumpy into a Friendly.
+
 ## 2026-11-22 — Task #37: Casting — one Grumpy, one Friendly ✅
 - "Two grumpies is too much": `dealArchetypes` now deals the four personalities first (shuffled), then extras from a
   *new* `EXTRA_DECK` of Peeker + Scaredy. The pool of 5: one of each plus an extra Peeker or Scaredy — never two

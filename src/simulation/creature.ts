@@ -46,6 +46,8 @@ export interface Creature {
   expression: Expression
   /** What it's wearing (task #30), and a Grumpy's shaking-it-off timing (see wearables.ts). */
   dress: Dress
+  /** Being cheered up by the rose (task #38): when it started, and how far the moment has got (emote cues). */
+  cheerUp: { since: number; stage: number } | null
 }
 
 /** Worn items by spot (the nose glasses fill both eyes and face), and when the next angry shake starts / started. */
@@ -168,6 +170,7 @@ export function createCreature(
       shakeAt: Infinity,
       shakingSince: -Infinity,
     },
+    cheerUp: null,
   }
 }
 

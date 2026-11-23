@@ -13,6 +13,7 @@ import { resolveToyContacts } from './play'
 import { stepWearables } from './wearables'
 import { createProps, stepProps, type Props } from './props'
 import { createParty, stepParty, type Party } from './party'
+import { stepCheerUps } from './cheerUp'
 import {
   applyTether,
   createInteraction,
@@ -98,6 +99,7 @@ export function stepWorld(world: World, dt: number): void {
   updatePresence(world.presence, dt)
   stepInteraction(world, dt)
   stepWearables(world) // a dressed Grumpy shakes things off
+  stepCheerUps(world, dt) // …unless it's the rose (task #38)
   stepProps(world, dt)
   stepParty(world, dt) // the disco ball switches the party on and off
   for (const creature of world.creatures) {

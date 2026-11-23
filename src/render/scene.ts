@@ -6,7 +6,7 @@ import { drawBubbles } from './bubbles'
 import { drawChest, drawChestItems } from './chest'
 import { drawCreature } from './drawCreature'
 import { drawPerceptionDebug } from './debugDraw'
-import { drawEmotes } from './emotes'
+import { drawCheerUps, drawEmotes } from './emotes'
 import { drawFloor } from './floor'
 import { drawInk } from './ink'
 import { drawProps } from './props'
@@ -73,6 +73,7 @@ export function drawScene(
               beats: beatsAt(world),
             }
           : null,
+      cheerUp: creature.cheerUp ? world.time - creature.cheerUp.since : null,
     })
   }
   for (const creature of ordered) if (creature.id !== charging) draw(creature)
@@ -81,6 +82,7 @@ export function drawScene(
   drawBubbles(ctx, world, motion)
   drawPartyLights(ctx, world, width, height, motion) // beams, light spots, rays and the disco ball on top
   drawChestItems(ctx, world, motion) // the open chest's items + the one being carried, above everything else
+  drawCheerUps(ctx, world, alpha, motion) // a cheered-up Grumpy's burst of hearts
   drawEmotes(ctx, world, alpha, motion)
   drawVignette(ctx, width, height)
   if (options.debug) drawPerceptionDebug(ctx, world, alpha)

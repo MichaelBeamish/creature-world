@@ -47,6 +47,11 @@ export const ruleMind: Mind = {
       mind.intent = override
       return
     }
+    // Being cheered up by the rose (task #38): he holds still for the moment.
+    if (creature.cheerUp) {
+      mind.intent = 'rest'
+      return
+    }
 
     const previous = mind.intent
     switch (mind.emotion.kind) {

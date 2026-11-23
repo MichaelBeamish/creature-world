@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { danceMoves } from './dance'
+import { cheerUpMoves, danceMoves } from './dance'
 
 describe('dance moves (task #32d)', () => {
   it('hops land on the beat and peak between beats', () => {
@@ -43,5 +43,23 @@ describe('dance moves (task #32d)', () => {
       expect(Math.abs(m.lean)).toBeLessThan(0.1)
     }
     expect(danceMoves('sulk', 0, 7.5, false).tap).toBe(0)
+  })
+})
+
+describe('the Grumpy cheered up (task #38)', () => {
+  it('tilts sceptically, then hops and stretches as he perks up', () => {
+    expect(Math.abs(cheerUpMoves(1, true).lean)).toBeGreaterThan(0.1)
+    const perk = cheerUpMoves(3, true) // halfway through perking up
+    expect(perk.bob).toBeLessThan(-0.3)
+    expect(perk.squash).toBeGreaterThan(1)
+    expect(cheerUpMoves(4.5, true)).toEqual(cheerUpMoves(99, true)) // then still
+  })
+
+  it('reduced motion: no tilt or hop', () => {
+    for (const t of [1, 3, 4.5]) {
+      const m = cheerUpMoves(t, false)
+      expect(m.bob).toBe(0)
+      expect(m.lean).toBe(0)
+    }
   })
 })

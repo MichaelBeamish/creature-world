@@ -48,7 +48,8 @@ pnpm dev        # http://localhost:5173
   and the party starts: the lights dim, deep house plays — builds, drops and all (with sound on — there's a
   nudge if it's off) — the disco ball throws rays, the seaweed turns neon and sways to the beat, and the lights
   pulse in the drops (light-safe). The creatures dance — a little in the build-ups, all-out when the drop hits —
-  each in its own style; the Grumpy sulks in the corner (tapping a tentacle when he thinks no one's looking). Drag
+  each in its own style; the Grumpy sulks in the corner (tapping a tentacle when he thinks no one's looking). Give
+  the Grumpy the **rose** and watch him come round — he becomes a Friendly. Drag
   it back to the chest to end it.
 - Click the 🔈 button (bottom-right) for sound — it always starts muted.
 - Press **D** (dev) or add `?debug` to the URL to see what each creature perceives and feels, plus FPS.
