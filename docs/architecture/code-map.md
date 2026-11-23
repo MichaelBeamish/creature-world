@@ -170,6 +170,8 @@
 | Where the chest sits / its size | `CHEST.left` | `src/simulation/props.ts` |
 | How far above the chest its items float | `CHEST.slotDistance` | `src/simulation/props.ts` |
 | How many shrimp can be in the water at once | `PROPS.maxShrimp` | `src/simulation/props.ts` |
+| How many rubber ducks can be out at once | `PROPS.maxDucks` | `src/simulation/props.ts` |
+| How big the toys are in the water (the chest icons stay small) | `TOY.radius` | `src/simulation/props.ts` |
 | How fast a shrimp sinks / drifts | `PROPS.sinkSpeed` | `src/simulation/props.ts` |
 | How far the chest's corner is kept clear of scenery | `SCENERY.chestClear` | `src/simulation/scenery.ts` |
 | How fast each personality goes for food | `FEEDING.speed` | `src/simulation/feeding.ts` |

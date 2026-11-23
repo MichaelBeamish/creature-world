@@ -197,10 +197,11 @@ export function playTarget(world: World, c: Creature, out: Vec2): { away: boolea
   const toC = { x: c.position.x - toy.position.x, y: c.position.y - toy.position.y }
   const along = toC.x * gx + toC.y * gy // negative = behind
   const lateral = Math.abs(toC.x * -gy + toC.y * gx)
-  const behind = c.size * PLAY.behind
+  // (Measured from the toy's edge, so a big ball still leaves room to get behind it.)
+  const behind = c.size * PLAY.behind + TOY.radius[toy.kind as 'duck' | 'ball']
   if (along < 0 && lateral < c.size) {
-    out.x = toy.position.x + gx * c.size
-    out.y = toy.position.y + gy * c.size
+    out.x = toy.position.x + gx * (c.size + TOY.radius[toy.kind as 'duck' | 'ball'])
+    out.y = toy.position.y + gy * (c.size + TOY.radius[toy.kind as 'duck' | 'ball'])
   } else {
     out.x = toy.position.x - gx * behind
     out.y = toy.position.y - gy * behind
