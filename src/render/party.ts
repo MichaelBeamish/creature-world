@@ -61,8 +61,26 @@ function frac(x: number): number {
   return x - Math.floor(x)
 }
 
-/** Dim the pool, then the neon reef, the beams, the light spots, the rays and the disco ball. */
-export function drawParty(
+/** Behind the creatures (task #32d): dim the pool, then the neon reef glowing on the dimmed floor. */
+export function drawPartyBackdrop(
+  ctx: CanvasRenderingContext2D,
+  world: World,
+  width: number,
+  height: number,
+  motion: MotionSettings,
+): void {
+  const k = world.party.level
+  if (k <= 0.005) return
+  ctx.save()
+  ctx.fillStyle = `rgba(6, 4, 24, ${LIGHTS.dim * k})`
+  ctx.fillRect(0, 0, width, height)
+  ctx.globalCompositeOperation = 'lighter'
+  drawNeonReef(ctx, world, width, height, motion, partyMoment(world), k)
+  ctx.restore()
+}
+
+/** In front of the creatures: the beams, the light spots, the rays and the disco ball. */
+export function drawPartyLights(
   ctx: CanvasRenderingContext2D,
   world: World,
   width: number,
@@ -77,10 +95,7 @@ export function drawParty(
     const moves = motion.partyLights // 0 under reduced motion
     const t = world.time * moves
     ctx.save()
-    ctx.fillStyle = `rgba(6, 4, 24, ${LIGHTS.dim * k})`
-    ctx.fillRect(0, 0, width, height)
     ctx.globalCompositeOperation = 'lighter'
-    drawNeonReef(ctx, world, width, height, motion, m, k)
     drawBeams(ctx, width, height, t, k, m, moves)
     drawSpots(ctx, from, width, height, t, k, m, moves)
     drawRays(ctx, from, ball ? ball.angle * moves : 0, k, m, moves)

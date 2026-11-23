@@ -3,6 +3,8 @@ import { INTERACTION } from '../simulation/interaction'
 import { MOVEMENT } from '../simulation/movement'
 import { shakeAmount } from '../simulation/wearables'
 import { drawCuffs, drawHeld, drawWorn, type Curve } from './wearables'
+import { danceMoves, type DanceMoves } from './dance'
+import type { DanceStyle } from '../simulation/dance'
 import { FULL_MOTION, type MotionSettings } from './motion'
 import { hash2 } from './noise'
 
@@ -32,6 +34,8 @@ export interface CreaturePose {
   /** A chasing Grumpy turning to fire (task #27): how much (0..1) it points its tentacles at the hand, and the
    *  hand relative to the mantle center. */
   aim?: { amount: number; hand: { x: number; y: number } }
+  /** Dancing at the party (task #32d): its style, how hard (0..1), and the beat clock. */
+  dance?: { style: DanceStyle; amount: number; beats: number } | null
 }
 
 export function drawCreature(
@@ -49,6 +53,9 @@ export function drawCreature(
   const mood = creature.mind.emotion.levels
   const scared = mood.scared
   const grumpy = mood.grumpy
+  const moves = pose.dance
+    ? danceMoves(pose.dance.style, pose.dance.amount, pose.dance.beats, motion.dance)
+    : null
 
   const fast = MOVEMENT.baseSpeed * 2
   // Jet swimming (fast: a chase or an escape): the head leads, tentacles stream behind, rhythmic strokes.
@@ -63,10 +70,12 @@ export function drawCreature(
     x:
       (1 + MOOD.stretch * Math.min(1, Math.abs(velocity.x) / fast) * (1 - propel)) *
       (1 + MOOD.squashWide * squash) *
+      (1 + 0.6 * (1 - (moves?.squash ?? 1))) *
       (1 - JET.squeeze * thrust * (1 - stroke)),
     y:
       (1 + MOOD.stretch * Math.min(1, Math.abs(velocity.y) / fast) * (1 - propel)) *
       (1 - MOOD.squashFlat * squash) *
+      (moves?.squash ?? 1) *
       (1 + JET.elongate * thrust),
   })
 
@@ -93,7 +102,7 @@ export function drawCreature(
   const tremble = size * MOOD.tremble * warning * motion.tremble
   ctx.translate(
     screenX + tremble * Math.sin(anim.breathPhase * 41),
-    screenY + tremble * 0.6 * Math.sin(anim.breathPhase * 53),
+    screenY + tremble * 0.6 * Math.sin(anim.breathPhase * 53) + (moves?.bob ?? 0) * size,
   )
   // Dizzy: a wobbly side-to-side tilt on top of the lean.
   const wobble =
@@ -118,7 +127,8 @@ export function drawCreature(
   const lean =
     (aim && aim.amount > 0 ? swimAngle(swimming, -aim.hand.x, -aim.hand.y, aim.amount) : swimming) +
     wobble +
-    shake
+    shake +
+    (moves?.lean ?? 0)
   ctx.rotate(lean)
   const x = 0
   const y = 0
@@ -148,6 +158,7 @@ export function drawCreature(
       aimDistance: aim ? Math.hypot(aim.hand.x, aim.hand.y) : 0,
     },
     creature.dress.hand !== null,
+    moves,
   )
   // Fur bristles (stands on end) when scared or grumpy.
   const bristle = 1 + MOOD.bristle * Math.max(scared, grumpy)
@@ -388,6 +399,7 @@ function drawTentacles(
     aimDistance: 0,
   },
   holding = false,
+  moves: DanceMoves | null = null,
 ): {
   curves: Curve[]
   hold: { x: number; y: number; angle: number; lean: number; dragX: number; dragY: number } | null
@@ -424,7 +436,8 @@ function drawTentacles(
   const fan =
     (dangling ? MOTION.dangleFan : 1) *
     (1 - JET.bundle * propel) *
-    (1 + JET.flare * propel * (2 * stroke - 1))
+    (1 + JET.flare * propel * (2 * stroke - 1)) *
+    (moves?.flare ?? 1)
   const grabbed = hand ? grabbedTentacle(size, n, hand.x) : -1
   // Holding something (task #33): the rightmost tentacle (or the next one, if the visitor has that one) is raised.
   const raised = holding ? (grabbed === n - 1 ? n - 2 : n - 1) : -1
@@ -473,7 +486,9 @@ function drawTentacles(
     }
 
     if (i === raised) {
-      const armX = trailX * MOTION_ARM
+      // Dancing: it waves what it holds to the beat (a glow stick above all).
+      const waveX = (moves?.wave ?? 0) * size * 0.7
+      const armX = trailX * MOTION_ARM + waveX
       const armY = trailY * MOTION_ARM
       // A raised arm: up and out to the side, showing off what it holds (it still sways a little).
       const curve: Curve = [
@@ -503,7 +518,11 @@ function drawTentacles(
       [rootX, rootY],
       [rootX + s * size * 0.6 + wave + sway1 + trailX * 0.3, rootY + reach * 0.33 + trailY * 0.3],
       [rootX + s * size * 0.9 - wave + sway2 + trailX * 0.65, rootY + reach * 0.66 + trailY * 0.65],
-      [rootX + s * size * 1.3 + wave * 0.5 + sway3 + trailX, rootY + reach + trailY],
+      [
+        rootX + s * size * 1.3 + wave * 0.5 + sway3 + trailX,
+        // Sulking at the party: one tentacle taps along to the beat.
+        rootY + reach + trailY - (i === 0 ? (moves?.tap ?? 0) * size * 0.45 : 0),
+      ],
     ]
     taperedCurve(ctx, ...curve, size * TENTACLE_ROOT.width, size * TENTACLE_ROOT.tipWidth)
     curves.push(curve)

@@ -2,6 +2,25 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #32d: Party — dancing ✅ (the party, #32, is complete)
+- **A mind layer after food** (*new* `simulation/dance.ts`): with the party on, calm creatures `dance` and the
+  Grumpy `sulk`s — styles by trait dials: bounce (Friendly: the floor under the ball, big hops, a spin every 8 bars
+  in the drops), sway (Peeker: edges closer over the song), shy (Scaredy: braver — closer, bigger — over a minute),
+  sulk (Grumpy: the bottom-right corner, 💢 now and then, a secret toe-tap on the beat). Everyone notices the party
+  (♥ ? ! 💢, staggered); chirps come on cues (more in the drops); dancers puff bubbles on the beat in the drops; a held
+  glow stick waves. Held / chased / dizzy, a fright and food still come first.
+- **Follows the song:** how hard they dance comes from `partyMoment` energy — small in the builds, all-out in the
+  drops. The moves are a pure `danceMoves(style, amount, beats)` (*new* `render/dance.ts`) drawn in the local frame.
+- **Fixed:** the neon seaweed drew in front of the creatures → the party drawing is split into a backdrop (dimming +
+  neon reef, behind) and the lights (in front); the dancers are no longer dimmed.
+- **Owner feedback:** a Scaredy danced too close to the disco ball (not reproduced) → timid dancers keep
+  `DANCE.ballClear` from the ball, tested. Backlog: #37 casting (one Grumpy, one Friendly; Peekers/Scaredies may
+  repeat); #38 a cheered-up Grumpy may become a Friendly.
+- **Verified:** 364 tests (+15): styles, noticing, the Grumpy's corner, build vs drop, bravery, ball clearance, the
+  party ending, priorities, beat bubbles, the moves (hops on the beat, spin, tap, reduced motion). Chrome screenshots in
+  build and drop. Owner: "verified". All five checks pass; docs updated.
+- **Learned:** split *what* (simulation: where, how hard) from *how it looks* (a pure move function on the beat).
+
 ## 2026-11-22 — Task #32c: Party — neon reef + lights that follow the music ✅
 - **"Where we are in the song"** in one place: the party song's map moved into `simulation/party.ts`
   (`PARTY_SONG_MAP`, also read by the music) with `momentAt` / `partyMoment` — section, energy (each section eases

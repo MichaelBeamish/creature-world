@@ -11,6 +11,7 @@ import { chooseMeal } from './feeding'
 import { interactionIntent } from './interaction'
 import { choosePlay } from './play'
 import { chooseCollect } from './wearables'
+import { chooseDance } from './dance'
 import { range, type Rng } from './rng'
 import { swimBounds } from './scenery'
 import type { World } from './world'
@@ -76,6 +77,14 @@ export const ruleMind: Mind = {
       else if (collect) mind.intent = collect
     } else {
       mind.meal = null
+      mind.play = null
+      mind.collect = null
+    }
+
+    // The party (task #32d): dancing beats toys and picking things up — but not food (a shrimp comes first).
+    const party = chooseDance(creature, world)
+    if (party && mind.intent !== 'eat' && mind.intent !== 'guard') {
+      mind.intent = party
       mind.play = null
       mind.collect = null
     }

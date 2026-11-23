@@ -7,6 +7,7 @@ import type { IntentKind } from './mindState'
 import { mealSpeed, mealTarget } from './feeding'
 import { PLAY, playTarget } from './play'
 import { COLLECT, collectTarget } from './wearables'
+import { DANCE, danceTarget } from './dance'
 import { chaseForce, dizzyForce, heldForce, INTERACTION, jetLimit } from './interaction'
 import { MIND } from './mind'
 import { PERCEPTION } from './perception'
@@ -56,6 +57,9 @@ export const INTENT_SPEED: Record<Exclude<IntentKind, 'held' | 'chase' | 'dizzy'
   play: 1,
   /** Going to pick up a dropped item: × `COLLECT.speed`. */
   collect: 1,
+  /** At the party: × `DANCE.speed` on the way to its spot. */
+  dance: 1,
+  sulk: 1,
 }
 
 /** This creature's top speed right now: base × energy (0.88–1.24) × intent. */
@@ -74,7 +78,9 @@ export function speedLimit(creature: Creature): number {
         ? PLAY.speed
         : intent === 'collect'
           ? COLLECT.speed
-          : 1
+          : intent === 'dance' || intent === 'sulk'
+            ? DANCE.speed
+            : 1
   return MOVEMENT.baseSpeed * energyFactor * INTENT_SPEED[intent] * food
 }
 
@@ -190,6 +196,21 @@ export function stepMovement(creature: Creature, world: World, dt: number): void
       }
       break
     }
+    case 'dance':
+    case 'sulk': {
+      // To its spot on the dance floor (or the Grumpy's corner), easing in; the moves are drawn on the beat.
+      arrive(
+        intentForce,
+        creature,
+        danceTarget(world, creature, mealPoint),
+        0,
+        80,
+        limit,
+        MOVEMENT.maxIntentForce,
+      )
+      addScaled(creature.velocity, intentForce, weights.intent * dt)
+      break
+    }
     case 'play': {
       const how = playTarget(world, creature, mealPoint)
       if (how?.away) {
@@ -214,7 +235,7 @@ export function stepMovement(creature: Creature, world: World, dt: number): void
   addScaled(creature.velocity, separationForce, weights.separation * dt)
 
   // Exponential drag: frame-rate independent (unlike `velocity *= 0.98` per step).
-  const holding = intent === 'rest' || intent === 'standoff'
+  const holding = intent === 'rest' || intent === 'standoff' || intent === 'sulk'
   const damping = Math.exp(-(holding ? MOVEMENT.restDrag : MOVEMENT.drag) * dt)
   creature.velocity.x *= damping
   creature.velocity.y *= damping
