@@ -11,7 +11,8 @@
  */
 import { BODY, type Creature } from './creature'
 import type { IntentKind } from './mindState'
-import { createRng, int, range, type Rng } from './rng'
+import { beatsAt, partyMoment } from './party'
+import { createRng, int, next, range, type Rng } from './rng'
 import type { World } from './world'
 
 export interface Bubble {
@@ -39,6 +40,8 @@ export interface BubbleSystem {
   lastIntent: Record<number, IntentKind>
   /** Seconds until each fleeing creature releases its next trickle bubble. */
   trickle: Record<number, number>
+  /** The last party bar a beat bubble was considered on (task #32d). */
+  partyBar: number
 }
 
 export const BUBBLES = {
@@ -50,6 +53,8 @@ export const BUBBLES = {
   /** While fleeing faster than `trickleSpeed` (px/s), one bubble every this many seconds. */
   trickleEvery: [0.6, 1.2],
   trickleSpeed: 45,
+  /** At the party, in the drops: each dancer's chance of a bubble on each bar's downbeat (task #32d). */
+  beatChance: 0.35,
   /** Rise speed (px/s) and a gentle upward acceleration (px/s²) — bubbles speed up as they rise. */
   riseSpeed: [40, 70],
   riseAccel: 10,
@@ -89,12 +94,25 @@ export function createBubbles(seed: number): BubbleSystem {
     rng: createRng(seed ^ BUBBLES.streamSalt),
     lastIntent: {},
     trickle: {},
+    partyBar: -1,
   }
 }
 
 /** Advance one fixed step: release new bubbles from intent changes / trickles, retire finished ones. */
 export function stepBubbles(world: World, dt: number): void {
   const system = world.bubbles
+  // Party (task #32d): in the drops, a dancer sometimes puffs a little bubble on the bar's downbeat.
+  const bar = world.party.on ? Math.floor(beatsAt(world) / 4) : -1
+  if (bar !== system.partyBar) {
+    system.partyBar = bar
+    if (bar >= 0 && partyMoment(world).section === 'drop') {
+      for (const creature of world.creatures) {
+        if (creature.mind.intent === 'dance' && next(system.rng) < BUBBLES.beatChance) {
+          release(system, creature, world.time, 1)
+        }
+      }
+    }
+  }
   for (const creature of world.creatures) {
     const intent = creature.mind.intent
     const last = system.lastIntent[creature.id] ?? intent

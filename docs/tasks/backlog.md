@@ -37,9 +37,9 @@ Before starting a task, run `/plan-task <n>` to write a detailed spec and get ap
 | 32a | Party: disco ball + lights | done |
 | 32b | Party: music (+ "turn on sound" nudge) | done |
 | 32c | Party: neon reef (seaweed + shells) | done |
-| 32d | Party: dancing by personality | todo |
+| 32d | Party: dancing by personality | done |
 | 36 | Party track picker: a small iPod by the mute button | todo |
-| 37 | Only ever one Grumpy | todo |
+| 37 | Casting: one Grumpy, one Friendly | todo |
 | 38 | Cheer up the Grumpy (something special) | todo |
 | 22 | Feeding | dropped |
 | 23 | Petting (slow strokes) | todo |
@@ -422,15 +422,19 @@ With 10 pages, the one-way ↻ circle takes forever to reach the end. Replace it
 - **Approved spec (owner, 2026-11-22):** `slotAt` returns 'prev' / 'next'; *new* `pageDotAt`, `goToPage`,
   `arrowPosition`, `pageDotPosition`; `turnPage(world, step)`; bigger dots (r 4, gap 14) with a forgiving hit area.
 
-### 37. Only ever one Grumpy — owner request 2026-11-22
-"Two grumpies is too much." World generation must never create more than one Grumpy (bold + incurious) creature;
-the others are drawn from the remaining personalities. Seeded and reproducible as now.
-- **Accept:** for many seeds, at most one creature is a Grumpy; the rest of the cast stays varied; existing seeded
-  behavior tests still pass (or are updated deliberately); all checks pass.
+### 37. Casting: one Grumpy, one Friendly — owner request 2026-11-22
+"Two grumpies is too much." **Never two Grumpies or two Friendlies — only the Scaredy and the Peeker may repeat.**
+Today `dealArchetypes` (traits.ts) shuffles a deck of the four and reshuffles when empty, so the 5th creature can be
+any of them. New deck: one Friendly, one Grumpy, two Peekers, two Scaredies (5 creatures: all four + a Peeker or a
+Scaredy). Seeded and reproducible as now.
+- **Accept:** for many seeds and counts up to 6, at most one Grumpy and at most one Friendly; every personality still
+  appears (4+ creatures); existing seeded behavior tests still pass (or are updated deliberately); all checks pass.
 
 ### 38. Cheer up the Grumpy — owner request 2026-11-22 (brainstorm first)
 Some way to make the Grumpy happy — maybe by giving him **something special**. To brainstorm with the owner before
 planning (what the gift is, how he reacts, whether it lasts, how it fits his personality without losing it).
+- **Owner idea (2026-11-22):** "if a grumpy changes his mood he can become a friendly" — cheered up for good, he
+  turns into a Friendly (the one exception to "one Friendly" in #37).
 - **Accept:** decided in the brainstorm.
 
 ### 36. Party track picker: a small iPod — owner request 2026-11-22
@@ -474,6 +478,8 @@ everything. Extras approved: bubbles rise on the beat (32d), the Grumpy secretly
   builds, **super into it when the drop hits**, calmer in the breakdown. Design note: the simulation will need the
   song's section map (intro / build / drop / breakdown), so move it into a small shared pure module that both the
   simulation and the music read (the simulation must not import audio code).
+  **Bug to fix here (owner, 2026-11-22):** the neon seaweed is drawn in front of the creatures; it should be behind
+  them (it's drawn in the party pass, after the creatures, so it glows above the dimming — needs a draw-order split).
 The disco ball and club lights come out together: the pool dims, the disco ball throws moving spots of light, colored
 beams sweep, an **original synthesized tech-house / bass-house groove** plays (four-on-the-floor kick, offbeat hats,
 rolling bassline, chord stabs — the vibe of an Austin dance festival, not a copy of any real track or artist; no

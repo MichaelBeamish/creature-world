@@ -93,6 +93,12 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   the Grumpy minds (bold + incurious): it shakes one item off every few seconds (`stepWearables`). Fallen items sink and
   can be picked up again (`itemAt`); after 5 s on the sand they blink for 3 s, then return to the chest. At most 3 of
   each are out.
+- **Dancing** (task #32d) — a mind layer after food (`chooseDance`): with the party on, calm creatures get the
+  `dance` intent and the Grumpy `sulk`, by trait dials (bounce / sway / shy / sulk). The simulation decides *where*
+  (`danceTarget`: the floor under the ball, the Peeker and Scaredy edging closer, the Grumpy's corner) and *how much*
+  (`mind.dance.amount`, from the song's energy); the renderer draws the moves on the beat with a pure `danceMoves`
+  in the creature's local frame. Dancers puff bubbles on the beat in the drops. The party drawing is split: the dimming
+  and neon reef go behind the creatures, the lights in front.
 - **Party** (task #32, in steps a–d) — the disco ball is one more chest item; let go in the water it floats slowly up
   to just below the surface and hangs there spinning. While it's out, `world.party` is on: one **beat clock**
   (`beatsAt`, `PARTY.bpm`) that the lights, the music (32b), the neon reef (32c) and the dancing (32d) all read, so

@@ -27,6 +27,9 @@ export type IntentKind =
   | 'play'
   /** Going to pick up a dropped wearable to put it on (task #33) */
   | 'collect'
+  /** At the party (task #32d): dancing / the Grumpy sulking in its corner */
+  | 'dance'
+  | 'sulk'
 
 export interface MindState {
   emotion: EmotionState
@@ -41,6 +44,9 @@ export interface MindState {
   play: { propId: number; since: number; phase: 'go' | 'back'; phaseSince: number } | null
   /** A dropped wearable it's going to pick up and put on (task #33). */
   collect: { propId: number } | null
+  /** At the party (task #32d): when it joined, when it notices the party and its next chirp / 💢, how hard it
+   *  dances (0..1). */
+  dance: { since: number; noticeAt: number; noticed: boolean; cueAt: number; amount: number } | null
   /** Bored of toys until this world time; when a Grumpy last swatted a toy. */
   playBoredUntil: number
   swattedAt: number
@@ -55,6 +61,7 @@ export function createMindState(): MindState {
     meal: null,
     play: null,
     collect: null,
+    dance: null,
     playBoredUntil: -Infinity,
     swattedAt: -Infinity,
   }
