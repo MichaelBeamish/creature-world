@@ -37,6 +37,41 @@ export const FLOOR = {
   tentacleAllowance: 18,
 } as const
 
+/**
+ * Small screens (task #42): phones and small windows, judged by the window's *shorter* side, so a phone counts as
+ * small in portrait and landscape alike. Below `small` px, things shrink smoothly, down to their minimum scale at
+ * `smallest` px.
+ */
+export const SCREEN = {
+  small: 600,
+  smallest: 390,
+  /** Creatures at the smallest screen (× their usual size). */
+  minCreatureScale: 0.65,
+  /** Toys and the disco ball at the smallest screen (× their usual size). */
+  minPropScale: 0.8,
+} as const
+
+/** True when the window's shorter side is under `SCREEN.small` px. */
+export function isSmallScreen(width: number, height: number): boolean {
+  return Math.min(width, height) < SCREEN.small
+}
+
+/** 1 on large screens, easing down to `min` as the shorter side shrinks from `SCREEN.small` to `SCREEN.smallest`. */
+function screenScale(width: number, height: number, min: number): number {
+  const t = (Math.min(width, height) - SCREEN.smallest) / (SCREEN.small - SCREEN.smallest)
+  return min + (1 - min) * Math.min(1, Math.max(0, t))
+}
+
+/** How big creatures are drawn for this window (× their usual size): 1 on large screens, down to 0.65. */
+export function creatureScale(width: number, height: number): number {
+  return screenScale(width, height, SCREEN.minCreatureScale)
+}
+
+/** How big toys and the disco ball are for this window (× their usual size): 1 on large screens, down to 0.8. */
+export function propScale(width: number, height: number): number {
+  return screenScale(width, height, SCREEN.minPropScale)
+}
+
 export const SCENERY = {
   /** How many of each kind (inclusive ranges). */
   rocks: [2, 4],

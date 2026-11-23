@@ -14,7 +14,7 @@ import type { Creature } from './creature'
 import { showEmote } from './expression'
 import type { IntentKind } from './mindState'
 import { partyMoment } from './party'
-import { DISCO } from './props'
+import { DISCO, discoRadius } from './props'
 import { range } from './rng'
 import { swimBounds } from './scenery'
 import type { Vec2 } from './vec2'
@@ -166,6 +166,6 @@ export function danceTarget(world: World, c: Creature, out: Vec2): Vec2 {
   }
   const margin = 60
   out.x = Math.max(margin, Math.min(bounds.width - margin, out.x))
-  out.y = Math.max(DISCO.hangY + DISCO.radius + 70, Math.min(bounds.height - margin, out.y))
+  out.y = Math.max(DISCO.hangY + discoRadius(world) + 70, Math.min(bounds.height - margin, out.y))
   return out
 }

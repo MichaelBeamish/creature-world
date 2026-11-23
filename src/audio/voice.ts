@@ -10,7 +10,7 @@
  */
 import type { EmoteKind } from '../simulation/expression'
 import type { InteractionSoundKind } from '../simulation/interaction'
-import { CREATURE_LIMITS, type Creature } from '../simulation/creature'
+import type { Creature } from '../simulation/creature'
 import type { Archetype } from '../simulation/traits'
 import { hash2 } from '../render/noise'
 
@@ -103,8 +103,7 @@ function detune(creature: Creature): number {
 
 /** The creature's base pentatonic step: smaller creatures sit higher. */
 export function baseStep(creature: Creature): number {
-  const { minSize, maxSize } = CREATURE_LIMITS
-  const smallness = 1 - (creature.size - minSize) / (maxSize - minSize) // 0 (big) .. 1 (small)
+  const smallness = 1 - creature.sizeRank // 0 (big) .. 1 (small), the same on any screen (task #42)
   return Math.round(smallness * 6) + TIMBRE[creature.archetype].register
 }
 

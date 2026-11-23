@@ -9,6 +9,7 @@
  */
 import { floorHeight, type SceneryItem } from '../simulation/scenery'
 import { beatsAt } from '../simulation/party'
+import { chestCovers } from '../simulation/props'
 import type { World } from '../simulation/world'
 import type { MotionSettings } from './motion'
 import { hash2 } from './noise'
@@ -47,10 +48,25 @@ export function drawFloor(
   const dance = seaweedDance(world, motion)
   for (const item of items) {
     const { x, y } = sceneryAt(item, width, height)
+    if (underChest(item, x)) continue
     if (item.kind === 'seaweed') drawSeaweed(ctx, item, x, sandLine(x, top) + 6, time, dance)
     else if (item.kind === 'rock') drawRock(ctx, item, x, y)
     else drawShell(ctx, item, x, y)
   }
+}
+
+/** How far (px) a seaweed clump spreads sideways from its root: the outer strands plus their sway. */
+const SEAWEED_REACH = 24
+
+/**
+ * Is this scenery item (at `x` on screen) in the chest's corner (task #42)? Then it isn't drawn: a rock or shell would
+ * poke out from under the chest, and seaweed (and its party neon) would grow in front of it. Decided at draw time,
+ * since scenery positions are fractions of the width — on a narrow phone, more of it falls in the chest's corner.
+ */
+export function underChest(item: SceneryItem, x: number): boolean {
+  const reach =
+    item.kind === 'rock' ? item.size * 1.5 : item.kind === 'shell' ? item.size : SEAWEED_REACH
+  return chestCovers(x, reach)
 }
 
 /** Where a scenery item sits on screen (px). */

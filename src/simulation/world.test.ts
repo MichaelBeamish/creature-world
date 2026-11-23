@@ -124,3 +124,28 @@ describe('resizeWorld', () => {
     expect([world.width, world.height]).toEqual([800, 600])
   })
 })
+
+describe('creatures on a small screen (task #42)', () => {
+  it('are 0.65 × the size, with the same voice rank, tentacles, hues and personalities as the seed deals', () => {
+    for (const seed of [1, 7, 42]) {
+      const big = createWorld({ seed, width: 1280, height: 720, creatureCount: 5 })
+      const phone = createWorld({ seed, width: 390, height: 844, creatureCount: 5 })
+      // The first creature's draws come before any spawn retries, so it's the very same creature, only smaller.
+      // (Later ones may differ: how many spawn retries a creature needs depends on the room — as before task #42.)
+      expect(phone.creatures[0]!.size).toBeCloseTo(big.creatures[0]!.size * 0.65)
+      expect(phone.creatures[0]!.sizeRank).toBeCloseTo(big.creatures[0]!.sizeRank)
+      expect(phone.creatures[0]!.tentacleCount).toBe(big.creatures[0]!.tentacleCount)
+      phone.creatures.forEach((c, i) => {
+        expect(c.size).toBeGreaterThanOrEqual(CREATURE_LIMITS.minSize * 0.65)
+        expect(c.size).toBeLessThan(CREATURE_LIMITS.maxSize * 0.65)
+        expect(c.size).toBeCloseTo(
+          0.65 *
+            (CREATURE_LIMITS.minSize +
+              c.sizeRank * (CREATURE_LIMITS.maxSize - CREATURE_LIMITS.minSize)),
+        )
+        expect(c.hue).toBe(big.creatures[i]!.hue)
+        expect(c.archetype).toBe(big.creatures[i]!.archetype)
+      })
+    }
+  })
+})

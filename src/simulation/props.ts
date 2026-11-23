@@ -16,7 +16,7 @@
  *   Each toy exists once. Creature contact and play live in `play.ts`.
  */
 import type { Creature } from './creature'
-import { floorHeight } from './scenery'
+import { floorHeight, isSmallScreen, propScale } from './scenery'
 import type { Vec2 } from './vec2'
 import type { World } from './world'
 
@@ -189,6 +189,8 @@ export const DISCO = {
   ease: 0.8,
   /** Spin (rad/s) — slow. */
   spin: 0.6,
+  /** Small screens (task #42): it also drifts to the upper-left corner, this far (px) from the left wall. */
+  cornerGap: 10,
 } as const
 
 export const PROPS = {
@@ -252,6 +254,41 @@ export function chestBox(world: World): { x: number; y: number; width: number; h
   const floor = floorHeight(world.height)
   const bottom = Math.min(world.height - 6, sandTop(world) + floor * CHEST.sink)
   return { x: CHEST.left, y: bottom - CHEST.height, width: CHEST.width, height: CHEST.height }
+}
+
+/** Clear space (px) kept between the chest's right edge and any scenery (task #42). */
+const CHEST_SCENERY_GAP = 12
+
+/** Scenery stays right of this (px): the chest's right edge plus a little clear space (task #42). */
+export function chestSceneryEdge(): number {
+  return CHEST.left + CHEST.width + CHEST_SCENERY_GAP
+}
+
+/**
+ * Would a scenery item at `x` reach under the chest (task #42)? `halfWidth` is how far it spreads sideways from `x`
+ * (a rock's or shell's radius, a seaweed clump's sway). Used at draw time: scenery positions are fractions of the
+ * width, so only the current width can tell.
+ */
+export function chestCovers(x: number, halfWidth: number): boolean {
+  return x - halfWidth < chestSceneryEdge()
+}
+
+/** A toy's radius in the water (px): a little smaller on small screens (task #42). */
+export function toyRadius(world: World, kind: 'duck' | 'ball'): number {
+  return TOY.radius[kind] * propScale(world.width, world.height)
+}
+
+/** The disco ball's radius (px): a little smaller on small screens (task #42). */
+export function discoRadius(world: World): number {
+  return DISCO.radius * propScale(world.width, world.height)
+}
+
+/** Where the disco ball hangs (px): below the surface — and, on small screens, in the upper-left corner. */
+export function discoHang(world: World, x: number): Vec2 {
+  return {
+    x: isSmallScreen(world.width, world.height) ? discoRadius(world) + DISCO.cornerGap : x,
+    y: DISCO.hangY,
+  }
 }
 
 /** Where slot `index` floats when the chest is open (px). One item: straight up; more: an arc leaning right. */
@@ -361,7 +398,7 @@ export function dropProp(world: World, kind: PropKind, x: number, y: number): Pr
     position: {
       x:
         kind === 'discoBall'
-          ? Math.max(DISCO.radius + 10, Math.min(world.width - DISCO.radius - 10, x))
+          ? Math.max(discoRadius(world) + 10, Math.min(world.width - discoRadius(world) - 10, x))
           : Math.max(8, Math.min(world.width - 8, x)),
       y: toy ? Math.min(y, toyFloor(world, kind)) : Math.min(y, rest),
     },
@@ -391,7 +428,7 @@ export function restY(world: World): number {
 
 /** The lowest a toy's center can go (px): resting on the sand. */
 export function toyFloor(world: World, kind: PropKind): number {
-  const r = kind === 'duck' || kind === 'ball' ? TOY.radius[kind] : 0
+  const r = kind === 'duck' || kind === 'ball' ? toyRadius(world, kind) : 0
   return restY(world) - r * 0.6
 }
 
@@ -402,9 +439,9 @@ export function itemAt(world: World, x: number, y: number): Prop | null {
     const p = world.props.items[i]!
     const reach =
       p.kind === 'duck' || p.kind === 'ball'
-        ? TOY.radius[p.kind] + 8
+        ? toyRadius(world, p.kind) + 8
         : p.kind === 'discoBall'
-          ? DISCO.radius + 8
+          ? discoRadius(world) + 8
           : isWearable(p.kind)
             ? PROPS.wearableReach
             : -1
@@ -416,7 +453,7 @@ export function itemAt(world: World, x: number, y: number): Prop | null {
 /** Toy physics for one step: the duck floats to the surface, the ball sinks, bounces and rolls. */
 function stepToy(world: World, p: Prop, dt: number): void {
   const kind = p.kind as 'duck' | 'ball'
-  const r = TOY.radius[kind]
+  const r = toyRadius(world, kind)
   const v = p.velocity
   // The duck has neutral buoyancy (no vertical force: it stays at its depth); the ball sinks.
   if (kind === 'ball') v.y += TOY.ballGravity * dt
@@ -444,6 +481,7 @@ function stepToy(world: World, p: Prop, dt: number): void {
     p.position.y = r * 0.5
     v.y = Math.abs(v.y) * TOY.restitution
   }
+  bounceOffChest(world, p, r)
   // The sand: the ball bounces (lower each time) and rolls with friction; the duck just can't go below it.
   const floor = toyFloor(world, kind)
   if (p.position.y >= floor) {
@@ -462,6 +500,53 @@ function stepToy(world: World, p: Prop, dt: number): void {
   p.angle += p.spin * dt
 }
 
+/**
+ * The chest is solid for toys (task #42): a toy (a circle of radius `r`) that touches its box is pushed back out and
+ * bounces off with the same give as the sand — or, if it's barely moving, just comes to rest against it (no jitter).
+ */
+function bounceOffChest(world: World, p: Prop, r: number): void {
+  const box = chestBox(world)
+  const v = p.velocity
+  // Its sides are walls: the big ball is taller than the chest, so a plain box would let it climb the corner and
+  // roll over. Only a toy that's clearly above the lid (coming down onto it, about a radius up) lands on top.
+  const overlapsX = p.position.x + r > box.x && p.position.x - r < box.x + box.width
+  const landing = v.y > 0 && p.position.y < box.y // falling onto the lid from above
+  if (overlapsX && !landing && p.position.y > box.y - r * 0.9) {
+    const fromRight = p.position.x > box.x + box.width / 2
+    p.position.x = fromRight ? box.x + box.width + r : box.x - r
+    if (fromRight ? v.x < 0 : v.x > 0) {
+      if (Math.abs(v.x) > TOY.hardBounce) p.bouncedAt = world.time
+      v.x = -v.x * (Math.abs(v.x) > 20 ? TOY.restitution : 0)
+    }
+    return
+  }
+  // The point of the box closest to the toy's center, and how far that is.
+  const cx = Math.max(box.x, Math.min(box.x + box.width, p.position.x))
+  const cy = Math.max(box.y, Math.min(box.y + box.height, p.position.y))
+  let nx = p.position.x - cx
+  let ny = p.position.y - cy
+  let d = Math.hypot(nx, ny)
+  if (d >= r) return
+  if (d < 1e-6) {
+    // The center is inside the box (it fell in fast): out through the top.
+    nx = 0
+    ny = -1
+    d = 0
+    p.position.y = box.y
+  } else {
+    nx /= d
+    ny /= d
+  }
+  p.position.x += nx * (r - d)
+  p.position.y += ny * (r - d)
+  const into = v.x * nx + v.y * ny // < 0: moving into the chest
+  if (into >= 0) return
+  const bounce = into < -20 ? TOY.restitution : 0
+  v.x -= (1 + bounce) * into * nx
+  v.y -= (1 + bounce) * into * ny
+  if (into < -TOY.hardBounce) p.bouncedAt = world.time
+}
+
 /** Advance one fixed step: shrimp sink with a gentle drift and settle on the sand; toys move. */
 export function stepProps(world: World, dt: number): void {
   const rest = restY(world)
@@ -472,9 +557,13 @@ export function stepProps(world: World, dt: number): void {
     }
     if (p.kind === 'discoBall') {
       // Floats slowly up to just below the surface, wherever it was let go, easing in as it arrives — then hangs
-      // there, spinning slowly.
-      const gap = p.position.y - DISCO.hangY
+      // there, spinning slowly. On small screens it also drifts to the upper-left corner (task #42), as gently.
+      const hang = discoHang(world, p.position.x)
+      const gap = p.position.y - hang.y
       p.velocity.y = -Math.min(DISCO.riseSpeed, Math.max(0, gap) * DISCO.ease)
+      const side = hang.x - p.position.x
+      p.velocity.x = Math.sign(side) * Math.min(DISCO.riseSpeed, Math.abs(side) * DISCO.ease)
+      p.position.x += p.velocity.x * dt
       p.position.y += p.velocity.y * dt
       p.angle += DISCO.spin * dt
       continue

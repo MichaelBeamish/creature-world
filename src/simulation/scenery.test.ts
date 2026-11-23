@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { createCreature, GOLDEN_ANGLE, type Creature } from './creature'
 import { createRng, range } from './rng'
-import { createScenery, floorHeight, FLOOR, SCENERY, swimBounds } from './scenery'
+import {
+  createScenery,
+  creatureScale,
+  floorHeight,
+  FLOOR,
+  isSmallScreen,
+  propScale,
+  SCENERY,
+  SCREEN,
+  swimBounds,
+} from './scenery'
 import { dealArchetypes } from './traits'
 import { createWorld } from './world'
 
@@ -101,6 +111,29 @@ describe('placement quality', () => {
         expect(rock.size).toBeLessThanOrEqual(SCENERY.rockSize[1])
         expect(rock.size).toBeLessThanOrEqual(34)
       }
+    }
+  })
+})
+
+describe('small screens (task #42)', () => {
+  it('are judged by the shorter side, so a phone is small in portrait and landscape', () => {
+    expect(isSmallScreen(1280, 720)).toBe(false)
+    expect(isSmallScreen(390, 844)).toBe(true)
+    expect(isSmallScreen(844, 390)).toBe(true)
+    expect(isSmallScreen(SCREEN.small, 900)).toBe(false)
+  })
+
+  it('shrink creatures smoothly from 1 down to 0.65, and toys down to 0.8', () => {
+    expect(creatureScale(1280, 720)).toBe(1)
+    expect(creatureScale(600, 900)).toBe(1)
+    expect(creatureScale(390, 844)).toBeCloseTo(SCREEN.minCreatureScale)
+    expect(creatureScale(320, 568)).toBeCloseTo(SCREEN.minCreatureScale) // never smaller
+    expect(propScale(390, 844)).toBeCloseTo(SCREEN.minPropScale)
+    let last = 0
+    for (let side = 300; side <= 700; side += 10) {
+      const s = creatureScale(side, 1000)
+      expect(s).toBeGreaterThanOrEqual(last) // never shrinks as the screen grows
+      last = s
     }
   })
 })

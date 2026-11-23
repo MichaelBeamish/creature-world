@@ -21,7 +21,7 @@ import {
   stepInteraction,
   type Interaction,
 } from './interaction'
-import { createScenery, swimBounds, type SceneryItem } from './scenery'
+import { createScenery, creatureScale, swimBounds, type SceneryItem } from './scenery'
 import { dealArchetypes } from './traits'
 import { addScaled, copyVec2 } from './vec2'
 
@@ -68,10 +68,12 @@ export function createWorld(config: WorldConfig): World {
   const bounds = swimBounds({ width: config.width, height: config.height })
   const baseHue = range(rng, 0, 360)
   const archetypes = dealArchetypes(rng, config.creatureCount)
+  // Smaller on small screens (task #42) — fixed at spawn, so resizing later doesn't rescale their spacing or physics.
+  const scale = creatureScale(config.width, config.height)
   const creatures: Creature[] = []
   for (let i = 0; i < config.creatureCount; i++) {
     const hue = baseHue + i * GOLDEN_ANGLE
-    creatures.push(createCreature(rng, i + 1, bounds, hue, creatures, archetypes[i]))
+    creatures.push(createCreature(rng, i + 1, bounds, hue, creatures, archetypes[i], scale))
   }
   return {
     width: config.width,
