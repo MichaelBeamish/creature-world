@@ -51,7 +51,7 @@ Simulation state is **plain, serializable data**; behavior is **functions** that
   `startle`, `pressure`, `trust`, and the current `stimulus` (sudden > chasing > calm > none). Personality decides
   how a creature *feels* about it (task #8).
 - **Personality** (`traits.ts`, ADR 0004) — archetype (Friendly, Peeker, Scaredy, Grumpy) sets the trait dials
-  `curiosity`, `boldness`, `energy` (+ seeded variation); dealt without replacement.
+  `curiosity`, `boldness`, `energy` (+ seeded variation); dealt without replacement — the four first, extras only Peekers / Scaredies (task #37).
 - **Emotion** (`emotion.ts`) — utility scores from perception × traits → smoothed levels → dominant emotion with
   hysteresis; fear is a reflex (judged on target scores).
 - **Mind** (the seam, `mind.ts`) — `interface Mind { think(creature, world, dt) }` writes emotion + intent.

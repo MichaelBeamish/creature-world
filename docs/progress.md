@@ -2,6 +2,16 @@
 
 Newest first. One entry per verified task or significant decision.
 
+## 2026-11-22 — Task #37: Casting — one Grumpy, one Friendly ✅
+- "Two grumpies is too much": `dealArchetypes` now deals the four personalities first (shuffled), then extras from a
+  *new* `EXTRA_DECK` of Peeker + Scaredy. The pool of 5: one of each plus an extra Peeker or Scaredy — never two
+  Grumpies or two Friendlies.
+- **Verified:** 300 seeds × 1–6 creatures (at most one Grumpy and one Friendly, ≤ 2 Peekers / Scaredies, all four
+  with 4+), the 5th is always a Peeker or Scaredy (both occur). No seed-dependent test shifted; a given `?seed=` with
+  5 creatures now makes a different pool than before. Owner: "verified". All five checks pass; docs updated (README
+  status line refreshed too).
+- **Learned:** build constraints into how things are created, instead of patching them afterwards.
+
 ## 2026-11-22 — Task #32d: Party — dancing ✅ (the party, #32, is complete)
 - **A mind layer after food** (*new* `simulation/dance.ts`): with the party on, calm creatures `dance` and the
   Grumpy `sulk`s — styles by trait dials: bounce (Friendly: the floor under the ball, big hops, a spin every 8 bars

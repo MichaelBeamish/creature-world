@@ -18,7 +18,8 @@ It should feel like **discovering something alive**, not using a website.
 
 ## Meet the residents
 
-Every creature has a personality — an **archetype** on shared trait dials (curiosity × boldness):
+Every creature has a personality — an **archetype** on shared trait dials (curiosity × boldness). The pool has one of
+each plus an extra Peeker or Scaredy — never two Grumpies (one is plenty):
 
 |                 | **Timid**                                                     | **Bold**                                                        |
 | --------------- | ------------------------------------------------------------- | --------------------------------------------------------------- |
@@ -107,6 +108,6 @@ decisions; [Claude Code](https://claude.com/claude-code) planned, implemented, t
 
 The MVP — "The Tide Pool" ([scope & success criteria](docs/product/mvp.md)) — is complete (success criteria 1–5 verified; the informal
 first-viewer test is pending), and a sea floor and bubbles have since been added. Now in progress: the **interaction milestone** — boop, drag and
-shake → ink (with a reaction per personality) and the treasure chest with shrimp, toys and dress-up are in; glow
-sticks and a disco party are next, then petting, names and moving shells — then a public
-deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md) (social life, an LLM-guided mind, …).
+shake → ink (with a reaction per personality), the treasure chest with shrimp, toys, dress-up and things to hold, and a
+disco party (lights, original house music, a neon reef and dancing) are in; next: cheering up the Grumpy, a party track
+picker, petting, names and moving shells — then a public deploy. Ideas beyond that live in the [roadmap](docs/product/roadmap.md) (social life, an LLM-guided mind, …).

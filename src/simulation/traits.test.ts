@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createRng } from './rng'
 import {
   ARCHETYPE_DECK,
+  EXTRA_DECK,
   ARCHETYPES,
   createTraits,
   dealArchetypes,
@@ -17,11 +18,30 @@ describe('dealArchetypes', () => {
     }
   })
 
-  it('five creatures get all four plus one repeat; eight get each twice', () => {
-    const five = dealArchetypes(createRng(7), 5)
-    expect(new Set(five).size).toBe(4)
-    const eight = dealArchetypes(createRng(7), 8)
-    for (const a of ARCHETYPE_DECK) expect(eight.filter((x) => x === a)).toHaveLength(2)
+  it('never two Grumpies or two Friendlies — only the Peeker and the Scaredy repeat (task #37)', () => {
+    for (let seed = 1; seed <= 300; seed++) {
+      for (let count = 1; count <= 6; count++) {
+        const dealt = dealArchetypes(createRng(seed), count)
+        const n = (a: string) => dealt.filter((x) => x === a).length
+        expect(dealt).toHaveLength(count)
+        expect(n('grumpy')).toBeLessThanOrEqual(1)
+        expect(n('friendly')).toBeLessThanOrEqual(1)
+        expect(n('peeker')).toBeLessThanOrEqual(2)
+        expect(n('scaredy')).toBeLessThanOrEqual(2)
+        if (count >= 4) expect(new Set(dealt)).toEqual(new Set(ARCHETYPE_DECK))
+      }
+    }
+  })
+
+  it('five creatures: all four plus a Peeker or a Scaredy (either can be the extra)', () => {
+    const extras = new Set<string>()
+    for (let seed = 1; seed <= 50; seed++) {
+      const dealt = dealArchetypes(createRng(seed), 5)
+      const extra = ARCHETYPE_DECK.find((a) => dealt.filter((x) => x === a).length === 2)!
+      expect(EXTRA_DECK).toContain(extra)
+      extras.add(extra)
+    }
+    expect(extras.size).toBe(2)
   })
 
   it('is deterministic and the order varies by seed', () => {
